@@ -81,32 +81,29 @@ body {
   gap: 14px;
 }
 
-.brand-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, var(--gold-400), var(--gold-600));
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--bg-deep);
+.brand-logo {
+  height: 42px;
+  width: auto;
+  filter: brightness(1.15) contrast(1.05);
+  transition: transform 200ms ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.03);
 }
 
 .brand-text h1 {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--gold-200);
   letter-spacing: 0.02em;
 }
 
 .brand-text p {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-tertiary);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .header-actions {
@@ -231,6 +228,79 @@ body {
 .upload-hint {
   font-size: 12px;
   color: var(--text-tertiary);
+}
+
+/* Hero Section */
+.hero-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 28px;
+}
+
+.hero-wrapper .upload-zone {
+  height: 100%;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.mascot-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 280px;
+}
+
+.mascot-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(201,169,110,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.mascot-img {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  object-position: bottom center;
+  position: relative;
+  z-index: 1;
+  padding: 8px 8px 0;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+}
+
+.mascot-caption {
+  position: relative;
+  z-index: 2;
+  padding: 10px 16px 14px;
+  text-align: center;
+  background: linear-gradient(to top, var(--bg-card) 60%, transparent);
+  width: 100%;
+}
+
+.mascot-caption .mascot-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold-200);
+  margin-bottom: 2px;
+}
+
+.mascot-caption .mascot-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
 }
 
 .file-info {
@@ -761,12 +831,48 @@ td.row-num {
 
 /* Footer */
 .app-footer {
+  position: relative;
   text-align: center;
-  padding: 24px 0;
+  padding: 48px 24px 32px;
   font-size: 12px;
   color: var(--text-tertiary);
   border-top: 1px solid var(--border-subtle);
   margin-top: 32px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.app-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('assets/lab.jpg') center center / cover no-repeat;
+  opacity: 0.15;
+  filter: saturate(0.6);
+}
+
+.app-footer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, var(--bg-deep) 0%, rgba(13,15,20,0.92) 40%, rgba(13,15,20,0.85) 100%);
+}
+
+.footer-content {
+  position: relative;
+  z-index: 1;
+}
+
+.footer-content p {
+  margin-bottom: 6px;
+}
+
+.footer-content .footer-brand {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gold-300);
+  margin-bottom: 8px;
 }
 
 /* Responsive */
@@ -775,6 +881,11 @@ td.row-num {
   .rules-grid { grid-template-columns: 1fr; }
   .app-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .results-toolbar { flex-direction: column; align-items: flex-start; }
+  .hero-wrapper { grid-template-columns: 1fr; }
+  .mascot-panel { min-height: 200px; flex-direction: row; align-items: center; justify-content: center; padding: 16px; gap: 16px; }
+  .mascot-img { height: 160px; width: 160px; object-fit: cover; border-radius: var(--radius-lg); }
+  .mascot-caption { background: none; padding: 0; text-align: left; width: auto; }
+  .brand-logo { height: 36px; }
 }
 
 /* Detail modal */
@@ -945,10 +1056,10 @@ td.row-num {
 <div class="app-container">
   <header class="app-header">
     <div class="brand">
-      <div class="brand-icon">域</div>
+      <img src="assets/logo.png" alt="域骉控股" class="brand-logo">
       <div class="brand-text">
         <h1>珠宝质检自动审查系统</h1>
-        <p>域骉控股 · Quality Control Engine v1.0</p>
+        <p>Quality Control Engine v1.0</p>
       </div>
     </div>
     <div class="header-actions">
@@ -958,13 +1069,22 @@ td.row-num {
     </div>
   </header>
 
-  <!-- Upload Section -->
+  <!-- Hero Section with Upload + Mascot -->
   <section class="upload-section" id="uploadSection">
-    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">◆</div>
-      <div class="upload-title">拖拽 Excel 文件到此处</div>
-      <div class="upload-subtitle">或点击选择文件上传</div>
-      <div class="upload-hint">支持 .xlsx 格式 · 自动执行 6 项规则审查 · 结果可导出</div>
+    <div class="hero-wrapper">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">◆</div>
+        <div class="upload-title">拖拽 Excel 文件到此处</div>
+        <div class="upload-subtitle">或点击选择文件上传</div>
+        <div class="upload-hint">支持 .xlsx 格式 · 自动执行 6 项规则审查 · 结果可导出</div>
+      </div>
+      <div class="mascot-panel">
+        <img src="assets/mascot.jpg" alt="质检小助手" class="mascot-img">
+        <div class="mascot-caption">
+          <div class="mascot-name">质检小助手</div>
+          <div class="mascot-desc">帮你揪出问题，守护品质 ✨</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -979,7 +1099,7 @@ td.row-num {
         <div class="rule-indicator"></div>
         <div class="rule-content">
           <div class="rule-name">R1 · 重量判定</div>
-          <div class="rule-desc">格式异常检测 + 重量极低判定，覆盖5种格式变体</div>
+          <div class="rule-desc">检测重量格式异常和极低重量</div>
         </div>
         <div class="rule-toggle active" data-rule="r1" onclick="toggleRule(this)"></div>
       </div>
@@ -987,7 +1107,7 @@ td.row-num {
         <div class="rule-indicator"></div>
         <div class="rule-content">
           <div class="rule-name">R2 · 宝玉石判定</div>
-          <div class="rule-desc">少备注/多备注来源/多备注重复，括号内不计入</div>
+          <div class="rule-desc">检查宝玉石结论与备注一致性</div>
         </div>
         <div class="rule-toggle active" data-rule="r2" onclick="toggleRule(this)"></div>
       </div>
@@ -995,7 +1115,7 @@ td.row-num {
         <div class="rule-indicator"></div>
         <div class="rule-content">
           <div class="rule-name">R3 · 金含量备注检查</div>
-          <div class="rule-desc">前置→触发→核验三层过滤，排除足银999</div>
+          <div class="rule-desc">检查金含量备注是否规范</div>
         </div>
         <div class="rule-toggle active" data-rule="r3" onclick="toggleRule(this)"></div>
       </div>
@@ -1003,7 +1123,7 @@ td.row-num {
         <div class="rule-indicator"></div>
         <div class="rule-content">
           <div class="rule-name">R4 · 足金净金重检查</div>
-          <div class="rule-desc">重量为空→正确；未检备注特殊处理；括号内容检查</div>
+          <div class="rule-desc">检查足金产品净金重备注</div>
         </div>
         <div class="rule-toggle active" data-rule="r4" onclick="toggleRule(this)"></div>
       </div>
@@ -1011,7 +1131,7 @@ td.row-num {
         <div class="rule-indicator"></div>
         <div class="rule-content">
           <div class="rule-name">R5 · 南红备注检查</div>
-          <div class="rule-desc">不通过→正确；配/为/伴+南红格式检查；玛瑙需核实</div>
+          <div class="rule-desc">检查南红备注格式是否合规</div>
         </div>
         <div class="rule-toggle active" data-rule="r5" onclick="toggleRule(this)"></div>
       </div>
@@ -1019,7 +1139,7 @@ td.row-num {
         <div class="rule-indicator"></div>
         <div class="rule-content">
           <div class="rule-name">R6 · 玛瑙覆膜检查</div>
-          <div class="rule-desc">玛瑙/玉髓（覆膜）材质核验；不通过→正确</div>
+          <div class="rule-desc">检查玛瑙覆膜备注是否合规</div>
         </div>
         <div class="rule-toggle active" data-rule="r6" onclick="toggleRule(this)"></div>
       </div>
@@ -1099,7 +1219,11 @@ td.row-num {
   </section>
 
   <footer class="app-footer">
-    域骉控股 · 珠宝质检自动审查系统 · 规则引擎 v1.0
+    <div class="footer-content">
+      <div class="footer-brand">域骉控股</div>
+      <p>珠宝质检自动审查系统 · 规则引擎 v1.0</p>
+      <p>专业检测 · 品质保障 · 值得信赖</p>
+    </div>
   </footer>
 </div>
 
