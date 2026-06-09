@@ -559,6 +559,60 @@ body {
 .column-filter-actions button:hover {
   text-decoration: underline;
 }
+/* Rule Filter Dropdown */
+.rule-filter-wrapper {
+  position: relative;
+}
+
+.rule-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 4px;
+  display: none;
+  z-index: 100;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.rule-filter-dropdown.active {
+  display: block;
+}
+
+.rule-filter-dropdown label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background 100ms;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.rule-filter-dropdown label:hover {
+  background: var(--bg-elevated);
+}
+
+.rule-filter-dropdown input[type="radio"] {
+  accent-color: var(--gold-400);
+  width: 14px;
+  height: 14px;
+}
+
+.rule-filter-actions {
+  padding: 6px 12px 2px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 
 /* Stats */
 .stats-grid {
@@ -1326,6 +1380,21 @@ td.row-num {
             </div>
           </div>
         </div>
+        <div class="rule-filter-wrapper">
+          <button class="btn btn-ghost" onclick="toggleRuleFilter()" id="ruleFilterBtn" style="font-size:12px">规则筛选 ▾</button>
+          <div class="rule-filter-dropdown" id="ruleFilterDropdown">
+            <label><input type="radio" name="ruleFilter" value="all" checked onchange="updateRuleFilter('all')"> 全部规则</label>
+            <label><input type="radio" name="ruleFilter" value="r1" onchange="updateRuleFilter('r1')"> R1 重量判定</label>
+            <label><input type="radio" name="ruleFilter" value="r2" onchange="updateRuleFilter('r2')"> R2 宝玉石判定</label>
+            <label><input type="radio" name="ruleFilter" value="r3" onchange="updateRuleFilter('r3')"> R3 金含量备注</label>
+            <label><input type="radio" name="ruleFilter" value="r4" onchange="updateRuleFilter('r4')"> R4 足金净金重</label>
+            <label><input type="radio" name="ruleFilter" value="r5" onchange="updateRuleFilter('r5')"> R5 南红备注</label>
+            <label><input type="radio" name="ruleFilter" value="r6" onchange="updateRuleFilter('r6')"> R6 玛瑙覆膜</label>
+            <label><input type="radio" name="ruleFilter" value="r7" onchange="updateRuleFilter('r7')"> R7 非洲翠</label>
+            <label><input type="radio" name="ruleFilter" value="r8" onchange="updateRuleFilter('r8')"> R8 合成立方氧化锆</label>
+            <div class="rule-filter-actions">选择后只显示该规则的异常</div>
+          </div>
+        </div>
         <div class="search-box">
           <span class="search-icon">⌕</span>
           <input type="text" id="searchInput" placeholder="搜索商品名称..." oninput="applyFilters()">
@@ -1378,6 +1447,7 @@ const PAGE_SIZE = 50;
 
 const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
 const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
+const ruleFilterValue = 'all';  // 'all' or 'r1'..'r8'
 const ruleMeta = [
   { id: 'r1', name: 'R1 重量判定', short: 'R1 重量' },
   { id: 'r2', name: 'R2 宝玉石判定', short: 'R2 宝玉石' },
@@ -1850,6 +1920,8 @@ function ruleR8(row) {
 function toggleColumnFilter() {
   const dd = document.getElementById('columnFilterDropdown');
   dd.classList.toggle('active');
+  // Close rule filter if open
+  document.getElementById('ruleFilterDropdown').classList.remove('active');
 }
 
 function updateColumnFilter() {
@@ -1885,6 +1957,29 @@ document.addEventListener('click', (e) => {
 function getVisibleRules() {
   return ruleMeta.filter(r => columnFilterState[r.id]).map(r => r.id);
 }
+// ==================== Rule Filter (row filtering) ====================
+function toggleRuleFilter() {
+  const dd = document.getElementById('ruleFilterDropdown');
+  dd.classList.toggle('active');
+  // Close column filter if open
+  document.getElementById('columnFilterDropdown').classList.remove('active');
+}
+
+function updateRuleFilter(val) {
+  ruleFilterValue = val;
+  const ruleNames = { r1:'R1', r2:'R2', r3:'R3', r4:'R4', r5:'R5', r6:'R6', r7:'R7', r8:'R8' };
+  document.getElementById('ruleFilterBtn').textContent = val === 'all' ? '规则筛选 ▾' : `${ruleNames[val]} ▾`;
+  applyFilters();
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.rule-filter-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    document.getElementById('ruleFilterDropdown').classList.remove('active');
+  }
+});
+
 
 // ==================== Processing ====================
 function processAndRender() {
@@ -1985,6 +2080,14 @@ function applyFilters() {
   if (currentFilter === 'error') filtered = filtered.filter(d => d._status === 'error');
   else if (currentFilter === 'ok') filtered = filtered.filter(d => d._status === 'ok');
   else if (currentFilter === 'empty') filtered = filtered.filter(d => d._status === 'empty');
+
+  // Rule filter: only show rows where selected rule has error
+  if (ruleFilterValue !== 'all') {
+    filtered = filtered.filter(d => {
+      const val = d[ruleFilterValue];
+      return val && val !== '正常' && val !== '正确' && val !== '';
+    });
+  }
 
   if (search) {
     filtered = filtered.filter(d => {
