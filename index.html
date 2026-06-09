@@ -4,108 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>域骉控股 - 珠宝质检自动审查系统</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-// ==================== Theme Init ====================
-(function initTheme() {
-  const saved = localStorage.getItem('theme');
-  if (saved === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = '☀';
-  } else {
-    // 默认浅色
-    document.documentElement.setAttribute('data-theme', 'light');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = '☾';
-    if (!saved) localStorage.setItem('theme', 'light');
-  }
-})();
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-deep: #050505;
-  --bg-surface: #0a0a0a;
-  --bg-card: #0f0f0f;
-  --bg-elevated: #161616;
-  --border-subtle: rgba(201,169,110,0.10);
-  --border-default: rgba(201,169,110,0.18);
-  --border-strong: rgba(201,169,110,0.32);
-  --gold-100: #f5e6c4;
-  --gold-200: #e8cc8a;
-  --gold-300: #d4ad5e;
-  --gold-400: #c9a96e;
-  --gold-500: #b8943f;
-  --gold-600: #9a7a30;
-  --text-primary: #f0ece4;
-  --text-secondary: rgba(240,236,228,0.55);
-  --text-tertiary: rgba(240,236,228,0.30);
-  --red-400: #f87171;
-  --red-500: #ef4444;
-  --red-bg: rgba(239,68,68,0.06);
-  --red-border: rgba(239,68,68,0.20);
-  --green-400: #4ade80;
-  --green-500: #22c55e;
-  --green-bg: rgba(34,197,94,0.06);
-  --green-border: rgba(34,197,94,0.20);
-  --amber-400: #fbbf24;
-  --amber-500: #f59e0b;
-  --amber-bg: rgba(245,158,11,0.06);
-  --amber-border: rgba(245,158,11,0.20);
-  --blue-400: #60a5fa;
-  --blue-bg: rgba(96,165,250,0.06);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.18);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.25);
-  --shadow-glow: 0 0 20px rgba(201,169,110,0.08);
-  --font-display: 'Noto Serif SC', 'Georgia', serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', monospace;
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ==================== Theme Toggle ==================== */
-.theme-toggle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border-default);
-  background: var(--bg-elevated);
-  color: var(--gold-400);
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-normal);
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.theme-toggle:hover {
-  background: var(--gold-400);
-  color: var(--bg-deep);
-  border-color: var(--gold-400);
-  transform: rotate(20deg) scale(1.05);
-  box-shadow: 0 2px 8px rgba(201,169,110,0.30);
-}
-
-.theme-toggle:active {
-  transform: rotate(20deg) scale(0.95);
-}
-/* ==================== Light Theme ==================== */
-
-[data-theme="light"] {
   --bg-deep: #f8f5f0;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
@@ -113,51 +18,43 @@
   --border-subtle: rgba(180,140,60,0.12);
   --border-default: rgba(180,140,60,0.22);
   --border-strong: rgba(180,140,60,0.38);
+  --gold-100: #f5e6c4;
+  --gold-200: #e8cc8a;
+  --gold-300: #d4ad5e;
+  --gold-400: #c9a96e;
+  --gold-500: #b8943f;
+  --gold-600: #9a7a30;
   --text-primary: #1a1410;
   --text-secondary: rgba(26,20,16,0.55);
   --text-tertiary: rgba(26,20,16,0.30);
+  --red-400: #ef4444;
+  --red-500: #dc2626;
   --red-bg: rgba(239,68,68,0.05);
   --red-border: rgba(239,68,68,0.18);
+  --green-400: #22c55e;
+  --green-500: #16a34a;
   --green-bg: rgba(34,197,94,0.05);
   --green-border: rgba(34,197,94,0.18);
+  --amber-400: #f59e0b;
+  --amber-500: #d97706;
   --amber-bg: rgba(245,158,11,0.05);
   --amber-border: rgba(245,158,11,0.18);
-  --blue-bg: rgba(96,165,250,0.05);
+  --blue-400: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.05);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
   --shadow-glow: 0 0 20px rgba(201,169,110,0.05);
-}
-
-
-[data-theme="light"] body {
-  background: var(--bg-deep);
-}
-
-[data-theme="light"] .upload-zone {
-  background: #fffdf7;
-}
-
-[data-theme="light"] .rule-card {
-  border-color: rgba(180,140,60,0.12);
-}
-
-[data-theme="light"] .rule-card:hover {
-  border-color: rgba(180,140,60,0.3);
-}
-
-[data-theme="light"] .app-footer::before {
-  opacity: 0.08;
-}
-
-[data-theme="light"] .app-footer::after {
-  background: linear-gradient(to bottom, #f5f0e8 0%, rgba(245,240,232,0.92) 40%, rgba(245,240,232,0.85) 100%);
-}
-
-[data-theme="light"] .brand-logo {
-  filter: brightness(1) contrast(1.1);
-}
-
+  --font-display: 'Noto Serif SC', 'Georgia', serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -391,9 +288,6 @@ body {
   transform: translateY(-4px) scale(1.03);
 }
 
-[data-theme="light"] .mascot-float {
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
-}
 
 @media (max-width: 768px) {
   .mascot-float {
@@ -1302,6 +1196,350 @@ td.row-num {
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+
+/* ========== Filter Panel ========== */
+.filter-wrapper {
+  position: relative;
+}
+
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+.filter-btn:hover {
+  border-color: var(--gold-400);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 0 3px rgba(201,169,110,0.08);
+}
+
+.filter-btn:active {
+  transform: scale(0.97);
+}
+
+.filter-btn .filter-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.filter-btn .filter-chevron {
+  font-size: 10px;
+  opacity: 0.5;
+  transition: transform 200ms ease;
+}
+
+.filter-btn.active .filter-chevron {
+  transform: rotate(180deg);
+}
+
+.filter-btn .filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--gold-500);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 320px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-lg), 0 20px 40px rgba(0,0,0,0.15);
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.96);
+  transform-origin: top right;
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+.filter-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.filter-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-default);
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-section:last-of-type {
+  margin-bottom: 16px;
+}
+
+.filter-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-section-title::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 12px;
+  background: var(--gold-500);
+  border-radius: 2px;
+}
+
+.filter-status-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.filter-status-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-status-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.filter-status-btn.active {
+  background: rgba(201,169,110,0.12);
+  border-color: var(--gold-400);
+  color: var(--gold-300);
+  box-shadow: 0 0 0 2px rgba(201,169,110,0.08);
+}
+
+.filter-status-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 2px;
+  background: var(--gold-500);
+  border-radius: 1px;
+}
+
+.filter-rule-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.filter-rule-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.filter-rule-checkboxes label:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.filter-rule-checkboxes label:has(input:checked) {
+  background: rgba(201,169,110,0.08);
+  border-color: rgba(201,169,110,0.25);
+  color: var(--gold-300);
+}
+
+.filter-rule-checkboxes input[type="checkbox"] {
+  accent-color: var(--gold-500);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.filter-actions button {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-body);
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.filter-actions .btn-ghost {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.filter-actions .btn-ghost:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.filter-actions .btn-primary {
+  background: var(--gold-500);
+  color: #000;
+  border-color: var(--gold-400);
+}
+
+.filter-actions .btn-primary:hover {
+  background: var(--gold-400);
+  box-shadow: 0 2px 8px rgba(201,169,110,0.25);
+}
+
+/* ========== Header Brand Enhancement ========== */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold-200);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.brand-text .brand-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-text .brand-subtitle::before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 1px;
+  background: var(--gold-500);
+  opacity: 0.4;
+}
+
+.brand-text .brand-tagline {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+  letter-spacing: 0.06em;
+}
+
+/* ========== Footer ========== */
+.app-footer {
+  margin-top: 48px;
+  padding: 32px 0;
+  border-top: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.app-footer::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-500), transparent);
+  opacity: 0.15;
+}
+
+.footer-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold-300);
+  letter-spacing: 0.04em;
+}
+
+.footer-content p {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
 </style>
 </head>
 <body>
@@ -1323,11 +1561,10 @@ td.row-num {
       <img src="assets/logo.png" alt="域骉控股" class="brand-logo">
       <div class="brand-text">
         <h1>珠宝质检自动审查系统</h1>
-        <p>Quality Control Engine v1.0</p>
+        <div class="brand-subtitle">规则引擎 v1.0</div>
       </div>
     </div>
     <div class="header-actions">
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">☀</button>
       <button class="btn btn-ghost" onclick="resetAll()" title="重置">↺ 重置</button>
       <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">上传文件</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" style="display:none" onchange="handleFile(this.files[0])">
@@ -1455,9 +1692,10 @@ td.row-num {
       <div class="toolbar-right">
         <div class="filter-wrapper">
           <button class="filter-btn" onclick="toggleFilterPanel()" id="filterBtn">
-            筛选
-            <span class="badge" id="filterBadge" style="display:none">0</span>
-            <span style="font-size:10px">▾</span>
+            <span class="filter-icon">◈</span>
+            <span>筛选</span>
+            <span class="filter-badge" id="filterBadge" style="display:none">0</span>
+            <span class="filter-chevron">▾</span>
           </button>
           <div class="filter-dropdown" id="filterDropdown">
             <div class="filter-section">
@@ -1523,7 +1761,7 @@ td.row-num {
 
   <footer class="app-footer">
     <div class="footer-content">
-      <div class="footer-brand">域骉控股</div>
+      <div class="footer-brand">◈ 域骉控股</div>
       <p>珠宝质检自动审查系统 · 规则引擎 v1.0</p>
       <p>专业检测 · 品质保障 · 值得信赖</p>
     </div>
@@ -2041,11 +2279,14 @@ function getVisibleRules() {
 
 function toggleFilterPanel() {
   const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
   if (!dd) return;
   const isActive = dd.classList.contains('active');
   document.querySelectorAll('.filter-dropdown.active').forEach(d => d.classList.remove('active'));
+  if (btn) btn.classList.remove('active');
   if (!isActive) {
     dd.classList.add('active');
+    if (btn) btn.classList.add('active');
   }
 }
 
@@ -2070,7 +2311,9 @@ function confirmFilterPanel() {
   }
   updateFilterBadge();
   const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
   if (dd) dd.classList.remove('active');
+  if (btn) btn.classList.remove('active');
   currentPage = 1;
   applyFilters();
 }
@@ -2085,6 +2328,10 @@ function resetFilterPanel() {
   });
   document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => c.checked = false);
   updateFilterBadge();
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (dd) dd.classList.remove('active');
+  if (btn) btn.classList.remove('active');
   currentPage = 1;
   applyFilters();
 }
@@ -2107,7 +2354,9 @@ function updateFilterBadge() {
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.filter-wrapper')) {
     const dd = document.getElementById('filterDropdown');
+    const btn = document.getElementById('filterBtn');
     if (dd) dd.classList.remove('active');
+    if (btn) btn.classList.remove('active');
   }
 });
 
@@ -2457,16 +2706,6 @@ function exportResults() {
 
 
 // ==================== Theme ====================
-function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme');
-  const next = current === 'light' ? 'dark' : 'light';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = next === 'light' ? '☀' : '☾';
-}
-
 // ==================== Reset ====================
 function resetAll() {
   rawData = [];
