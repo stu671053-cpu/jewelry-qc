@@ -1,0 +1,51 @@
+# 域骉控股珠宝质检规则配置
+# 每条规则的启用状态、输出列名、优先级
+
+rules:
+  - id: r1_weight
+    name: 重量判定
+    column: 重量判定
+    enabled: true
+    priority: 1
+
+  - id: r2_gemstone
+    name: 宝玉石判定
+    column: 宝玉石判定
+    enabled: true
+    priority: 2
+
+  - id: r3_gold_content
+    name: 金含量备注检查
+    column: 金含量备注检查
+    enabled: true
+    priority: 3
+
+  - id: r4_net_weight
+    name: 足金净金重检查
+    column: 足金净金重检查
+    enabled: true
+    priority: 4
+
+  - id: r5_nanhong
+    name: 南红备注检查
+    column: 南红备注检查
+    enabled: true
+    priority: 5
+
+  - id: r6_agate_coating
+    name: 玛瑙覆膜检查
+    column: 玛瑙覆膜检查
+    enabled: true
+    priority: 6
+
+  - id: r7_african_jade
+    name: 非洲翠备注检查
+    column: 非洲翠备注检查
+    enabled: true
+    priority: 7
+
+  - id: r8_cubic_zirconia
+    name: 合成立方氧化锆备注检查
+    column: 合成立方氧化锆备注检查
+    enabled: true
+    priority: 8
