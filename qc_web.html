@@ -715,6 +715,12 @@ body {
   gap: 8px;
 }
 
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .search-box {
   display: flex;
   align-items: center;
@@ -1689,6 +1695,12 @@ td.row-num {
   <!-- Results Table -->
   <section class="results-section" id="resultsSection" style="display:none">
     <div class="results-toolbar">
+      <div class="toolbar-left">
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="searchInput" placeholder="搜索商品名称..." oninput="applyFilters()">
+        </div>
+      </div>
       <div class="toolbar-right">
         <div class="filter-wrapper">
           <button class="filter-btn" onclick="toggleFilterPanel()" id="filterBtn">
@@ -1725,10 +1737,6 @@ td.row-num {
               <button class="btn-primary" onclick="confirmFilterPanel()">确定</button>
             </div>
           </div>
-        </div>
-        <div class="search-box">
-          <span class="search-icon">⌕</span>
-          <input type="text" id="searchInput" placeholder="搜索商品名称..." oninput="applyFilters()">
         </div>
         <button class="btn" onclick="exportResults()">↓ 导出结果</button>
       </div>
