@@ -1447,7 +1447,7 @@ const PAGE_SIZE = 50;
 
 const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
 const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
-const ruleFilterValue = 'all';  // 'all' or 'r1'..'r8'
+let ruleFilterValue = 'all';  // 'all' or 'r1'..'r8'
 const ruleMeta = [
   { id: 'r1', name: 'R1 重量判定', short: 'R1 重量' },
   { id: 'r2', name: 'R2 宝玉石判定', short: 'R2 宝玉石' },
