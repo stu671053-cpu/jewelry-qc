@@ -490,6 +490,76 @@ body {
   left: 18px;
 }
 
+
+/* Column Filter Dropdown */
+.column-filter-wrapper {
+  position: relative;
+}
+
+.column-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 4px;
+  display: none;
+  z-index: 100;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.column-filter-dropdown.active {
+  display: block;
+}
+
+.column-filter-dropdown label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background 100ms;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.column-filter-dropdown label:hover {
+  background: var(--bg-elevated);
+}
+
+.column-filter-dropdown input[type="checkbox"] {
+  accent-color: var(--gold-400);
+  width: 14px;
+  height: 14px;
+}
+
+.column-filter-actions {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px 2px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+}
+
+.column-filter-actions button {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: var(--gold-400);
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.column-filter-actions button:hover {
+  text-decoration: underline;
+}
+
 /* Stats */
 .stats-grid {
   display: grid;
@@ -1104,7 +1174,7 @@ td.row-num {
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">☀</button>
       <button class="btn btn-ghost" onclick="resetAll()" title="重置">↺ 重置</button>
       <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">上传文件</button>
-      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" style="display:none" onchange="handleFile(this.files[0])">
     </div>
   </header>
 
@@ -1115,7 +1185,7 @@ td.row-num {
       <div class="upload-icon">◆</div>
       <div class="upload-title">拖拽 Excel 文件到此处</div>
       <div class="upload-subtitle">或点击选择文件上传</div>
-      <div class="upload-hint">支持 .xlsx 格式 · 自动执行 8 项规则审查 · 结果可导出</div>
+      <div class="upload-hint">支持 .xlsx/.xls/.xlsm/.csv 等格式 · 自动执行 8 项规则审查 · 结果可导出</div>
     </div>
   </section>
 
@@ -1286,6 +1356,17 @@ let currentPage = 1;
 const PAGE_SIZE = 50;
 
 const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
+const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
+const ruleMeta = [
+  { id: 'r1', name: 'R1 重量判定', short: 'R1 重量' },
+  { id: 'r2', name: 'R2 宝玉石判定', short: 'R2 宝玉石' },
+  { id: 'r3', name: 'R3 金含量备注', short: 'R3 金含量' },
+  { id: 'r4', name: 'R4 足金净金重', short: 'R4 净金重' },
+  { id: 'r5', name: 'R5 南红备注', short: 'R5 南红' },
+  { id: 'r6', name: 'R6 玛瑙覆膜', short: 'R6 玛瑙' },
+  { id: 'r7', name: 'R7 非洲翠', short: 'R7 非洲翠' },
+  { id: 'r8', name: 'R8 合成立方氧化锆', short: 'R8 合成立方氧化锆' },
+];
 
 // ==================== Drag & Drop ====================
 const uploadZone = document.getElementById('uploadZone');
@@ -1303,10 +1384,13 @@ uploadZone.addEventListener('drop', (e) => {
   e.preventDefault();
   uploadZone.classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
-  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+  const ext = file.name.toLowerCase();
+  const supported = ['.xlsx', '.xls', '.xlsm', '.xlsb', '.csv', '.ods'];
+  const isValid = supported.some(e => ext.endsWith(e));
+  if (file && isValid) {
     handleFile(file);
   } else {
-    showToast('请上传 .xlsx 格式的文件', 'error');
+    showToast('请上传支持的格式 (.xlsx/.xls/.xlsm/.csv)', 'error');
   }
 });
 
@@ -1740,6 +1824,47 @@ function ruleR8(row) {
 }
 
 
+
+// ==================== Column Filter ====================
+function toggleColumnFilter() {
+  const dd = document.getElementById('columnFilterDropdown');
+  dd.classList.toggle('active');
+}
+
+function updateColumnFilter() {
+  const checkboxes = document.querySelectorAll('#columnFilterDropdown input[type="checkbox"]');
+  let count = 0;
+  checkboxes.forEach(cb => {
+    columnFilterState[cb.value] = cb.checked;
+    if (cb.checked) count++;
+  });
+  document.getElementById('columnFilterBtn').textContent = count === 8 ? '显示规则 ▾' : `已选 ${count} 项 ▾`;
+  applyFilters();
+}
+
+function setAllColumns(on) {
+  for (const k of Object.keys(columnFilterState)) {
+    columnFilterState[k] = on;
+  }
+  document.querySelectorAll('#columnFilterDropdown input[type="checkbox"]').forEach(cb => {
+    cb.checked = on;
+  });
+  updateColumnFilter();
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.column-filter-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    document.getElementById('columnFilterDropdown').classList.remove('active');
+  }
+});
+
+// Helper: get visible rule IDs
+function getVisibleRules() {
+  return ruleMeta.filter(r => columnFilterState[r.id]).map(r => r.id);
+}
+
 // ==================== Processing ====================
 function processAndRender() {
   showLoading('正在执行规则审查...');
@@ -1800,7 +1925,7 @@ function renderStats() {
 
 function renderChart() {
   const container = document.getElementById('ruleChart');
-  const ruleNames = [
+  const ruleNamesFull = [
     { id: 'r1', name: 'R1 重量判定', color: 'var(--gold-400)' },
     { id: 'r2', name: 'R2 宝玉石判定', color: 'var(--red-400)' },
     { id: 'r3', name: 'R3 金含量备注', color: 'var(--amber-400)' },
@@ -1810,6 +1935,7 @@ function renderChart() {
     { id: 'r7', name: 'R7 非洲翠', color: 'var(--green-400)' },
     { id: 'r8', name: 'R8 合成立方氧化锆', color: 'var(--amber-400)' },
   ];
+  const ruleNames = ruleNamesFull.filter(r => columnFilterState[r.id]);
 
   const maxCount = Math.max(
     ...ruleNames.map(r => processedData.filter(d => d[r.id] && d[r.id] !== '正常' && d[r.id] !== '正确' && d[r.id] !== '').length),
@@ -1858,10 +1984,28 @@ function applyFilters() {
 
 function renderTable(data) {
   const tbody = document.getElementById('tableBody');
+  const thead = document.querySelector('thead tr');
+
+  // Dynamic header
+  let headerHtml = `
+    <th style="width:50px">#</th>
+    <th>商品名称</th>
+    <th>重量</th>
+    <th>宝玉石结论</th>
+    <th>贵金属结论</th>
+    <th>备注</th>`;
+  const visibleRules = getVisibleRules();
+  ruleMeta.forEach(r => {
+    if (columnFilterState[r.id]) {
+      headerHtml += `<th>${r.short}</th>`;
+    }
+  });
+  thead.innerHTML = headerHtml;
 
   if (data.length === 0) {
+    const colCount = 6 + visibleRules.length;
     tbody.innerHTML = `
-      <tr><td colspan="14">
+      <tr><td colspan="${colCount}">
         <div class="empty-state">
           <div class="empty-icon">◇</div>
           <div class="empty-title">无匹配记录</div>
@@ -1874,24 +2018,21 @@ function renderTable(data) {
 
   tbody.innerHTML = data.map(d => {
     const rowClass = d._status === 'error' ? 'error-row' : '';
-    return `
+    let rowHtml = `
       <tr class="${rowClass}" onclick="showDetail(${d._idx - 1})" style="cursor:pointer">
         <td class="row-num">${d._idx}</td>
         <td title="${esc(cleanVal(d._row['商品名称']))}">${esc(truncate(cleanVal(d._row['商品名称']), 20))}</td>
         <td title="${esc(cleanVal(d._row['重量']))}">${esc(truncate(cleanVal(d._row['重量']), 15))}</td>
         <td title="${esc(cleanVal(d._row['宝玉石结论']))}">${esc(truncate(cleanVal(d._row['宝玉石结论']), 12))}</td>
         <td>${esc(cleanVal(d._row['贵金属结论']))}</td>
-        <td title="${esc(cleanVal(d._row['备注']))}">${esc(truncate(cleanVal(d._row['备注']), 18))}</td>
-        <td>${renderBadge(d.r1)}</td>
-        <td>${renderBadge(d.r2)}</td>
-        <td>${renderBadge(d.r3)}</td>
-        <td>${renderBadge(d.r4)}</td>
-        <td>${renderBadge(d.r5)}</td>
-        <td>${renderBadge(d.r6)}</td>
-        <td>${renderBadge(d.r7)}</td>
-        <td>${renderBadge(d.r8)}</td>
-      </tr>
-    `;
+        <td title="${esc(cleanVal(d._row['备注']))}">${esc(truncate(cleanVal(d._row['备注']), 18))}</td>`;
+    ruleMeta.forEach(r => {
+      if (columnFilterState[r.id]) {
+        rowHtml += `<td>${renderBadge(d[r.id])}</td>`;
+      }
+    });
+    rowHtml += '</tr>';
+    return rowHtml;
   }).join('');
 }
 
@@ -1950,20 +2091,22 @@ function showDetail(idx) {
     }
   }
 
-  // Rule results
-  const ruleResults = [
-    { name: 'R1 重量判定', val: d.r1 },
-    { name: 'R2 宝玉石判定', val: d.r2 },
-    { name: 'R3 金含量备注检查', val: d.r3 },
-    { name: 'R4 足金净金重检查', val: d.r4 },
-    { name: 'R5 南红备注检查', val: d.r5 },
-    { name: 'R6 玛瑙覆膜检查', val: d.r6 },
-    { name: 'R7 非洲翠备注检查', val: d.r7 },
-    { name: 'R8 合成立方氧化锆备注检查', val: d.r8 },
+  // Rule results (only visible columns)
+  const ruleResultsFull = [
+    { id: 'r1', name: 'R1 重量判定', val: d.r1 },
+    { id: 'r2', name: 'R2 宝玉石判定', val: d.r2 },
+    { id: 'r3', name: 'R3 金含量备注检查', val: d.r3 },
+    { id: 'r4', name: 'R4 足金净金重检查', val: d.r4 },
+    { id: 'r5', name: 'R5 南红备注检查', val: d.r5 },
+    { id: 'r6', name: 'R6 玛瑙覆膜检查', val: d.r6 },
+    { id: 'r7', name: 'R7 非洲翠备注检查', val: d.r7 },
+    { id: 'r8', name: 'R8 合成立方氧化锆备注检查', val: d.r8 },
   ];
 
-  for (const r of ruleResults) {
-    html += `<div class="detail-item"><div class="detail-label">${r.name}</div><div class="detail-value">${renderBadge(r.val)}</div></div>`;
+  for (const r of ruleResultsFull) {
+    if (columnFilterState[r.id]) {
+      html += `<div class="detail-item"><div class="detail-label">${r.name}</div><div class="detail-value">${renderBadge(r.val)}</div></div>`;
+    }
   }
 
   html += '</div>';
@@ -2025,14 +2168,14 @@ function exportResults() {
 
   const exportData = processedData.map(d => {
     const row = { ...d._row };
-    if (ruleState.r1) row['R1_重量判定'] = d.r1;
-    if (ruleState.r2) row['R2_宝玉石判定'] = d.r2;
-    if (ruleState.r3) row['R3_金含量备注检查'] = d.r3;
-    if (ruleState.r4) row['R4_足金净金重检查'] = d.r4;
-    if (ruleState.r5) row['R5_南红备注检查'] = d.r5;
-    if (ruleState.r6) row['R6_玛瑙覆膜检查'] = d.r6;
-    if (ruleState.r7) row['R7_非洲翠备注检查'] = d.r7;
-    if (ruleState.r8) row['R8_合成立方氧化锆备注检查'] = d.r8;
+    if (columnFilterState.r1) row['R1_重量判定'] = d.r1;
+    if (columnFilterState.r2) row['R2_宝玉石判定'] = d.r2;
+    if (columnFilterState.r3) row['R3_金含量备注检查'] = d.r3;
+    if (columnFilterState.r4) row['R4_足金净金重检查'] = d.r4;
+    if (columnFilterState.r5) row['R5_南红备注检查'] = d.r5;
+    if (columnFilterState.r6) row['R6_玛瑙覆膜检查'] = d.r6;
+    if (columnFilterState.r7) row['R7_非洲翠备注检查'] = d.r7;
+    if (columnFilterState.r8) row['R8_合成立方氧化锆备注检查'] = d.r8;
     return row;
   });
 
