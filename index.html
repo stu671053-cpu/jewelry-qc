@@ -8,10 +8,16 @@
 // ==================== Theme Init ====================
 (function initTheme() {
   const saved = localStorage.getItem('theme');
-  if (saved === 'light') {
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀';
+  } else {
+    // 默认浅色
     document.documentElement.setAttribute('data-theme', 'light');
     const btn = document.getElementById('themeToggle');
     if (btn) btn.textContent = '☾';
+    if (!saved) localStorage.setItem('theme', 'light');
   }
 })();
 </script>
@@ -21,10 +27,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-deep: #0d0f14;
-  --bg-surface: #161921;
-  --bg-card: #1c1f2a;
-  --bg-elevated: #242836;
+  --bg-deep: #050505;
+  --bg-surface: #0a0a0a;
+  --bg-card: #0f0f0f;
+  --bg-elevated: #161616;
   --border-subtle: rgba(201,169,110,0.12);
   --border-default: rgba(201,169,110,0.2);
   --border-strong: rgba(201,169,110,0.35);
@@ -688,44 +694,10 @@ body {
   gap: 12px;
 }
 
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .toolbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.filter-tabs {
-  display: flex;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  overflow: hidden;
-}
-
-.filter-tab {
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 150ms ease;
-  border: none;
-  background: transparent;
-  font-family: var(--font-body);
-}
-
-.filter-tab:hover { color: var(--text-primary); }
-
-.filter-tab.active {
-  background: var(--gold-500);
-  color: var(--bg-deep);
-  font-weight: 600;
 }
 
 .search-box {
@@ -1350,49 +1322,40 @@ td.row-num {
   <!-- Results Table -->
   <section class="results-section" id="resultsSection" style="display:none">
     <div class="results-toolbar">
-      <div class="toolbar-left">
-        <div class="filter-tabs">
-          <button class="filter-tab active" data-filter="all" onclick="setFilter('all', this)">全部</button>
-          <button class="filter-tab" data-filter="error" onclick="setFilter('error', this)">异常</button>
-          <button class="filter-tab" data-filter="ok" onclick="setFilter('ok', this)">正常</button>
-          <button class="filter-tab" data-filter="empty" onclick="setFilter('empty', this)">空值</button>
-        </div>
-        <div class="search-box">
-          <span class="search-icon">⌕</span>
-          <input type="text" placeholder="搜索商品名称..." id="searchInput" oninput="applyFilters()">
-        </div>
-      </div>
       <div class="toolbar-right">
-        <div class="column-filter-wrapper">
-          <button class="btn btn-ghost" onclick="toggleColumnFilter()" id="columnFilterBtn" style="font-size:12px">显示规则 ▾</button>
-          <div class="column-filter-dropdown" id="columnFilterDropdown">
-            <label><input type="checkbox" value="r1" checked onchange="updateColumnFilter()"> R1 重量判定</label>
-            <label><input type="checkbox" value="r2" checked onchange="updateColumnFilter()"> R2 宝玉石判定</label>
-            <label><input type="checkbox" value="r3" checked onchange="updateColumnFilter()"> R3 金含量备注</label>
-            <label><input type="checkbox" value="r4" checked onchange="updateColumnFilter()"> R4 足金净金重</label>
-            <label><input type="checkbox" value="r5" checked onchange="updateColumnFilter()"> R5 南红备注</label>
-            <label><input type="checkbox" value="r6" checked onchange="updateColumnFilter()"> R6 玛瑙覆膜</label>
-            <label><input type="checkbox" value="r7" checked onchange="updateColumnFilter()"> R7 非洲翠</label>
-            <label><input type="checkbox" value="r8" checked onchange="updateColumnFilter()"> R8 合成立方氧化锆</label>
-            <div class="column-filter-actions">
-              <button onclick="setAllColumns(true)">全选</button>
-              <button onclick="setAllColumns(false)">全不选</button>
+        <div class="filter-wrapper">
+          <button class="filter-btn" onclick="toggleFilterPanel()" id="filterBtn">
+            筛选
+            <span class="badge" id="filterBadge" style="display:none">0</span>
+            <span style="font-size:10px">▾</span>
+          </button>
+          <div class="filter-dropdown" id="filterDropdown">
+            <div class="filter-section">
+              <div class="filter-section-title">状态筛选</div>
+              <div class="filter-status-btns">
+                <button class="filter-status-btn active" data-status="all" onclick="selectFilterStatus('all', this)">全部</button>
+                <button class="filter-status-btn" data-status="error" onclick="selectFilterStatus('error', this)">异常</button>
+                <button class="filter-status-btn" data-status="ok" onclick="selectFilterStatus('ok', this)">正常</button>
+                <button class="filter-status-btn" data-status="empty" onclick="selectFilterStatus('empty', this)">空值</button>
+              </div>
             </div>
-          </div>
-        </div>
-        <div class="rule-filter-wrapper">
-          <button class="btn btn-ghost" onclick="toggleRuleFilter()" id="ruleFilterBtn" style="font-size:12px">规则筛选 ▾</button>
-          <div class="rule-filter-dropdown" id="ruleFilterDropdown">
-            <label><input type="radio" name="ruleFilter" value="all" checked onchange="updateRuleFilter('all')"> 全部规则</label>
-            <label><input type="radio" name="ruleFilter" value="r1" onchange="updateRuleFilter('r1')"> R1 重量判定</label>
-            <label><input type="radio" name="ruleFilter" value="r2" onchange="updateRuleFilter('r2')"> R2 宝玉石判定</label>
-            <label><input type="radio" name="ruleFilter" value="r3" onchange="updateRuleFilter('r3')"> R3 金含量备注</label>
-            <label><input type="radio" name="ruleFilter" value="r4" onchange="updateRuleFilter('r4')"> R4 足金净金重</label>
-            <label><input type="radio" name="ruleFilter" value="r5" onchange="updateRuleFilter('r5')"> R5 南红备注</label>
-            <label><input type="radio" name="ruleFilter" value="r6" onchange="updateRuleFilter('r6')"> R6 玛瑙覆膜</label>
-            <label><input type="radio" name="ruleFilter" value="r7" onchange="updateRuleFilter('r7')"> R7 非洲翠</label>
-            <label><input type="radio" name="ruleFilter" value="r8" onchange="updateRuleFilter('r8')"> R8 合成立方氧化锆</label>
-            <div class="rule-filter-actions">选择后只显示该规则的异常</div>
+            <div class="filter-section">
+              <div class="filter-section-title">规则筛选（可选，选单条规则按该规则筛选行）</div>
+              <div class="filter-rule-checkboxes">
+                <label><input type="checkbox" value="r1" onchange="updatePendingRules()"> R1 重量</label>
+                <label><input type="checkbox" value="r2" onchange="updatePendingRules()"> R2 宝玉石</label>
+                <label><input type="checkbox" value="r3" onchange="updatePendingRules()"> R3 金含量</label>
+                <label><input type="checkbox" value="r4" onchange="updatePendingRules()"> R4 净金重</label>
+                <label><input type="checkbox" value="r5" onchange="updatePendingRules()"> R5 南红</label>
+                <label><input type="checkbox" value="r6" onchange="updatePendingRules()"> R6 玛瑙</label>
+                <label><input type="checkbox" value="r7" onchange="updatePendingRules()"> R7 非洲翠</label>
+                <label><input type="checkbox" value="r8" onchange="updatePendingRules()"> R8 合成立方氧化锆</label>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn-ghost" onclick="resetFilterPanel()">重置</button>
+              <button class="btn-primary" onclick="confirmFilterPanel()">确定</button>
+            </div>
           </div>
         </div>
         <div class="search-box">
@@ -1441,13 +1404,22 @@ td.row-num {
 // ==================== State ====================
 let rawData = [];
 let processedData = [];
-let currentFilter = 'all';
 let currentPage = 1;
 const PAGE_SIZE = 50;
 
+// Filter state (applied after confirm)
+let appliedStatus = 'all';      // 'all' | 'error' | 'ok' | 'empty'
+let appliedRuleFilter = 'all';  // 'all' | 'r1'..'r8'
+
+// Pending filter state (before confirm)
+let pendingStatus = 'all';
+let pendingRules = [];
+
+// Rule toggle state (which rules to run)
 const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
+
+// Column filter state (which rule columns to show)
 const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
-let ruleFilterValue = 'all';  // 'all' or 'r1'..'r8'
 const ruleMeta = [
   { id: 'r1', name: 'R1 重量判定', short: 'R1 重量' },
   { id: 'r2', name: 'R2 宝玉石判定', short: 'R2 宝玉石' },
@@ -1917,33 +1889,11 @@ function ruleR8(row) {
 
 
 // ==================== Column Filter ====================
-function toggleColumnFilter() {
-  const dd = document.getElementById('columnFilterDropdown');
-  dd.classList.toggle('active');
-  // Close rule filter if open
-  document.getElementById('ruleFilterDropdown').classList.remove('active');
-}
 
-function updateColumnFilter() {
-  const checkboxes = document.querySelectorAll('#columnFilterDropdown input[type="checkbox"]');
-  let count = 0;
-  checkboxes.forEach(cb => {
-    columnFilterState[cb.value] = cb.checked;
-    if (cb.checked) count++;
-  });
-  document.getElementById('columnFilterBtn').textContent = count === 8 ? '显示规则 ▾' : `已选 ${count} 项 ▾`;
-  applyFilters();
-}
 
-function setAllColumns(on) {
-  for (const k of Object.keys(columnFilterState)) {
-    columnFilterState[k] = on;
-  }
-  document.querySelectorAll('#columnFilterDropdown input[type="checkbox"]').forEach(cb => {
-    cb.checked = on;
-  });
-  updateColumnFilter();
-}
+
+
+
 
 // Close dropdown on outside click
 document.addEventListener('click', (e) => {
@@ -1957,26 +1907,77 @@ document.addEventListener('click', (e) => {
 function getVisibleRules() {
   return ruleMeta.filter(r => columnFilterState[r.id]).map(r => r.id);
 }
-// ==================== Rule Filter (row filtering) ====================
-function toggleRuleFilter() {
-  const dd = document.getElementById('ruleFilterDropdown');
-  dd.classList.toggle('active');
-  // Close column filter if open
-  document.getElementById('columnFilterDropdown').classList.remove('active');
+// ==================== Unified Filter Panel ====================
+
+function toggleFilterPanel() {
+  const dd = document.getElementById('filterDropdown');
+  if (!dd) return;
+  const isActive = dd.classList.contains('active');
+  document.querySelectorAll('.filter-dropdown.active').forEach(d => d.classList.remove('active'));
+  if (!isActive) {
+    dd.classList.add('active');
+  }
 }
 
-function updateRuleFilter(val) {
-  ruleFilterValue = val;
-  const ruleNames = { r1:'R1', r2:'R2', r3:'R3', r4:'R4', r5:'R5', r6:'R6', r7:'R7', r8:'R8' };
-  document.getElementById('ruleFilterBtn').textContent = val === 'all' ? '规则筛选 ▾' : `${ruleNames[val]} ▾`;
+function selectFilterStatus(status, btn) {
+  pendingStatus = status;
+  document.querySelectorAll('.filter-status-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function updatePendingRules() {
+  const checks = document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]');
+  pendingRules = [];
+  checks.forEach(c => { if (c.checked) pendingRules.push(c.value); });
+}
+
+function confirmFilterPanel() {
+  appliedStatus = pendingStatus;
+  if (pendingRules.length === 1) {
+    appliedRuleFilter = pendingRules[0];
+  } else {
+    appliedRuleFilter = 'all';
+  }
+  updateFilterBadge();
+  const dd = document.getElementById('filterDropdown');
+  if (dd) dd.classList.remove('active');
+  currentPage = 1;
   applyFilters();
 }
 
-// Close dropdowns on outside click
-document.addEventListener('click', (e) => {
-  const wrapper = document.querySelector('.rule-filter-wrapper');
-  if (wrapper && !wrapper.contains(e.target)) {
-    document.getElementById('ruleFilterDropdown').classList.remove('active');
+function resetFilterPanel() {
+  pendingStatus = 'all';
+  pendingRules = [];
+  appliedStatus = 'all';
+  appliedRuleFilter = 'all';
+  document.querySelectorAll('.filter-status-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === 'all');
+  });
+  document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => c.checked = false);
+  updateFilterBadge();
+  currentPage = 1;
+  applyFilters();
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById('filterBadge');
+  if (!badge) return;
+  let count = 0;
+  if (appliedStatus !== 'all') count++;
+  if (appliedRuleFilter !== 'all') count++;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.filter-wrapper')) {
+    const dd = document.getElementById('filterDropdown');
+    if (dd) dd.classList.remove('active');
   }
 });
 
@@ -2077,14 +2078,14 @@ function applyFilters() {
   const search = (document.getElementById('searchInput').value || '').toLowerCase();
   let filtered = processedData;
 
-  if (currentFilter === 'error') filtered = filtered.filter(d => d._status === 'error');
-  else if (currentFilter === 'ok') filtered = filtered.filter(d => d._status === 'ok');
-  else if (currentFilter === 'empty') filtered = filtered.filter(d => d._status === 'empty');
+  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status === 'error');
+  else if (appliedStatus === 'ok') filtered = filtered.filter(d => d._status === 'ok');
+  else if (appliedStatus === 'empty') filtered = filtered.filter(d => d._status === 'empty');
 
-  // Rule filter: only show rows where selected rule has error
-  if (ruleFilterValue !== 'all') {
+  // Rule filter (appliedRuleFilter: all or specific rule)
+  if (appliedRuleFilter !== 'all') {
     filtered = filtered.filter(d => {
-      const val = d[ruleFilterValue];
+      const val = d[appliedRuleFilter];
       return val && val !== '正常' && val !== '正确' && val !== '';
     });
   }
@@ -2247,14 +2248,6 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
 });
 
 // ==================== Filters & Pagination ====================
-function setFilter(filter, btn) {
-  currentFilter = filter;
-  currentPage = 1;
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  applyFilters();
-}
-
 function goPage(p) {
   currentPage = p;
   applyFilters();
@@ -2326,7 +2319,8 @@ function toggleTheme() {
 function resetAll() {
   rawData = [];
   processedData = [];
-  currentFilter = 'all';
+  appliedStatus = 'all';
+appliedRuleFilter = 'all';
   currentPage = 1;
 
   const zone = document.getElementById('uploadZone');
