@@ -1185,7 +1185,7 @@ td.row-num {
       <div class="upload-icon">◆</div>
       <div class="upload-title">拖拽 Excel 文件到此处</div>
       <div class="upload-subtitle">或点击选择文件上传</div>
-      <div class="upload-hint">支持 .xlsx/.xls/.xlsm/.csv 等格式 · 自动执行 8 项规则审查 · 结果可导出</div>
+      <div class="upload-hint">支持 .xlsx/.xls/.xlsm/.xlsb/.csv/.ods · 自动执行 8 项规则审查 · 结果可导出</div>
     </div>
   </section>
 
@@ -1309,6 +1309,27 @@ td.row-num {
         </div>
       </div>
       <div class="toolbar-right">
+        <div class="column-filter-wrapper">
+          <button class="btn btn-ghost" onclick="toggleColumnFilter()" id="columnFilterBtn" style="font-size:12px">显示规则 ▾</button>
+          <div class="column-filter-dropdown" id="columnFilterDropdown">
+            <label><input type="checkbox" value="r1" checked onchange="updateColumnFilter()"> R1 重量判定</label>
+            <label><input type="checkbox" value="r2" checked onchange="updateColumnFilter()"> R2 宝玉石判定</label>
+            <label><input type="checkbox" value="r3" checked onchange="updateColumnFilter()"> R3 金含量备注</label>
+            <label><input type="checkbox" value="r4" checked onchange="updateColumnFilter()"> R4 足金净金重</label>
+            <label><input type="checkbox" value="r5" checked onchange="updateColumnFilter()"> R5 南红备注</label>
+            <label><input type="checkbox" value="r6" checked onchange="updateColumnFilter()"> R6 玛瑙覆膜</label>
+            <label><input type="checkbox" value="r7" checked onchange="updateColumnFilter()"> R7 非洲翠</label>
+            <label><input type="checkbox" value="r8" checked onchange="updateColumnFilter()"> R8 合成立方氧化锆</label>
+            <div class="column-filter-actions">
+              <button onclick="setAllColumns(true)">全选</button>
+              <button onclick="setAllColumns(false)">全不选</button>
+            </div>
+          </div>
+        </div>
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="searchInput" placeholder="搜索商品名称..." oninput="applyFilters()">
+        </div>
         <button class="btn" onclick="exportResults()">↓ 导出结果</button>
       </div>
     </div>
@@ -2211,7 +2232,7 @@ function resetAll() {
     <div class="upload-icon">◆</div>
     <div class="upload-title">拖拽 Excel 文件到此处</div>
     <div class="upload-subtitle">或点击选择文件上传</div>
-    <div class="upload-hint">支持 .xlsx 格式 · 自动执行 4 项规则审查 · 结果可导出</div>
+    <div class="upload-hint">支持 .xlsx/.xls/.xlsm/.xlsb/.csv/.ods · 自动执行 8 项规则审查 · 结果可导出</div>
   `;
 
   document.getElementById('statsSection').style.display = 'none';
