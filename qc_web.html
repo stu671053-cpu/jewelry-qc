@@ -4,108 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>域骉控股 - 珠宝质检自动审查系统</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-// ==================== Theme Init ====================
-(function initTheme() {
-  const saved = localStorage.getItem('theme');
-  if (saved === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = '☀';
-  } else {
-    // 默认浅色
-    document.documentElement.setAttribute('data-theme', 'light');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = '☾';
-    if (!saved) localStorage.setItem('theme', 'light');
-  }
-})();
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-deep: #050505;
-  --bg-surface: #0a0a0a;
-  --bg-card: #0f0f0f;
-  --bg-elevated: #161616;
-  --border-subtle: rgba(201,169,110,0.10);
-  --border-default: rgba(201,169,110,0.18);
-  --border-strong: rgba(201,169,110,0.32);
-  --gold-100: #f5e6c4;
-  --gold-200: #e8cc8a;
-  --gold-300: #d4ad5e;
-  --gold-400: #c9a96e;
-  --gold-500: #b8943f;
-  --gold-600: #9a7a30;
-  --text-primary: #f0ece4;
-  --text-secondary: rgba(240,236,228,0.55);
-  --text-tertiary: rgba(240,236,228,0.30);
-  --red-400: #f87171;
-  --red-500: #ef4444;
-  --red-bg: rgba(239,68,68,0.06);
-  --red-border: rgba(239,68,68,0.20);
-  --green-400: #4ade80;
-  --green-500: #22c55e;
-  --green-bg: rgba(34,197,94,0.06);
-  --green-border: rgba(34,197,94,0.20);
-  --amber-400: #fbbf24;
-  --amber-500: #f59e0b;
-  --amber-bg: rgba(245,158,11,0.06);
-  --amber-border: rgba(245,158,11,0.20);
-  --blue-400: #60a5fa;
-  --blue-bg: rgba(96,165,250,0.06);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.18);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.25);
-  --shadow-glow: 0 0 20px rgba(201,169,110,0.08);
-  --font-display: 'Noto Serif SC', 'Georgia', serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', monospace;
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ==================== Theme Toggle ==================== */
-.theme-toggle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border-default);
-  background: var(--bg-elevated);
-  color: var(--gold-400);
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-normal);
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.theme-toggle:hover {
-  background: var(--gold-400);
-  color: var(--bg-deep);
-  border-color: var(--gold-400);
-  transform: rotate(20deg) scale(1.05);
-  box-shadow: 0 2px 8px rgba(201,169,110,0.30);
-}
-
-.theme-toggle:active {
-  transform: rotate(20deg) scale(0.95);
-}
-/* ==================== Light Theme ==================== */
-
-[data-theme="light"] {
   --bg-deep: #f8f5f0;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
@@ -113,51 +18,43 @@
   --border-subtle: rgba(180,140,60,0.12);
   --border-default: rgba(180,140,60,0.22);
   --border-strong: rgba(180,140,60,0.38);
+  --gold-100: #f5e6c4;
+  --gold-200: #e8cc8a;
+  --gold-300: #d4ad5e;
+  --gold-400: #c9a96e;
+  --gold-500: #b8943f;
+  --gold-600: #9a7a30;
   --text-primary: #1a1410;
   --text-secondary: rgba(26,20,16,0.55);
   --text-tertiary: rgba(26,20,16,0.30);
+  --red-400: #ef4444;
+  --red-500: #dc2626;
   --red-bg: rgba(239,68,68,0.05);
   --red-border: rgba(239,68,68,0.18);
+  --green-400: #22c55e;
+  --green-500: #16a34a;
   --green-bg: rgba(34,197,94,0.05);
   --green-border: rgba(34,197,94,0.18);
+  --amber-400: #f59e0b;
+  --amber-500: #d97706;
   --amber-bg: rgba(245,158,11,0.05);
   --amber-border: rgba(245,158,11,0.18);
-  --blue-bg: rgba(96,165,250,0.05);
+  --blue-400: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.05);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
   --shadow-glow: 0 0 20px rgba(201,169,110,0.05);
-}
-
-
-[data-theme="light"] body {
-  background: var(--bg-deep);
-}
-
-[data-theme="light"] .upload-zone {
-  background: #fffdf7;
-}
-
-[data-theme="light"] .rule-card {
-  border-color: rgba(180,140,60,0.12);
-}
-
-[data-theme="light"] .rule-card:hover {
-  border-color: rgba(180,140,60,0.3);
-}
-
-[data-theme="light"] .app-footer::before {
-  opacity: 0.08;
-}
-
-[data-theme="light"] .app-footer::after {
-  background: linear-gradient(to bottom, #f5f0e8 0%, rgba(245,240,232,0.92) 40%, rgba(245,240,232,0.85) 100%);
-}
-
-[data-theme="light"] .brand-logo {
-  filter: brightness(1) contrast(1.1);
-}
-
+  --font-display: 'Noto Serif SC', 'Georgia', serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -391,9 +288,6 @@ body {
   transform: translateY(-4px) scale(1.03);
 }
 
-[data-theme="light"] .mascot-float {
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
-}
 
 @media (max-width: 768px) {
   .mascot-float {
@@ -1375,12 +1269,12 @@ td.row-num {
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-lg), 0 20px 40px rgba(0,0,0,0.15);
-  z-index: 200;
+  z-index: 9999;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-8px) scale(0.96);
   transform-origin: top right;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 200ms ease, transform 200ms ease;
   pointer-events: none;
 }
 
@@ -1670,7 +1564,6 @@ td.row-num {
       </div>
     </div>
     <div class="header-actions">
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">☀</button>
       <button class="btn btn-ghost" onclick="resetAll()" title="重置">↺ 重置</button>
       <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">上传文件</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" style="display:none" onchange="handleFile(this.files[0])">
@@ -2812,16 +2705,6 @@ function exportResults() {
 
 
 // ==================== Theme ====================
-function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme');
-  const next = current === 'light' ? 'dark' : 'light';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = next === 'light' ? '☀' : '☾';
-}
-
 // ==================== Reset ====================
 function resetAll() {
   rawData = [];
