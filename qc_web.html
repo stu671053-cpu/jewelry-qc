@@ -1363,37 +1363,36 @@ td.row-num {
         </div>
       </div>
       <div class="toolbar-right">
-        <div class="filter-panel-wrapper">
-          <button class="btn btn-ghost" onclick="toggleFilterPanel()" id="filterPanelBtn" style="font-size:12px">
-            筛选<span class="filter-count-badge" id="filterBadge" style="display:none">0</span> ▾
-          </button>
-          <div class="filter-panel" id="filterPanel">
-            <div class="filter-panel-section">
-              <div class="filter-panel-title">状态</div>
-              <div class="filter-status-options">
-                <button class="filter-status-btn active" data-status="all" onclick="selectStatus('all')">全部</button>
-                <button class="filter-status-btn" data-status="error" onclick="selectStatus('error')">异常</button>
-                <button class="filter-status-btn" data-status="ok" onclick="selectStatus('ok')">正常</button>
-                <button class="filter-status-btn" data-status="empty" onclick="selectStatus('empty')">空值</button>
-              </div>
+        <div class="column-filter-wrapper">
+          <button class="btn btn-ghost" onclick="toggleColumnFilter()" id="columnFilterBtn" style="font-size:12px">显示规则 ▾</button>
+          <div class="column-filter-dropdown" id="columnFilterDropdown">
+            <label><input type="checkbox" value="r1" checked onchange="updateColumnFilter()"> R1 重量判定</label>
+            <label><input type="checkbox" value="r2" checked onchange="updateColumnFilter()"> R2 宝玉石判定</label>
+            <label><input type="checkbox" value="r3" checked onchange="updateColumnFilter()"> R3 金含量备注</label>
+            <label><input type="checkbox" value="r4" checked onchange="updateColumnFilter()"> R4 足金净金重</label>
+            <label><input type="checkbox" value="r5" checked onchange="updateColumnFilter()"> R5 南红备注</label>
+            <label><input type="checkbox" value="r6" checked onchange="updateColumnFilter()"> R6 玛瑙覆膜</label>
+            <label><input type="checkbox" value="r7" checked onchange="updateColumnFilter()"> R7 非洲翠</label>
+            <label><input type="checkbox" value="r8" checked onchange="updateColumnFilter()"> R8 合成立方氧化锆</label>
+            <div class="column-filter-actions">
+              <button onclick="setAllColumns(true)">全选</button>
+              <button onclick="setAllColumns(false)">全不选</button>
             </div>
-            <div class="filter-panel-section">
-              <div class="filter-panel-title">规则</div>
-              <div class="filter-rule-list" id="filterRuleList">
-                <label><input type="checkbox" value="r1" checked> R1 重量判定</label>
-                <label><input type="checkbox" value="r2" checked> R2 宝玉石判定</label>
-                <label><input type="checkbox" value="r3" checked> R3 金含量备注</label>
-                <label><input type="checkbox" value="r4" checked> R4 足金净金重</label>
-                <label><input type="checkbox" value="r5" checked> R5 南红备注</label>
-                <label><input type="checkbox" value="r6" checked> R6 玛瑙覆膜</label>
-                <label><input type="checkbox" value="r7" checked> R7 非洲翠</label>
-                <label><input type="checkbox" value="r8" checked> R8 合成立方氧化锆</label>
-              </div>
-            </div>
-            <div class="filter-panel-actions">
-              <button class="btn-reset" onclick="resetFilterPanel()">重置</button>
-              <button class="btn-confirm" onclick="applyFilterPanel()">确定</button>
-            </div>
+          </div>
+        </div>
+        <div class="rule-filter-wrapper">
+          <button class="btn btn-ghost" onclick="toggleRuleFilter()" id="ruleFilterBtn" style="font-size:12px">规则筛选 ▾</button>
+          <div class="rule-filter-dropdown" id="ruleFilterDropdown">
+            <label><input type="radio" name="ruleFilter" value="all" checked onchange="updateRuleFilter('all')"> 全部规则</label>
+            <label><input type="radio" name="ruleFilter" value="r1" onchange="updateRuleFilter('r1')"> R1 重量判定</label>
+            <label><input type="radio" name="ruleFilter" value="r2" onchange="updateRuleFilter('r2')"> R2 宝玉石判定</label>
+            <label><input type="radio" name="ruleFilter" value="r3" onchange="updateRuleFilter('r3')"> R3 金含量备注</label>
+            <label><input type="radio" name="ruleFilter" value="r4" onchange="updateRuleFilter('r4')"> R4 足金净金重</label>
+            <label><input type="radio" name="ruleFilter" value="r5" onchange="updateRuleFilter('r5')"> R5 南红备注</label>
+            <label><input type="radio" name="ruleFilter" value="r6" onchange="updateRuleFilter('r6')"> R6 玛瑙覆膜</label>
+            <label><input type="radio" name="ruleFilter" value="r7" onchange="updateRuleFilter('r7')"> R7 非洲翠</label>
+            <label><input type="radio" name="ruleFilter" value="r8" onchange="updateRuleFilter('r8')"> R8 合成立方氧化锆</label>
+            <div class="rule-filter-actions">选择后只显示该规则的异常</div>
           </div>
         </div>
         <div class="search-box">
@@ -2078,15 +2077,14 @@ function applyFilters() {
   const search = (document.getElementById('searchInput').value || '').toLowerCase();
   let filtered = processedData;
 
-  // Status filter (applied)
-  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status === 'error');
-  else if (appliedStatus === 'ok') filtered = filtered.filter(d => d._status === 'ok');
-  else if (appliedStatus === 'empty') filtered = filtered.filter(d => d._status === 'empty');
+  if (currentFilter === 'error') filtered = filtered.filter(d => d._status === 'error');
+  else if (currentFilter === 'ok') filtered = filtered.filter(d => d._status === 'ok');
+  else if (currentFilter === 'empty') filtered = filtered.filter(d => d._status === 'empty');
 
   // Rule filter: only show rows where selected rule has error
-  if (appliedRuleFilter !== 'all') {
+  if (ruleFilterValue !== 'all') {
     filtered = filtered.filter(d => {
-      const val = d[appliedRuleFilter];
+      const val = d[ruleFilterValue];
       return val && val !== '正常' && val !== '正确' && val !== '';
     });
   }
