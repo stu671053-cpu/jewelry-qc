@@ -1539,6 +1539,220 @@ td.row-num {
   color: var(--text-tertiary);
   margin: 0;
 }
+
+/* ========== Version History Modal ========== */
+.version-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.50);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 200ms ease;
+}
+
+.version-modal-overlay.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.version-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 680px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  animation: slideUp 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.version-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.version-modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold-300);
+  margin: 0;
+}
+
+.version-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+}
+
+.version-modal-close:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.version-modal-body {
+  padding: 16px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.version-loading {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.version-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 16px;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-index {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-400);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.version-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.version-tag {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-500);
+  background: rgba(201,169,110,0.10);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.version-date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.version-changes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px 0;
+}
+
+.version-changes li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 3px 0;
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.version-changes li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  color: var(--gold-400);
+  font-weight: 700;
+}
+
+.version-rollback {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+.version-rollback:hover {
+  background: rgba(239,68,68,0.06);
+  border-color: var(--red-border);
+  color: var(--red-500);
+}
+
+.version-copy-cmd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  margin-left: 8px;
+}
+
+.version-copy-cmd:hover {
+  background: rgba(201,169,110,0.06);
+  border-color: var(--gold-400);
+  color: var(--gold-400);
+}
 </style>
 </head>
 <body>
@@ -1566,6 +1780,7 @@ td.row-num {
     <div class="header-actions">
       <button class="btn btn-ghost" onclick="resetAll()" title="重置">↺ 重置</button>
       <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">上传文件</button>
+      <button class="btn btn-ghost" onclick="toggleVersionPanel()" id="versionBtn">📋 版本历史</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" style="display:none" onchange="handleFile(this.files[0])">
     </div>
   </header>
@@ -1765,6 +1980,19 @@ td.row-num {
       <p>专业检测 · 品质保障 · 值得信赖</p>
     </div>
   </footer>
+
+  <!-- Version History Modal -->
+  <div class="version-modal-overlay" id="versionModalOverlay" onclick="closeVersionModal(event)">
+    <div class="version-modal" onclick="event.stopPropagation()">
+      <div class="version-modal-header">
+        <h2>📋 版本历史</h2>
+        <button class="version-modal-close" onclick="closeVersionModal()">✕</button>
+      </div>
+      <div class="version-modal-body" id="versionModalBody">
+        <div class="version-loading">加载中...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -2274,6 +2502,83 @@ document.addEventListener('click', (e) => {
 function getVisibleRules() {
   return ruleMeta.filter(r => columnFilterState[r.id]).map(r => r.id);
 }
+// ==================== Version History ====================
+let versionHistoryLoaded = false;
+
+function toggleVersionPanel() {
+  const overlay = document.getElementById('versionModalOverlay');
+  if (!overlay) return;
+  const isActive = overlay.classList.contains('active');
+  if (isActive) {
+    overlay.classList.remove('active');
+  } else {
+    overlay.classList.add('active');
+    if (!versionHistoryLoaded) {
+      loadVersionHistory();
+    }
+  }
+}
+
+function closeVersionModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const overlay = document.getElementById('versionModalOverlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+function loadVersionHistory() {
+  const body = document.getElementById('versionModalBody');
+  if (!body) return;
+
+  fetch('version-log.json?t=' + Date.now())
+    .then(r => r.json())
+    .then(versions => {
+      if (!Array.isArray(versions) || versions.length === 0) {
+        body.innerHTML = '<div class="version-loading">暂无版本记录</div>';
+        return;
+      }
+      versionHistoryLoaded = true;
+      let html = '';
+      versions.forEach((v, i) => {
+        const changesHtml = (v.changes || []).map(c => '<li>' + c + '</li>').join('');
+        const rollbackCmd = v.commit && v.commit !== 'latest'
+          ? 'git revert ' + v.commit
+          : 'git reset --hard HEAD~' + (i + 1);
+        const checkoutCmd = v.commit && v.commit !== 'latest'
+          ? 'git checkout ' + v.commit
+          : '';
+        html += '<div class="version-item">' +
+          '<div class="version-index">' + (versions.length - i) + '</div>' +
+          '<div class="version-info">' +
+            '<div class="version-header">' +
+              '<span class="version-tag">' + (v.version || ('v1.0.' + i)) + '</span>' +
+              '<span class="version-date">' + (v.date || '') + (v.time ? ' ' + v.time : '') + '</span>' +
+            '</div>' +
+            '<ul class="version-changes">' + changesHtml + '</ul>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+              (checkoutCmd ? '<button class="version-copy-cmd" onclick="copyRollbackCmd(this, \\'' + checkoutCmd.replace(/'/g, "\\'") + '\\')">📋 复制回退命令</button>' : '') +
+              '<button class="version-rollback" onclick="copyRollbackCmd(this, \\'git reset --hard ' + (v.commit !== 'latest' ? v.commit : 'HEAD') + '\\')">⚠ 复制重置命令</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      });
+      body.innerHTML = html;
+    })
+    .catch(() => {
+      body.innerHTML = '<div class="version-loading">加载失败，请检查 version-log.json 是否存在</div>';
+    });
+}
+
+function copyRollbackCmd(btn, cmd) {
+  if (!cmd) return;
+  navigator.clipboard.writeText(cmd).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {
+    prompt('请手动复制以下命令：', cmd);
+  });
+}
+
 // ==================== Unified Filter Panel ====================
 
 function toggleFilterPanel() {
