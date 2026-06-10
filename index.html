@@ -1546,6 +1546,45 @@ td.row-num {
   margin: 0;
 }
 
+/* Sticky Columns */
+.data-table th.sticky-col,
+.data-table td.sticky-col {
+  position: sticky;
+  background: var(--bg-card);
+  z-index: 2;
+}
+.data-table th.sticky-col {
+  z-index: 3;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.04);
+}
+.sticky-col::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(to right, transparent, var(--border-subtle));
+  pointer-events: none;
+}
+#col-num { left: 0; }
+#col-order-code { left: 50px; }
+
+/* Column Resize Handle */
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+  transition: background 100ms;
+}
+.col-resize-handle:hover,
+.col-resize-handle.active {
+  background: var(--gold-400);
+  opacity: 0.5;
+}
+
 </style>
 </head>
 <body>
@@ -1698,7 +1737,7 @@ td.row-num {
       <div class="toolbar-left">
         <div class="search-box">
           <span class="search-icon">⌕</span>
-          <input type="text" id="searchInput" placeholder="搜索商品名称..." oninput="applyFilters()">
+          <input type="text" id="searchInput" placeholder="搜索 订单码/商品名称..." oninput="applyFilters()">
         </div>
       </div>
       <div class="toolbar-right">
@@ -1806,6 +1845,18 @@ const ruleMeta = [
   { id: 'r7', name: 'R7 非洲翠', short: 'R7 非洲翠' },
   { id: 'r8', name: 'R8 合成立方氧化锆', short: 'R8 合成立方氧化锆' },
 ];
+
+// 每条规则检查的源字段映射（用于动态列显示）
+const ruleSourceFields = {
+  r1: ['重量'],
+  r2: ['宝玉石结论', '备注'],
+  r3: ['质检结果', '备注', '贵金属结论'],
+  r4: ['重量', '宝玉石结论', '贵金属结论', '备注'],
+  r5: ['质检结果', '备注', '宝玉石结论', '商品名称', '商品材质', '配件材质'],
+  r6: ['质检结果', '商品材质', '宝玉石结论', '备注'],
+  r7: ['商品名称', '商品材质', '配件材质', '备注'],
+  r8: ['配件材质', '宝玉石结论', '备注'],
+};
 
 // ==================== Drag & Drop ====================
 const uploadZone = document.getElementById('uploadZone');
@@ -2499,12 +2550,13 @@ function applyFilters() {
     });
   }
 
-  if (search) {
-    filtered = filtered.filter(d => {
-      const name = cleanVal(d._row['商品名称']).toLowerCase();
-      return name.includes(search);
-    });
-  }
+    if (search) {
+      filtered = filtered.filter(d => {
+        const name = cleanVal(d._row['商品名称']).toLowerCase();
+        const orderCode = cleanVal(d._row['订单码']||'').toLowerCase();
+        return name.includes(search) || orderCode.includes(search);
+      });
+    }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   if (currentPage > totalPages) currentPage = totalPages;
@@ -2516,28 +2568,131 @@ function applyFilters() {
   renderPagination(filtered.length, totalPages);
 }
 
+function getVisibleColumns() {
+  // 始终显示 # 和 订单码
+  const cols = [
+    { type: 'index', label: '#', style: 'width:50px', class: 'sticky-col', id: 'col-num' },
+    { type: 'order-code', label: '订单码', class: 'sticky-col', id: 'col-order-code' },
+  ];
+
+  if (appliedRuleFilter === 'all') {
+    // 显示所有基础字段 + 所有可见规则列
+    const baseFields = ['商品名称', '重量', '宝玉石结论', '贵金属结论', '备注'];
+    baseFields.forEach(f => {
+      if (!cols.some(c => c.field === f)) {
+        cols.push({ type: 'field', field: f, label: f });
+      }
+    });
+    ruleMeta.filter(r => columnFilterState[r.id]).forEach(r => {
+      cols.push({ type: 'rule', ruleId: r.id, label: r.short });
+    });
+  } else {
+    // 只显示筛选规则的源字段 + 该规则结果列
+    const src = ruleSourceFields[appliedRuleFilter] || [];
+    src.forEach(f => {
+      if (!cols.some(c => c.field === f)) {
+        cols.push({ type: 'field', field: f, label: f });
+      }
+    });
+    const rule = ruleMeta.find(r => r.id === appliedRuleFilter);
+    if (rule) {
+      cols.push({ type: 'rule', ruleId: rule.id, label: rule.short });
+    }
+  }
+
+  return cols;
+}
+
+// ==================== Column Resize ====================
+let _resizeState = null;
+
+function initColumnResize() {
+  const ths = document.querySelectorAll('thead th');
+  ths.forEach(th => {
+    let handle = th.querySelector('.col-resize-handle');
+    if (!handle) {
+      handle = document.createElement('div');
+      handle.className = 'col-resize-handle';
+      th.style.position = 'relative';
+      th.appendChild(handle);
+    }
+  });
+  document.removeEventListener('mousedown', _onResizeMouseDown);
+  document.addEventListener('mousedown', _onResizeMouseDown);
+}
+
+function _onResizeMouseDown(e) {
+  const handle = e.target.closest('.col-resize-handle');
+  if (!handle) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const th = handle.parentElement;
+  _resizeState = {
+    th: th,
+    startX: e.pageX,
+    startWidth: th.offsetWidth,
+    table: th.closest('table'),
+  };
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', _onResizeMouseMove);
+  document.addEventListener('mouseup', _onResizeMouseUp);
+}
+
+function _onResizeMouseMove(e) {
+  if (!_resizeState) return;
+  const delta = e.pageX - _resizeState.startX;
+  const newWidth = Math.max(30, _resizeState.startWidth + delta);
+  _resizeState.th.style.width = newWidth + 'px';
+  _resizeState.th.style.minWidth = newWidth + 'px';
+}
+
+function _onResizeMouseUp() {
+  if (!_resizeState) return;
+  _resizeState = null;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  document.removeEventListener('mousemove', _onResizeMouseMove);
+  document.removeEventListener('mouseup', _onResizeMouseUp);
+}
+
+// 每次 renderTable 后重新初始化拖拽
+const _origRenderTable = renderTable;
+// 用 MutationObserver 监听 thead 变化
+const _resizeObserver = new MutationObserver(() => { initColumnResize(); });
+document.addEventListener('DOMContentLoaded', () => {
+  const thead = document.querySelector('thead');
+  if (thead) {
+    _resizeObserver.observe(thead, { childList: true, subtree: true });
+    initColumnResize();
+  }
+});
+
+
+
 function renderTable(data) {
   const tbody = document.getElementById('tableBody');
   const thead = document.querySelector('thead tr');
 
-  // Dynamic header
-  let headerHtml = `
-    <th style="width:50px">#</th>
-    <th>商品名称</th>
-    <th>重量</th>
-    <th>宝玉石结论</th>
-    <th>贵金属结论</th>
-    <th>备注</th>`;
-  const visibleRules = getVisibleRules();
-  ruleMeta.forEach(r => {
-    if (columnFilterState[r.id]) {
-      headerHtml += `<th>${r.short}</th>`;
+  // 动态列
+  const cols = getVisibleColumns();
+
+  // 生成表头
+  let headerHtml = cols.map(c => {
+    let resizeHandle = '<div class="col-resize-handle"></div>';
+    if (c.type === 'index') {
+      return `<th style="${c.style}" class="${c.class}" id="${c.id}">${c.label}${resizeHandle}</th>`;
     }
-  });
+    if (c.type === 'order-code') {
+      return `<th class="${c.class}" id="${c.id}">${c.label}${resizeHandle}</th>`;
+    }
+    return `<th>${c.label}${resizeHandle}</th>`;
+  }).join('');
   thead.innerHTML = headerHtml;
+  initColumnResize();
 
   if (data.length === 0) {
-    const colCount = 6 + visibleRules.length;
+    const colCount = cols.length;
     tbody.innerHTML = `
       <tr><td colspan="${colCount}">
         <div class="empty-state">
@@ -2552,19 +2707,22 @@ function renderTable(data) {
 
   tbody.innerHTML = data.map(d => {
     const rowClass = d._status === 'error' ? 'error-row' : '';
-    let rowHtml = `
-      <tr class="${rowClass}" onclick="showDetail(${d._idx - 1})" style="cursor:pointer">
-        <td class="row-num">${d._idx}</td>
-        <td title="${esc(cleanVal(d._row['商品名称']))}">${esc(truncate(cleanVal(d._row['商品名称']), 20))}</td>
-        <td title="${esc(cleanVal(d._row['重量']))}">${esc(truncate(cleanVal(d._row['重量']), 15))}</td>
-        <td title="${esc(cleanVal(d._row['宝玉石结论']))}">${esc(truncate(cleanVal(d._row['宝玉石结论']), 12))}</td>
-        <td>${esc(cleanVal(d._row['贵金属结论']))}</td>
-        <td title="${esc(cleanVal(d._row['备注']))}">${esc(truncate(cleanVal(d._row['备注']), 18))}</td>`;
-    ruleMeta.forEach(r => {
-      if (columnFilterState[r.id]) {
-        rowHtml += `<td>${renderBadge(d[r.id])}</td>`;
+    let rowHtml = `<tr class="${rowClass}" onclick="showDetail(${d._idx - 1})" style="cursor:pointer">`;
+
+    cols.forEach(c => {
+      if (c.type === 'index') {
+        rowHtml += `<td class="row-num sticky-col" id="col-num">${d._idx}</td>`;
+      } else if (c.type === 'order-code') {
+        const val = cleanVal(d._row['订单码']||'');
+        rowHtml += `<td class="sticky-col" id="col-order-code" title="${esc(val)}">${esc(truncate(val, 18))}</td>`;
+      } else if (c.type === 'field') {
+        const val = cleanVal(d._row[c.field]);
+        rowHtml += `<td title="${esc(val)}">${esc(truncate(val, 20))}</td>`;
+      } else if (c.type === 'rule') {
+        rowHtml += `<td>${renderBadge(d[c.ruleId])}</td>`;
       }
     });
+
     rowHtml += '</tr>';
     return rowHtml;
   }).join('');
@@ -2692,16 +2850,20 @@ function exportResults() {
     return;
   }
 
+  const cols = getVisibleColumns();
   const exportData = processedData.map(d => {
-    const row = { ...d._row };
-    if (columnFilterState.r1) row['R1_重量判定'] = d.r1;
-    if (columnFilterState.r2) row['R2_宝玉石判定'] = d.r2;
-    if (columnFilterState.r3) row['R3_金含量备注检查'] = d.r3;
-    if (columnFilterState.r4) row['R4_足金净金重检查'] = d.r4;
-    if (columnFilterState.r5) row['R5_南红备注检查'] = d.r5;
-    if (columnFilterState.r6) row['R6_玛瑙覆膜检查'] = d.r6;
-    if (columnFilterState.r7) row['R7_非洲翠备注检查'] = d.r7;
-    if (columnFilterState.r8) row['R8_合成立方氧化锆备注检查'] = d.r8;
+    const row = {};
+    cols.forEach(c => {
+      if (c.type === 'index') {
+        row['#'] = d._idx;
+      } else if (c.type === 'order-code') {
+        row['订单码'] = d._row['订单码'] || '';
+      } else if (c.type === 'field') {
+        row[c.field] = d._row[c.field] || '';
+      } else if (c.type === 'rule') {
+        row[c.label] = d[c.ruleId] || '';
+      }
+    });
     return row;
   });
 
