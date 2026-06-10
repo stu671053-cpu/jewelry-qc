@@ -2672,17 +2672,10 @@ function _onResizeMouseUp() {
   document.removeEventListener('mouseup', _onResizeMouseUp);
 }
 
-// 每次 renderTable 后重新初始化拖拽
-const _origRenderTable = renderTable;
-// 用 MutationObserver 监听 thead 变化
-const _resizeObserver = new MutationObserver(() => { initColumnResize(); });
-document.addEventListener('DOMContentLoaded', () => {
-  const thead = document.querySelector('thead');
-  if (thead) {
-    _resizeObserver.observe(thead, { childList: true, subtree: true });
-    initColumnResize();
-  }
-});
+// [disabled] MutationObserver for column resize - was causing page spin
+// const _origRenderTable = renderTable;
+// const _resizeObserver = new MutationObserver(() => { initColumnResize(); });
+// document.addEventListener('DOMContentLoaded', ...);
 
 
 
@@ -2705,7 +2698,6 @@ function renderTable(data) {
     return `<th>${c.label}${resizeHandle}</th>`;
   }).join('');
   thead.innerHTML = headerHtml;
-  initColumnResize();
 
   if (data.length === 0) {
     const colCount = cols.length;
