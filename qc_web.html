@@ -1759,16 +1759,16 @@ td.row-num {
               </div>
             </div>
             <div class="filter-section">
-              <div class="filter-section-title">规则筛选（可选，选单条规则按该规则筛选行）</div>
+              <div class="filter-section-title">规则筛选（单选，选中后按该规则筛选）</div>
               <div class="filter-rule-checkboxes">
-                <label><input type="checkbox" value="r1" onchange="updatePendingRules()"> R1 重量</label>
-                <label><input type="checkbox" value="r2" onchange="updatePendingRules()"> R2 宝玉石</label>
-                <label><input type="checkbox" value="r3" onchange="updatePendingRules()"> R3 金含量</label>
-                <label><input type="checkbox" value="r4" onchange="updatePendingRules()"> R4 净金重</label>
-                <label><input type="checkbox" value="r5" onchange="updatePendingRules()"> R5 南红</label>
-                <label><input type="checkbox" value="r6" onchange="updatePendingRules()"> R6 玛瑙</label>
-                <label><input type="checkbox" value="r7" onchange="updatePendingRules()"> R7 非洲翠</label>
-                <label><input type="checkbox" value="r8" onchange="updatePendingRules()"> R8 合成立方氧化锆</label>
+                <label><input type="checkbox" value="r1" onchange="updatePendingRules(this)"> R1 重量</label>
+                <label><input type="checkbox" value="r2" onchange="updatePendingRules(this)"> R2 宝玉石</label>
+                <label><input type="checkbox" value="r3" onchange="updatePendingRules(this)"> R3 金含量</label>
+                <label><input type="checkbox" value="r4" onchange="updatePendingRules(this)"> R4 净金重</label>
+                <label><input type="checkbox" value="r5" onchange="updatePendingRules(this)"> R5 南红</label>
+                <label><input type="checkbox" value="r6" onchange="updatePendingRules(this)"> R6 玛瑙</label>
+                <label><input type="checkbox" value="r7" onchange="updatePendingRules(this)"> R7 非洲翠</label>
+                <label><input type="checkbox" value="r8" onchange="updatePendingRules(this)"> R8 合成立方氧化锆</label>
               </div>
             </div>
             <div class="filter-actions">
@@ -2355,10 +2355,19 @@ function selectFilterStatus(status, btn) {
   btn.classList.add('active');
 }
 
-function updatePendingRules() {
-  const checks = document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]');
-  pendingRules = [];
-  checks.forEach(c => { if (c.checked) pendingRules.push(c.value); });
+function updatePendingRules(changed) {
+  // 单选逻辑：选中一个规则时，自动取消其他
+  if (changed && changed.checked) {
+    document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => {
+      if (c !== changed) c.checked = false;
+    });
+    pendingRules = [changed.value];
+  } else {
+    pendingRules = [];
+    document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => {
+      if (c.checked) pendingRules.push(c.value);
+    });
+  }
 }
 
 function confirmFilterPanel() {
@@ -2729,11 +2738,17 @@ function renderTable(data) {
 }
 
 function renderBadge(val) {
-  if (!val) return '<span class="badge badge-empty">--</span>';
-  if (val === '正常') return '<span class="badge badge-ok">正常</span>';
-  if (val === '正确') return '<span class="badge badge-correct">正确</span>';
-  if (val === '需核实') return '<span class="badge badge-warning">需核实</span>';
-  return `<span class="badge badge-error" title="${esc(val)}">${esc(truncate(val, 10))}</span>`;
+  if (!val) return '<span class="badge badge-error">异常</span>';
+  const v = String(val).trim();
+  // 正常/正确 -> 绿色
+  if (v === '正常' || v === '正确') return '<span class="badge badge-ok">正确</span>';
+  // 包含"异常" -> 红色
+  if (v.includes('异常')) return '<span class="badge badge-error">' + esc(v) + '</span>';
+  // 需核实 -> 黄色
+  if (v === '需核实') return '<span class="badge badge-warning">需核实</span>';
+  // 其他情况：包含"正确"/"ok"/"OK" -> 绿色，否则红色
+  if (v.includes('正确') || v.toLowerCase().includes('ok')) return '<span class="badge badge-ok">正确</span>';
+  return '<span class="badge badge-error">' + esc(truncate(v, 10)) + '</span>';
 }
 
 function renderPagination(total, totalPages) {
