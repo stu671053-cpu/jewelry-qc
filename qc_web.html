@@ -2382,6 +2382,7 @@ function getVisibleRules() {
 }
 // ==================== Unified Filter Panel ====================
 
+function toggleFilterPanel() { /* removed: filter is now horizontal bar */ }
 
 
 function applyStatusFilter(status, btn) {
@@ -2402,10 +2403,32 @@ function applyRuleFilter(rule, btn) {
 
 // updatePendingRules removed: using applyRuleFilter instead
 
+// confirmFilterPanel removed
+ else {
+    appliedRuleFilter = 'all';
+  }
+  updateFilterBadge();
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (dd) dd.classList.remove('active');
+  if (btn) btn.classList.remove('active');
+  currentPage = 1;
+  applyFilters();
+}
 
+// resetFilterPanel removed
+);
+  document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => c.checked = false);
+  updateFilterBadge();
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (dd) dd.classList.remove('active');
+  if (btn) btn.classList.remove('active');
+  currentPage = 1;
+  applyFilters();
+}
 
-
-
+// updateFilterBadge removed
  else {
     badge.style.display = 'none';
   }
