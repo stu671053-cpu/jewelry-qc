@@ -1267,7 +1267,7 @@ td.row-num {
 
 .filter-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  bottom: calc(100% + 8px);
   right: 0;
   min-width: 320px;
   background: var(--bg-card);
@@ -1279,7 +1279,7 @@ td.row-num {
   opacity: 0;
   visibility: hidden;
   transform: translateY(-8px) scale(0.96);
-  transform-origin: top right;
+  transform-origin: bottom right;
   transition: opacity 200ms ease, transform 200ms ease;
   pointer-events: none;
 }
@@ -1294,7 +1294,7 @@ td.row-num {
 .filter-dropdown::before {
   content: '';
   position: absolute;
-  top: -6px;
+  bottom: -6px;
   right: 24px;
   width: 12px;
   height: 12px;
