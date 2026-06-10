@@ -1267,7 +1267,7 @@ td.row-num {
 
 .filter-dropdown {
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   right: 0;
   min-width: 320px;
   background: var(--bg-card);
@@ -1275,11 +1275,11 @@ td.row-num {
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-lg), 0 20px 40px rgba(0,0,0,0.15);
-  z-index: 9999;
+  z-index: 2147483647;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-8px) scale(0.96);
-  transform-origin: bottom right;
+  transform-origin: top right;
   transition: opacity 200ms ease, transform 200ms ease;
   pointer-events: none;
 }
@@ -1294,13 +1294,13 @@ td.row-num {
 .filter-dropdown::before {
   content: '';
   position: absolute;
-  bottom: -6px;
+  top: -6px;
   right: 24px;
   width: 12px;
   height: 12px;
   background: var(--bg-card);
-  border-right: 1px solid var(--border-default);
-  border-bottom: 1px solid var(--border-default);
+  border-left: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-default);
   transform: rotate(45deg);
   z-index: -1;
 }
