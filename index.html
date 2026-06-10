@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>域骉控股 - 珠宝质检自动审查系统</title>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Google Fonts removed for performance -->
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -50,7 +49,7 @@
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
   --shadow-glow: 0 0 20px rgba(201,169,110,0.05);
   --font-display: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', monospace;
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -1828,7 +1827,7 @@ td.row-num {
 let rawData = [];
 let processedData = [];
 let currentPage = 1;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100;
 
 // Filter state (applied after confirm)
 let appliedStatus = 'all';      // 'all' | 'error' | 'ok'
@@ -2777,10 +2776,7 @@ function renderPagination(total, totalPages) {
 function showDetail(idx) {
   const d = processedData[idx];
   const row = d._row;
-  const fields = [
-    ['商品名称', '商品材质', '镶嵌材质', '商品质量', '配件材质'],
-    ['重量', '宝玉石结论', '贵金属结论', '质检结果', '备注'],
-  ];
+  const allFields = Object.keys(row).filter(k => k !== '__rowNum__');
 
   let html = `
     <div class="modal-header">
@@ -2790,29 +2786,9 @@ function showDetail(idx) {
     <div class="detail-grid">
   `;
 
-  for (const group of fields) {
-    for (const f of group) {
-      const val = cleanVal(row[f]);
-      html += `<div class="detail-item"><div class="detail-label">${f}</div><div class="detail-value">${esc(val) || '-'}</div></div>`;
-    }
-  }
-
-  // Rule results (only visible columns)
-  const ruleResultsFull = [
-    { id: 'r1', name: 'R1 重量判定', val: d.r1 },
-    { id: 'r2', name: 'R2 宝玉石判定', val: d.r2 },
-    { id: 'r3', name: 'R3 金含量备注检查', val: d.r3 },
-    { id: 'r4', name: 'R4 足金净金重检查', val: d.r4 },
-    { id: 'r5', name: 'R5 南红备注检查', val: d.r5 },
-    { id: 'r6', name: 'R6 玛瑙覆膜检查', val: d.r6 },
-    { id: 'r7', name: 'R7 非洲翠备注检查', val: d.r7 },
-    { id: 'r8', name: 'R8 合成立方氧化锆备注检查', val: d.r8 },
-  ];
-
-  for (const r of ruleResultsFull) {
-    if (columnFilterState[r.id]) {
-      html += `<div class="detail-item"><div class="detail-label">${r.name}</div><div class="detail-value">${renderBadge(r.val)}</div></div>`;
-    }
+  for (const f of allFields) {
+    const val = cleanVal(row[f]);
+    html += `<div class="detail-item"><div class="detail-label">${f}</div><div class="detail-value">${esc(val) || '-'}</div></div>`;
   }
 
   html += '</div>';
