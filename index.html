@@ -1900,7 +1900,7 @@ function handleFile(file) {
   reader.onload = (e) => {
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       rawData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
@@ -1929,7 +1929,33 @@ function handleFile(file) {
 
 // ==================== Rules Engine (JS) ====================
 
+// Excel日期序列号转字符串
+function excelDateToString(serial) {
+  if (typeof serial !== 'number' || serial < 1000) return null;
+  // Excel日期系统：从1900-01-01开始，但有闰年bug，需减1修正
+  const excelEpoch = new Date(1899, 11, 30); // 1899-12-30（序列号0）
+  const days = Math.floor(serial);
+  const msPerDay = 86400000;
+  const date = new Date(excelEpoch.getTime() + days * msPerDay);
+  const fraction = serial - days;
+  date.setTime(date.getTime() + Math.round(fraction * msPerDay));
+  const pad = n => String(n).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth()+1) + '-' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
+}
+
 function cleanVal(val) {
+  // 处理JavaScript Date对象（XLSX cellDates选项可能返回此类型）
+  if (val instanceof Date) {
+    const pad = n => String(n).padStart(2, '0');
+    return val.getFullYear() + '-' + pad(val.getMonth()+1) + '-' + pad(val.getDate()) + ' ' + pad(val.getHours()) + ':' + pad(val.getMinutes()) + ':' + pad(val.getSeconds());
+  }
+  
+  // 处理Excel日期序列号（数字类型且在合理范围内）
+  if (typeof val === 'number' && val > 1000 && val < 1000000) {
+    const ds = excelDateToString(val);
+    if (ds) return ds;
+  }
+  
   let s = String(val || '').trim().replace(/\t/g, '');
   if (s === 'nan' || s === 'NaN' || s === 'None' || s === '') return '';
   return s;
