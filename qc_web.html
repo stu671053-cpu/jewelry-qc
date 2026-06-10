@@ -1757,9 +1757,8 @@ td.row-num {
               <div class="filter-section-title">状态筛选</div>
               <div class="filter-status-btns">
                 <button class="filter-status-btn active" data-status="all" onclick="selectFilterStatus('all', this)">全部</button>
+                <button class="filter-status-btn" data-status="ok" onclick="selectFilterStatus('ok', this)">正确</button>
                 <button class="filter-status-btn" data-status="error" onclick="selectFilterStatus('error', this)">异常</button>
-                <button class="filter-status-btn" data-status="ok" onclick="selectFilterStatus('ok', this)">正常</button>
-                <button class="filter-status-btn" data-status="empty" onclick="selectFilterStatus('empty', this)">空值</button>
               </div>
             </div>
             <div class="filter-section">
@@ -1827,7 +1826,7 @@ let currentPage = 1;
 const PAGE_SIZE = 50;
 
 // Filter state (applied after confirm)
-let appliedStatus = 'all';      // 'all' | 'error' | 'ok' | 'empty'
+let appliedStatus = 'all';      // 'all' | 'error' | 'ok'
 let appliedRuleFilter = 'all';  // 'all' | 'r1'..'r8'
 
 // Pending filter state (before confirm)
@@ -2551,9 +2550,8 @@ function applyFilters() {
   const search = (document.getElementById('searchInput').value || '').toLowerCase();
   let filtered = processedData;
 
-  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status === 'error');
+  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status !== 'ok');
   else if (appliedStatus === 'ok') filtered = filtered.filter(d => d._status === 'ok');
-  else if (appliedStatus === 'empty') filtered = filtered.filter(d => d._status === 'empty');
 
   // Rule filter (appliedRuleFilter: all or specific rule)
   if (appliedRuleFilter !== 'all') {
