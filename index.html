@@ -696,7 +696,6 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  overflow: hidden;
 }
 
 .results-toolbar {
@@ -884,6 +883,12 @@ td.row-num {
   background: rgba(239,68,68,0.10);
   color: var(--red-400);
   border: 1px solid rgba(239,68,68,0.22);
+}
+
+.badge-info {
+  background: rgba(96,165,250,0.12);
+  color: var(--blue-400);
+  border: 1px solid rgba(96,165,250,0.25);
 }
 
 .badge-empty {
@@ -2746,8 +2751,8 @@ function renderBadge(val) {
   if (v === '正常' || v === '正确') return '<span class="badge badge-ok">正确</span>';
   // 包含"异常" -> 红色
   if (v.includes('异常')) return '<span class="badge badge-error">' + esc(v) + '</span>';
-  // 需核实 -> 黄色
-  if (v === '需核实') return '<span class="badge badge-warning">需核实</span>';
+  // 需核实 -> 蓝色
+  if (v === '需核实') return '<span class="badge badge-info">需核实</span>';
   // 其他情况：包含"正确"/"ok"/"OK" -> 绿色，否则红色
   if (v.includes('正确') || v.toLowerCase().includes('ok')) return '<span class="badge badge-ok">正确</span>';
   return '<span class="badge badge-error">' + esc(truncate(v, 10)) + '</span>';
