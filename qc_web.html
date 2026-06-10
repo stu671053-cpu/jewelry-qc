@@ -2865,28 +2865,36 @@ function exportResults() {
     return;
   }
 
-  const cols = getVisibleColumns();
+  // 导出完整表格：原表所有字段 + 8条规则处理结果
+  // 不受筛选影响（筛选逻辑已注释，如需恢复请联系开发者）
+  const allKeys = new Set();
+  processedData.forEach(d => {
+    Object.keys(d._row).forEach(k => allKeys.add(k));
+  });
+
+  const ruleLabels = ruleMeta.map(r => r.short);
+  const headerOrder = ['#', '订单码', ...Array.from(allKeys), ...ruleLabels];
+
   const exportData = processedData.map(d => {
     const row = {};
-    cols.forEach(c => {
-      if (c.type === 'index') {
-        row['#'] = d._idx;
-      } else if (c.type === 'order-code') {
-        row['订单码'] = d._row['订单码'] || '';
-      } else if (c.type === 'field') {
-        row[c.field] = d._row[c.field] || '';
-      } else if (c.type === 'rule') {
-        row[c.label] = d[c.ruleId] || '';
-      }
+    row['#'] = d._idx;
+    row['订单码'] = d._row['订单码'] || '';
+    // 原表所有字段
+    allKeys.forEach(k => {
+      row[k] = d._row[k] || '';
+    });
+    // 8条规则结果列
+    ruleMeta.forEach(r => {
+      row[r.short] = d[r.id] || '';
     });
     return row;
   });
 
-  const ws = XLSX.utils.json_to_sheet(exportData);
+  const ws = XLSX.utils.json_to_sheet(exportData, { header: headerOrder });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '审查结果');
   XLSX.writeFile(wb, '珠宝质检审查结果.xlsx');
-  showToast('导出成功！', 'success');
+  showToast('导出成功！已导出完整数据（不受筛选影响）', 'success');
 }
 
 
