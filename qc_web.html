@@ -1384,64 +1384,6 @@ td.row-num {
   background: var(--gold-500);
   border-radius: 1px;
 }
-.filter-status-btns {
-  display: flex;
-  gap: 4px;
-}
-
-/* Filter Bar (horizontal inline) */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
-  background: var(--bg-elevated);
-}
-.filter-bar-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border-default);
-}
-.filter-bar-hint {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-right: 4px;
-  user-select: none;
-}
-
-/* Rule Chips */
-.filter-rule-chips {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.filter-rule-chip {
-  padding: 4px 10px;
-  border-radius: 100px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid var(--border-default);
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 150ms ease;
-  font-family: var(--font-body);
-  white-space: nowrap;
-}
-.filter-rule-chip:hover {
-  border-color: var(--gold-400);
-  color: var(--gold-500);
-  background: rgba(201,169,110,0.06);
-}
-.filter-rule-chip.active {
-  background: var(--gold-500);
-  color: #fff;
-  border-color: var(--gold-500);
-}
-
 
 .filter-rule-checkboxes {
   display: grid;
@@ -1803,27 +1745,42 @@ td.row-num {
         </div>
       </div>
       <div class="toolbar-right">
+        <div class="filter-wrapper">
+          <button class="filter-btn" onclick="toggleFilterPanel()" id="filterBtn">
+            <span class="filter-icon">◈</span>
+            <span>筛选</span>
+            <span class="filter-badge" id="filterBadge" style="display:none">0</span>
+            <span class="filter-chevron">▾</span>
+          </button>
+          <div class="filter-dropdown" id="filterDropdown">
+            <div class="filter-section">
+              <div class="filter-section-title">状态筛选</div>
+              <div class="filter-status-btns">
+                <button class="filter-status-btn active" data-status="all" onclick="selectFilterStatus('all', this)">全部</button>
+                <button class="filter-status-btn" data-status="ok" onclick="selectFilterStatus('ok', this)">正确</button>
+                <button class="filter-status-btn" data-status="error" onclick="selectFilterStatus('error', this)">异常</button>
+              </div>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-title">规则筛选（单选，选中后按该规则筛选）</div>
+              <div class="filter-rule-checkboxes">
+                <label><input type="checkbox" value="r1" onchange="updatePendingRules(this)"> R1 重量</label>
+                <label><input type="checkbox" value="r2" onchange="updatePendingRules(this)"> R2 宝玉石</label>
+                <label><input type="checkbox" value="r3" onchange="updatePendingRules(this)"> R3 金含量</label>
+                <label><input type="checkbox" value="r4" onchange="updatePendingRules(this)"> R4 净金重</label>
+                <label><input type="checkbox" value="r5" onchange="updatePendingRules(this)"> R5 南红</label>
+                <label><input type="checkbox" value="r6" onchange="updatePendingRules(this)"> R6 玛瑙</label>
+                <label><input type="checkbox" value="r7" onchange="updatePendingRules(this)"> R7 非洲翠</label>
+                <label><input type="checkbox" value="r8" onchange="updatePendingRules(this)"> R8 合成立方氧化锆</label>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn-ghost" onclick="resetFilterPanel()">重置</button>
+              <button class="btn-primary" onclick="confirmFilterPanel()">确定</button>
+            </div>
+          </div>
+        </div>
         <button class="btn" onclick="exportResults()">↓ 导出结果</button>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <div class="filter-status-btns">
-        <button class="filter-status-btn active" data-status="all" onclick="applyStatusFilter('all', this)">全部</button>
-        <button class="filter-status-btn" data-status="ok" onclick="applyStatusFilter('ok', this)">正确</button>
-        <button class="filter-status-btn" data-status="error" onclick="applyStatusFilter('error', this)">异常</button>
-      </div>
-      <span class="filter-bar-divider"></span>
-      <div class="filter-rule-chips">
-        <span class="filter-bar-hint">按规则筛选：</span>
-        <button class="filter-rule-chip active" data-rule="all" onclick="applyRuleFilter('all', this)">全部</button>
-        <button class="filter-rule-chip" data-rule="r1" onclick="applyRuleFilter('r1', this)">R1</button>
-        <button class="filter-rule-chip" data-rule="r2" onclick="applyRuleFilter('r2', this)">R2</button>
-        <button class="filter-rule-chip" data-rule="r3" onclick="applyRuleFilter('r3', this)">R3</button>
-        <button class="filter-rule-chip" data-rule="r4" onclick="applyRuleFilter('r4', this)">R4</button>
-        <button class="filter-rule-chip" data-rule="r5" onclick="applyRuleFilter('r5', this)">R5</button>
-        <button class="filter-rule-chip" data-rule="r6" onclick="applyRuleFilter('r6', this)">R6</button>
-        <button class="filter-rule-chip" data-rule="r7" onclick="applyRuleFilter('r7', this)">R7</button>
-        <button class="filter-rule-chip" data-rule="r8" onclick="applyRuleFilter('r8', this)">R8</button>
       </div>
     </div>
     <div class="table-container" id="tableContainer">
@@ -1873,8 +1830,8 @@ let appliedStatus = 'all';      // 'all' | 'error' | 'ok'
 let appliedRuleFilter = 'all';  // 'all' | 'r1'..'r8'
 
 // Pending filter state (before confirm)
-let pendingStatus = 'all'; // unused, kept for compat
-let pendingRules = []; // unused, kept for compat
+let pendingStatus = 'all';
+let pendingRules = [];
 
 // Rule toggle state (which rules to run)
 const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
@@ -2382,29 +2339,45 @@ function getVisibleRules() {
 }
 // ==================== Unified Filter Panel ====================
 
-function toggleFilterPanel() { /* removed: filter is now horizontal bar */ }
+function toggleFilterPanel() {
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (!dd) return;
+  const isActive = dd.classList.contains('active');
+  document.querySelectorAll('.filter-dropdown.active').forEach(d => d.classList.remove('active'));
+  if (btn) btn.classList.remove('active');
+  if (!isActive) {
+    dd.classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+}
 
-
-function applyStatusFilter(status, btn) {
-  appliedStatus = status;
+function selectFilterStatus(status, btn) {
+  pendingStatus = status;
   document.querySelectorAll('.filter-status-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  currentPage = 1;
-  applyFilters();
 }
 
-function applyRuleFilter(rule, btn) {
-  appliedRuleFilter = rule;
-  document.querySelectorAll('.filter-rule-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentPage = 1;
-  applyFilters();
+function updatePendingRules(changed) {
+  // 单选逻辑：选中一个规则时，自动取消其他
+  if (changed && changed.checked) {
+    document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => {
+      if (c !== changed) c.checked = false;
+    });
+    pendingRules = [changed.value];
+  } else {
+    pendingRules = [];
+    document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => {
+      if (c.checked) pendingRules.push(c.value);
+    });
+  }
 }
 
-// updatePendingRules removed: using applyRuleFilter instead
-
-// confirmFilterPanel removed
- else {
+function confirmFilterPanel() {
+  appliedStatus = pendingStatus;
+  if (pendingRules.length === 1) {
+    appliedRuleFilter = pendingRules[0];
+  } else {
     appliedRuleFilter = 'all';
   }
   updateFilterBadge();
@@ -2416,8 +2389,14 @@ function applyRuleFilter(rule, btn) {
   applyFilters();
 }
 
-// resetFilterPanel removed
-);
+function resetFilterPanel() {
+  pendingStatus = 'all';
+  pendingRules = [];
+  appliedStatus = 'all';
+  appliedRuleFilter = 'all';
+  document.querySelectorAll('.filter-status-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === 'all');
+  });
   document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => c.checked = false);
   updateFilterBadge();
   const dd = document.getElementById('filterDropdown');
@@ -2428,8 +2407,16 @@ function applyRuleFilter(rule, btn) {
   applyFilters();
 }
 
-// updateFilterBadge removed
- else {
+function updateFilterBadge() {
+  const badge = document.getElementById('filterBadge');
+  if (!badge) return;
+  let count = 0;
+  if (appliedStatus !== 'all') count++;
+  if (appliedRuleFilter !== 'all') count++;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-flex';
+  } else {
     badge.style.display = 'none';
   }
 }
