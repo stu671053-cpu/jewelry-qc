@@ -2369,10 +2369,19 @@ function updatePendingRules(changed) {
       if (c !== changed) c.checked = false;
     });
     pendingRules = [changed.value];
+    // 选了规则 → 强制异常，隐藏全部/正确
+    pendingStatus = 'error';
+    document.querySelectorAll('.filter-status-btn').forEach(b => {
+      b.style.display = b.dataset.status === 'error' ? '' : 'none';
+      b.classList.toggle('active', b.dataset.status === 'error');
+    });
   } else {
     pendingRules = [];
-    document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => {
-      if (c.checked) pendingRules.push(c.value);
+    // 取消规则 → 恢复全部状态按钮
+    pendingStatus = 'all';
+    document.querySelectorAll('.filter-status-btn').forEach(b => {
+      b.style.display = '';
+      b.classList.toggle('active', b.dataset.status === 'all');
     });
   }
 }
@@ -2400,6 +2409,7 @@ function resetFilterPanel() {
   appliedRuleFilter = 'all';
   document.querySelectorAll('.filter-status-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.status === 'all');
+    b.style.display = '';
   });
   document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => c.checked = false);
   updateFilterBadge();
