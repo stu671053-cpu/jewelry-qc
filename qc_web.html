@@ -1966,7 +1966,6 @@ function ruleR1(row) {
   const weight = cleanVal(row['重量']);
   if (!weight) return '';
 
-  const hasBracket = /[（(]/.test(weight);
   const formatErr = checkWeightFormat(weight);
   if (formatErr) return '格式异常(' + formatErr + ')';
 
@@ -1974,7 +1973,7 @@ function ruleR1(row) {
   if (!numMatch) return '格式异常(无数值)';
 
   const numVal = parseFloat(numMatch[1]);
-  if (numVal < 0.1 && !hasBracket) return '重量极低';
+  if (numVal < 0.1) return '重量极低';
 
   return '正常';
 }
@@ -2014,22 +2013,22 @@ function ruleR2(row) {
   const gemstone = cleanVal(row['宝玉石结论']);
   const remark = cleanVal(row['备注']);
 
-  // 规则1: 少备注
+  // 规则1: 漏备注
   if (gemstone.includes('翡翠')) {
-    if (!hasAnyKeyword(remark)) return '少备注';
+    if (!hasAnyKeyword(remark)) return '漏备注';
   }
 
-  // 规则3: 多备注(重复) - 优先于来源不匹配
-  if (hasDuplicateOutside(remark)) return '多备注(重复)';
+  // 规则2: 多备注(重复) - 优先于来源不匹配
+  if (hasDuplicateOutside(remark)) return '多备注';
 
-  // 规则2: 多备注(来源不匹配)
+  // 规则3: 多备注(来源不匹配)
   if (!gemstone.includes('翡翠')) {
     if (remark.includes('翡翠(A货)') || remark.includes('翡翠（A货）')) {
-      return '多备注(来源不匹配)';
+      return '多备注';
     }
   }
 
-  return '正常';
+  return '正确';
 }
 
 function hasAnyKeyword(remark) {
@@ -2245,6 +2244,9 @@ function ruleR6(row) {
   // 全局预检：质检结果=不通过 → 正确
   if (qcResult === '不通过') return '正确';
 
+  // 优先级最高：宝玉石结论为空 → 正确
+  if (!gemstone) return '正确';
+
   // B节点: 商品材质精确等于"玛瑙/玉髓（覆膜）"？
   if (material === '玛瑙/玉髓（覆膜）') {
     // B=Yes → C节点: 宝玉石结论=玛瑙 / =玛瑙（覆膜）？
@@ -2292,19 +2294,7 @@ function ruleR6(row) {
     return '正确';
   }
 
-  // H=No → M节点: 宝玉石结论=玛瑙 或者=玉髓 或者为空值？
-  if (gemstone === '玛瑙' || gemstone === '玉髓' || gemstone === '') {
-    return '正确';  // M=Yes → D
-  }
-  // M=No → N节点: 宝玉石结论精确等于"玛瑙（覆膜）"？
-  if (gemstone === '玛瑙（覆膜）') {
-    return '应驳回';  // N=Yes → O
-  }
-  // N=No → P节点: 备注文本内包含"玛瑙（覆膜）"？
-  if (remark.includes('玛瑙（覆膜）') || remark.includes('玛瑙(覆膜)')) {
-    return '应驳回';  // P=Yes → O
-  }
-  // P=No → F节点: 需核实结论
+  // H=No → 宝玉石结论是玛瑙或玛瑙（覆膜）→ 需核实结论
   return '需核实结论';
 }
 
