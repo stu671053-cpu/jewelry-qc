@@ -1828,6 +1828,7 @@ let rawData = [];
 let processedData = [];
 let currentPage = 1;
 const PAGE_SIZE = 100;
+let originalHeaders = []; // 保存原始Excel列顺序
 
 // Filter state (applied after confirm)
 let appliedStatus = 'all';      // 'all' | 'error' | 'ok'
@@ -1904,6 +1905,15 @@ function handleFile(file) {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       rawData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      // 提取原始列顺序（按照Excel第一行的顺序）
+      originalHeaders = [];
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+        const cell = sheet[cellAddress];
+        originalHeaders.push(cell ? String(cell.v) : `Column_${C + 1}`);
+      }
 
       // Update upload zone
       uploadZone.classList.add('has-file');
@@ -2574,10 +2584,10 @@ function getVisibleColumns() {
   ];
 
   if (appliedRuleFilter === 'all') {
-    // 显示所有基础字段 + 所有可见规则列
-    const baseFields = ['商品名称', '重量', '宝玉石结论', '贵金属结论', '备注'];
-    baseFields.forEach(f => {
-      if (!cols.some(c => c.field === f)) {
+    // 显示所有基础字段（按照原始Excel列顺序） + 所有可见规则列
+    const fieldsToShow = originalHeaders.length > 0 ? originalHeaders : ['商品名称', '重量', '宝玉石结论', '贵金属结论', '备注'];
+    fieldsToShow.forEach(f => {
+      if (f && !cols.some(c => c.field === f)) {
         cols.push({ type: 'field', field: f, label: f });
       }
     });
@@ -2826,9 +2836,20 @@ function exportResults() {
   // 导出完整表格：原表所有字段 + 8条规则处理结果
   // 不受筛选影响（筛选逻辑已注释，如需恢复请联系开发者）
   const allKeys = new Set();
-  processedData.forEach(d => {
-    Object.keys(d._row).forEach(k => allKeys.add(k));
-  });
+  // 按照原始Excel列顺序添加字段
+  if (originalHeaders.length > 0) {
+    originalHeaders.forEach(h => {
+      if (h) allKeys.add(h);
+    });
+    // 补充可能缺失的字段
+    processedData.forEach(d => {
+      Object.keys(d._row).forEach(k => allKeys.add(k));
+    });
+  } else {
+    processedData.forEach(d => {
+      Object.keys(d._row).forEach(k => allKeys.add(k));
+    });
+  }
 
   const ruleLabels = ruleMeta.map(r => r.short);
   const headerOrder = ['#', '订单码', ...Array.from(allKeys), ...ruleLabels];
@@ -2861,6 +2882,7 @@ function exportResults() {
 function resetAll() {
   rawData = [];
   processedData = [];
+  originalHeaders = []; // 清空原始列顺序
   appliedStatus = 'all';
 appliedRuleFilter = 'all';
   currentPage = 1;
