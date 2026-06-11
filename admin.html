@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>珠宝质检规则管理后台</title>
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-card: #1a2332;
+      --border-color: #2d3748;
+      --text-primary: #e2e8f0;
+      --text-secondary: #a0aec0;
+      --gold-400: #f6ad55;
+      --gold-500: #ed8936;
+      --blue-400: #63b3ed;
+      --green-400: #68d391;
+      --red-400: #fc8181;
+      --gray-600: #718096;
+      --gray-700: #4a5568;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* 顶部导航 */
+    .top-nav {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-400);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .nav-tab:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .nav-tab.active {
+      background: var(--gold-500);
+      color: white;
+    }
+
+    /* 主布局 */
+    .main-layout {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+
+    /* 左侧边栏 */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      padding: 0 8px;
+    }
+
+    .rule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .rule-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .rule-item:hover {
+      background: var(--bg-card);
+    }
+
+    .rule-item.active {
+      background: var(--bg-card);
+      border-color: var(--gold-500);
+    }
+
+    .rule-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .rule-status.enabled {
+      background: var(--green-400);
+    }
+
+    .rule-status.disabled {
+      background: var(--gray-600);
+    }
+
+    .rule-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rule-name {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rule-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .rule-priority {
+      background: var(--bg-primary);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 右侧内容区 */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .content-header {
+      margin-bottom: 24px;
+    }
+
+    .content-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .content-subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    /* 卡片 */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 表单 */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--gold-500);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* 开关 */
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 24px;
+      background: var(--gray-700);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .toggle-switch.enabled {
+      background: var(--green-400);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s;
+    }
+
+    .toggle-switch.enabled::after {
+      left: 26px;
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--gold-500);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-400);
+    }
+
+    .btn-secondary {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card);
+    }
+
+    /* 标签 */
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 12px;
+      margin: 4px;
+      cursor: pointer;
+    }
+
+    .tag:hover {
+      border-color: var(--gold-500);
+    }
+
+    .tag-remove {
+      margin-left: 6px;
+      color: var(--red-400);
+      cursor: pointer;
+    }
+
+    /* Mermaid 流程图 */
+    .mermaid-container {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    /* 标签页 */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      color: var(--gold-400);
+      border-bottom-color: var(--gold-400);
+    }
+
+    /* 隐藏 */
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <div class="top-nav">
+    <div class="logo">💎 珠宝质检规则管理</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-page="rules">规则中心</button>
+      <button class="nav-tab" data-page="golden">Golden 用例</button>
+      <button class="nav-tab" data-page="data">数据处理</button>
+      <button class="nav-tab" data-page="dashboard">仪表盘</button>
+    </div>
+  </div>
+
+  <!-- 主布局 -->
+  <div class="main-layout">
+    <!-- 左侧边栏 -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-title">规则列表</div>
+      <div class="rule-list" id="ruleList"></div>
+    </div>
+
+    <!-- 右侧内容区 -->
+    <div class="content-area" id="contentArea">
+      <div class="content-header">
+        <div class="content-title" id="contentTitle">规则配置中心</div>
+        <div class="content-subtitle" id="contentSubtitle">选择左侧规则进行配置</div>
+      </div>
+
+      <!-- 规则详情 -->
+      <div id="ruleDetail">
+        <div class="tabs">
+          <button class="tab active" data-tab="config">基本配置</button>
+          <button class="tab" data-tab="params">参数配置</button>
+          <button class="tab" data-tab="flowchart">逻辑流程图</button>
+          <button class="tab" data-tab="test">测试</button>
+        </div>
+
+        <!-- 基本配置 -->
+        <div id="tab-config">
+          <div class="card">
+            <div class="card-title">
+              基本信息
+              <div class="toggle-switch enabled" id="toggleEnable" title="启用/禁用"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">规则名称</label>
+              <input type="text" class="form-input" id="ruleName" placeholder="例如：R1 克重及单位">
+            </div>
+            <div class="form-group">
+              <label class="form-label">输出列名</label>
+              <input type="text" class="form-input" id="ruleColumn" placeholder="例如：R1 克重及单位">
+            </div>
+            <div class="form-group">
+              <label class="form-label">优先级（数字越小优先级越高）</label>
+              <input type="number" class="form-input" id="rulePriority" min="1" max="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label">依赖字段（多个字段用逗号分隔）</label>
+              <input type="text" class="form-input" id="ruleFields" placeholder="例如：重量, 备注">
+            </div>
+            <button class="btn btn-primary" onclick="saveRuleConfig()">保存配置</button>
+          </div>
+        </div>
+
+        <!-- 参数配置 -->
+        <div id="tab-params" class="hidden">
+          <div class="card">
+            <div class="card-title">关键词配置</div>
+            <div id="paramsContent"></div>
+            <button class="btn btn-primary" onclick="saveRuleParams()">保存参数</button>
+          </div>
+        </div>
+
+        <!-- 逻辑流程图 -->
+        <div id="tab-flowchart" class="hidden">
+          <div class="card">
+            <div class="card-title">规则逻辑流程图</div>
+            <div class="mermaid-container">
+              <pre class="mermaid" id="mermaidChart"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 测试 -->
+        <div id="tab-test" class="hidden">
+          <div class="card">
+            <div class="card-title">规则测试</div>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">输入测试数据，验证规则逻辑</p>
+            <div id="testInputs"></div>
+            <button class="btn btn-primary" onclick="runTest()" style="margin-top: 16px;">运行测试</button>
+            <div id="testResult" style="margin-top: 16px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  
+  <script>
+    // ==================== 数据模型 ====================
+    const ruleMeta = [
+      { id: 'r1', name: 'R1 克重及单位', short: 'R1 克重及单位', enabled: true, priority: 1 },
+      { id: 'r2', name: 'R2 翡翠备注', short: 'R2 翡翠备注', enabled: true, priority: 2 },
+      { id: 'r3', name: 'R3 足金金含量备注', short: 'R3 足金金含量备注', enabled: true, priority: 3 },
+      { id: 'r4', name: 'R4 足金净金重备注', short: 'R4 足金净金重备注', enabled: true, priority: 4 },
+      { id: 'r5', name: 'R5 南红玛瑙备注', short: 'R5 南红玛瑙备注', enabled: true, priority: 5 },
+      { id: 'r6', name: 'R6 玛瑙（覆膜）', short: 'R6 玛瑙（覆膜）', enabled: true, priority: 6 },
+      { id: 'r7', name: 'R7 非洲翠备注', short: 'R7 非洲翠备注', enabled: true, priority: 7 },
+      { id: 'r8', name: 'R8 合成立方氧化锆备注', short: 'R8 合成立方氧化锆备注', enabled: true, priority: 8 },
+    ];
+
+    // 规则参数（关键词等）
+    const ruleParams = {
+      r1: {
+        checkItems: ['缺少g/克', 'g前含字母', '0开头无小数点', '逗号代小数点', '无小数点']
+      },
+      r2: {
+        keywordGroups: [
+          { keywords: ['翡翠(A货)', '翡翠（A货）'] },
+          { keywords: ['含其他矿物'] },
+          { keywords: ['颜色成因未定'] },
+          { keywords: ['颜色成因未做分析'] }
+        ]
+      },
+      r5: {
+        triggerFields: ['商品名称', '商品材质', '配件材质'],
+        keywords: ['南红', '保山红', '凉山红', '川料红', '瓦西', '九口红', '锦红']
+      },
+      r6: {
+        applicableMaterials: ['玛瑙/玉髓（覆膜）', '玛瑙/玉髓']
+      },
+      r7: {
+        triggerFields: ['商品名称', '商品材质', '配件材质'],
+        keywords: ['非洲翠']
+      },
+      r8: {
+        triggerFields: ['配件材质', '宝玉石结论', '备注', '商品材质'],
+        keywords: ['合成立方氧化锆']
+      }
+    };
+
+    // 规则逻辑图（Mermaid 语法）
+    const ruleFlowcharts = {
+      r1: `graph TD
+    A[开始] --> B{重量为空?}
+    B -->|是| Z[不判断]
+    B -->|否| C{格式检查}
+    C -->|异常| D[格式异常]
+    C -->|正常| E{数值 < 0.1g?}
+    E -->|是| F[重量极低]
+    E -->|否| G[正常]`,
+
+      r2: `graph TD
+    A[开始] --> B{宝玉石结论含翡翠?}
+    B -->|是| C{备注有关键词?}
+    B -->|否| D{备注含翡翠A货?}
+    D -->|是| E[多备注]
+    D -->|否| F[正确]
+    C -->|否| G[漏备注]
+    C -->|是| H[正确]`,
+
+      r5: `graph TD
+    A[开始] --> B{商品名称/材质/配件含南红关键词?}
+    B -->|否| Z[正确]
+    B -->|是| C{备注含南红?}
+    C -->|是| D[正确]
+    C -->|否| E[漏备注]`,
+
+      r6: `graph TD
+    A[开始] --> B{商品材质=玛瑙/玉髓覆膜?}
+    B -->|否| Z[正确]
+    B -->|是| C{宝玉石结论=玛瑙/玛瑙覆膜/空?}
+    C -->|是| D[正确]
+    C -->|否| E{备注精确=玛瑙/玛瑙覆膜?}
+    E -->|是| F[正确]
+    E -->|否| G[需核实结论]`,
+
+      r7: `graph TD
+    A[开始] --> B{宝玉石结论为空?}
+    B -->|是| C[正确]
+    B -->|否| D{字段含非洲翠?}
+    D -->|是| E{备注含非洲翠?}
+    D -->|否| F[正确]
+    E -->|是| G[正确]
+    E -->|否| H[漏备注]`
+    };
+
+    // ==================== 全局状态 ====================
+    let currentRuleId = 'r1';
+    let currentTab = 'config';
+
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', function() {
+      renderRuleList();
+      bindEvents();
+      loadRuleDetail(currentRuleId);
+    });
+
+    // ==================== 事件绑定 ====================
+    function bindEvents() {
+      // 顶部导航
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          // TODO: 切换页面
+        });
+      });
+
+      // 左侧规则列表（动态生成，用事件委托）
+      document.getElementById('ruleList').addEventListener('click', function(e) {
+        const item = e.target.closest('.rule-item');
+        if (!item) return;
+        
+        document.querySelectorAll('.rule-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        currentRuleId = item.dataset.ruleId;
+        loadRuleDetail(currentRuleId);
+      });
+
+      // 标签页
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          
+          const tabName = this.dataset.tab;
+          document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
+          document.getElementById('tab-' + tabName).classList.remove('hidden');
+          
+          currentTab = tabName;
+          if (tabName === 'flowchart') {
+            renderFlowchart(currentRuleId);
+          }
+        });
+      });
+
+      // 启用/禁用开关
+      document.getElementById('toggleEnable').addEventListener('click', function() {
+        this.classList.toggle('enabled');
+      });
+    }
+
+    // ==================== 渲染规则列表 ====================
+    function renderRuleList() {
+      const container = document.getElementById('ruleList');
+      container.innerHTML = '';
+      
+      ruleMeta.forEach(rule => {
+        const item = document.createElement('div');
+        item.className = 'rule-item' + (rule.id === currentRuleId ? ' active' : '');
+        item.dataset.ruleId = rule.id;
+        
+        item.innerHTML = `
+          <div class="rule-status ${rule.enabled ? 'enabled' : 'disabled'}"></div>
+          <div class="rule-info">
+            <div class="rule-name">${rule.name}</div>
+            <div class="rule-meta">优先级: ${rule.priority}</div>
+          </div>
+        `;
+        
+        container.appendChild(item);
+      });
+    }
+
+    // ==================== 加载规则详情 ====================
+    function loadRuleDetail(ruleId) {
+      const rule = ruleMeta.find(r => r.id === ruleId);
+      if (!rule) return;
+
+      // 更新标题
+      document.getElementById('contentTitle').textContent = rule.name;
+      document.getElementById('contentSubtitle').textContent = `ID: ${rule.id} | 优先级: ${rule.priority}`;
+
+      // 填充表单
+      document.getElementById('ruleName').value = rule.name;
+      document.getElementById('ruleColumn').value = rule.short;
+      document.getElementById('rulePriority').value = rule.priority;
+      
+      const fields = getRuleFields(ruleId);
+      document.getElementById('ruleFields').value = fields.join(', ');
+
+      // 启用/禁用状态
+      const toggle = document.getElementById('toggleEnable');
+      if (rule.enabled) {
+        toggle.classList.add('enabled');
+      } else {
+        toggle.classList.remove('enabled');
+      }
+
+      // 渲染参数配置
+      renderParams(ruleId);
+
+      // 渲染测试输入
+      renderTestInputs(ruleId);
+
+      // 如果当前是流程图标签页，渲染流程图
+      if (currentTab === 'flowchart') {
+        renderFlowchart(ruleId);
+      }
+    }
+
+    // ==================== 获取规则依赖字段 ====================
+    function getRuleFields(ruleId) {
+      const fieldMap = {
+        r1: ['重量'],
+        r2: ['宝玉石结论', '备注'],
+        r3: ['质检结果', '备注', '贵金属结论', '商品名称', '商品材质'],
+        r4: ['重量', '宝玉石结论', '贵金属结论', '备注'],
+        r5: ['质检结果', '备注', '宝玉石结论', '商品名称', '商品材质', '配件材质'],
+        r6: ['质检结果', '商品材质', '宝玉石结论', '备注'],
+        r7: ['商品名称', '商品材质', '配件材质', '备注', '宝玉石结论'],
+        r8: ['配件材质', '宝玉石结论', '备注', '商品材质']
+      };
+      return fieldMap[ruleId] || [];
+    }
+
+    // ==================== 渲染参数配置 ====================
+    function renderParams(ruleId) {
+      const container = document.getElementById('paramsContent');
+      const params = ruleParams[ruleId];
+      
+      if (!params) {
+        container.innerHTML = '<p style="color: var(--text-secondary);">此规则暂无参数配置</p>';
+        return;
+      }
+
+      let html = '';
+
+      // R1: 格式检查项
+      if (params.checkItems) {
+        html += '<div class="form-group"><label class="form-label">格式检查项</label>';
+        params.checkItems.forEach((item, idx) => {
+          html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <input type="text" class="form-input" value="${item}" data-param="checkItems" data-idx="${idx}">
+            <button class="btn btn-secondary" onclick="removeParamItem('checkItems', ${idx})">删除</button>
+          </div>`;
+        });
+        html += '<button class="btn btn-secondary" onclick="addParamItem(\'checkItems\')">+ 添加检查项</button></div>';
+      }
+
+      // R2: 关键词组
+      if (params.keywordGroups) {
+        html += '<div class="form-group"><label class="form-label">关键词组</label>';
+        params.keywordGroups.forEach((group, gIdx) => {
+          html += `<div style="margin-bottom: 12px; padding: 12px; background: var(--bg-primary); border-radius: 6px;">`;
+          html += `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">组 ${gIdx + 1}</div>`;
+          group.keywords.forEach((kw, kIdx) => {
+            html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <input type="text" class="form-input" value="${kw}" data-param="keywordGroups" data-gidx="${gIdx}" data-kidx="${kIdx}">
+              <button class="btn btn-secondary" onclick="removeKeyword('keywordGroups', ${gIdx}, ${kIdx})">删除</button>
+            </div>`;
+          });
+          html += `<button class="btn btn-secondary" onclick="addKeyword('keywordGroups', ${gIdx})">+ 添加关键词</button>`;
+          html += `</div>`;
+        });
+        html += '<button class="btn btn-secondary" onclick="addKeywordGroup()">+ 添加关键词组</button></div>';
+      }
+
+      // R5/R7/R8: 触发字段 + 关键词
+      if (params.triggerFields) {
+        html += '<div class="form-group"><label class="form-label">触发字段</label>';
+        html += '<div id="triggerFieldsContainer">';
+        params.triggerFields.forEach((field, idx) => {
+          html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <input type="text" class="form-input" value="${field}" data-param="triggerFields" data-idx="${idx}">
+            <button class="btn btn-secondary" onclick="removeParamItem('triggerFields', ${idx})">删除</button>
+          </div>`;
+        });
+        html += '</div>';
+        html += '<button class="btn btn-secondary" onclick="addParamItem(\'triggerFields\')">+ 添加触发字段</button></div>';
+      }
+
+      if (params.keywords) {
+        html += '<div class="form-group"><label class="form-label">关键词列表</label>';
+        html += '<div id="keywordsContainer">';
+        params.keywords.forEach((kw, idx) => {
+          html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <input type="text" class="form-input" value="${kw}" data-param="keywords" data-idx="${idx}">
+            <button class="btn btn-secondary" onclick="removeParamItem('keywords', ${idx})">删除</button>
+          </div>`;
+        });
+        html += '</div>';
+        html += '<button class="btn btn-secondary" onclick="addParamItem(\'keywords\')">+ 添加关键词</button></div>';
+      }
+
+      // R6: 适用材质
+      if (params.applicableMaterials) {
+        html += '<div class="form-group"><label class="form-label">适用材质列表</label>';
+        html += '<div id="materialsContainer">';
+        params.applicableMaterials.forEach((mat, idx) => {
+          html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <input type="text" class="form-input" value="${mat}" data-param="applicableMaterials" data-idx="${idx}">
+            <button class="btn btn-secondary" onclick="removeParamItem('applicableMaterials', ${idx})">删除</button>
+          </div>`;
+        });
+        html += '</div>';
+        html += '<button class="btn btn-secondary" onclick="addParamItem(\'applicableMaterials\')">+ 添加材质</button></div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ==================== 参数操作函数 ====================
+    function addParamItem(paramName) {
+      const params = ruleParams[currentRuleId];
+      if (!params[paramName]) params[paramName] = [];
+      params[paramName].push('');
+      renderParams(currentRuleId);
+    }
+
+    function removeParamItem(paramName, idx) {
+      const params = ruleParams[currentRuleId];
+      params[paramName].splice(idx, 1);
+      renderParams(currentRuleId);
+    }
+
+    function addKeywordGroup() {
+      const params = ruleParams[currentRuleId];
+      if (!params.keywordGroups) params.keywordGroups = [];
+      params.keywordGroups.push({ keywords: [''] });
+      renderParams(currentRuleId);
+    }
+
+    function addKeyword(paramName, gIdx) {
+      const params = ruleParams[currentRuleId];
+      params[paramName][gIdx].keywords.push('');
+      renderParams(currentRuleId);
+    }
+
+    function removeKeyword(paramName, gIdx, kIdx) {
+      const params = ruleParams[currentRuleId];
+      params[paramName][gIdx].keywords.splice(kIdx, 1);
+      if (params[paramName][gIdx].keywords.length === 0) {
+        params[paramName].splice(gIdx, 1);
+      }
+      renderParams(currentRuleId);
+    }
+
+    // ==================== 保存配置 ====================
+    function saveRuleConfig() {
+      const rule = ruleMeta.find(r => r.id === currentRuleId);
+      if (!rule) return;
+
+      rule.name = document.getElementById('ruleName').value;
+      rule.short = document.getElementById('ruleColumn').value;
+      rule.priority = parseInt(document.getElementById('rulePriority').value);
+      
+      const toggle = document.getElementById('toggleEnable');
+      rule.enabled = toggle.classList.contains('enabled');
+
+      // 更新列表
+      renderRuleList();
+      
+      alert('配置已保存！');
+    }
+
+    function saveRuleParams() {
+      const params = ruleParams[currentRuleId];
+      
+      // 收集所有输入
+      document.querySelectorAll('#paramsContent input').forEach(input => {
+        const paramName = input.dataset.param;
+        const idx = parseInt(input.dataset.idx);
+        
+        if (paramName === 'keywordGroups') {
+          const gIdx = parseInt(input.dataset.gidx);
+          const kIdx = parseInt(input.dataset.kidx);
+          params[paramName][gIdx].keywords[kIdx] = input.value;
+        } else {
+          params[paramName][idx] = input.value;
+        }
+      });
+
+      alert('参数已保存！');
+      console.log('当前参数:', params);
+    }
+
+    // ==================== 渲染流程图 ====================
+    function renderFlowchart(ruleId) {
+      const chart = ruleFlowcharts[ruleId];
+      if (!chart) {
+        document.getElementById('mermaidChart').textContent = '暂无流程图数据';
+        return;
+      }
+
+      document.getElementById('mermaidChart').textContent = chart;
+      
+      // 初始化 Mermaid
+      mermaid.initialize({ 
+        startOnLoad: false,
+        theme: 'dark',
+        themeVariables: {
+          primaryColor: '#1a2332',
+          primaryTextColor: '#e2e8f0',
+          primaryBorderColor: '#f6ad55',
+          lineColor: '#63b3ed',
+          secondaryColor: '#111827',
+          tertiaryColor: '#0a0e17'
+        }
+      });
+
+      // 渲染
+      mermaid.render('mermaidSvg', chart).then(result => {
+        document.querySelector('.mermaid-container').innerHTML = result.svg;
+      }).catch(err => {
+        console.error('Mermaid 渲染错误:', err);
+        document.querySelector('.mermaid-container').innerHTML = '<p style="color: var(--red-400);">流程图渲染失败</p>';
+      });
+    }
+
+    // ==================== 渲染测试输入 ====================
+    function renderTestInputs(ruleId) {
+      const container = document.getElementById('testInputs');
+      const fields = getRuleFields(ruleId);
+      
+      let html = '';
+      fields.forEach(field => {
+        html += `<div class="form-group">
+          <label class="form-label">${field}</label>
+          <input type="text" class="form-input" id="test_${field}" placeholder="输入测试值">
+        </div>`;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // ==================== 运行测试 ====================
+    function runTest() {
+      const fields = getRuleFields(currentRuleId);
+      const testData = {};
+      
+      fields.forEach(field => {
+        testData[field] = document.getElementById('test_' + field)?.value || '';
+      });
+
+      // 模拟规则执行（实际应该调用真实的规则函数）
+      const result = simulateRule(currentRuleId, testData);
+      
+      document.getElementById('testResult').innerHTML = `
+        <div class="card" style="border-color: var(--blue-400);">
+          <div class="card-title">测试结果</div>
+          <p><strong>输入:</strong></p>
+          <pre style="background: var(--bg-primary); padding: 12px; border-radius: 6px; margin: 8px 0; font-size: 12px; overflow-x: auto;">${JSON.stringify(testData, null, 2)}</pre>
+          <p><strong>输出:</strong> <span style="color: var(--gold-400); font-size: 18px;">${result}</span></p>
+        </div>
+      `;
+    }
+
+    // ==================== 模拟规则执行 ====================
+    function simulateRule(ruleId, row) {
+      // 这里只是 demo，实际应该调用真实的规则函数
+      const mockResults = {
+        r1: ['正常', '格式异常(缺少g)', '重量极低'],
+        r2: ['正确', '漏备注', '多备注'],
+        r5: ['正确', '漏备注'],
+        r6: ['正确', '需核实结论', '应驳回'],
+        r7: ['正确', '漏备注'],
+        r8: ['正确', '多备注']
+      };
+      
+      const results = mockResults[ruleId] || ['正确', '异常'];
+      return results[Math.floor(Math.random() * results.length)];
+    }
+  </script>
+</body>
+</html>
