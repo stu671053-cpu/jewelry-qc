@@ -1768,14 +1768,14 @@ td.row-num {
             <div class="filter-section">
               <div class="filter-section-title">规则筛选（单选，选中后按该规则筛选）</div>
               <div class="filter-rule-checkboxes">
-                <label><input type="checkbox" value="r1" onchange="updatePendingRules(this)"> R1 重量</label>
-                <label><input type="checkbox" value="r2" onchange="updatePendingRules(this)"> R2 宝玉石</label>
-                <label><input type="checkbox" value="r3" onchange="updatePendingRules(this)"> R3 金含量</label>
-                <label><input type="checkbox" value="r4" onchange="updatePendingRules(this)"> R4 净金重</label>
-                <label><input type="checkbox" value="r5" onchange="updatePendingRules(this)"> R5 南红</label>
-                <label><input type="checkbox" value="r6" onchange="updatePendingRules(this)"> R6 玛瑙</label>
-                <label><input type="checkbox" value="r7" onchange="updatePendingRules(this)"> R7 非洲翠</label>
-                <label><input type="checkbox" value="r8" onchange="updatePendingRules(this)"> R8 合成立方氧化锆</label>
+                <label><input type="checkbox" value="r1" onchange="updatePendingRules(this)"> R1 克重及单位</label>
+                <label><input type="checkbox" value="r2" onchange="updatePendingRules(this)"> R2 翡翠备注</label>
+                <label><input type="checkbox" value="r3" onchange="updatePendingRules(this)"> R3 足金金含量备注</label>
+                <label><input type="checkbox" value="r4" onchange="updatePendingRules(this)"> R4 足金净金重备注</label>
+                <label><input type="checkbox" value="r5" onchange="updatePendingRules(this)"> R5 南红玛瑙备注</label>
+                <label><input type="checkbox" value="r6" onchange="updatePendingRules(this)"> R6 玛瑙（覆膜）</label>
+                <label><input type="checkbox" value="r7" onchange="updatePendingRules(this)"> R7 非洲翠备注</label>
+                <label><input type="checkbox" value="r8" onchange="updatePendingRules(this)"> R8 合成立方氧化锆备注</label>
               </div>
             </div>
             <div class="filter-actions">
@@ -1797,14 +1797,14 @@ td.row-num {
             <th>宝玉石结论</th>
             <th>贵金属结论</th>
             <th>备注</th>
-            <th>R1 重量</th>
-            <th>R2 宝玉石</th>
-            <th>R3 金含量</th>
-            <th>R4 净金重</th>
-            <th>R5 南红</th>
-            <th>R6 玛瑙</th>
-            <th>R7 非洲翠</th>
-            <th>R8 合成立方氧化锆</th>
+            <th>R1 克重及单位</th>
+            <th>R2 翡翠备注</th>
+            <th>R3 足金金含量备注</th>
+            <th>R4 足金净金重备注</th>
+            <th>R5 南红玛瑙备注</th>
+            <th>R6 玛瑙（覆膜）</th>
+            <th>R7 非洲翠备注</th>
+            <th>R8 合成立方氧化锆备注</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -1843,26 +1843,26 @@ const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, 
 // Column filter state (which rule columns to show)
 const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true };
 const ruleMeta = [
-  { id: 'r1', name: 'R1 重量判定', short: 'R1 重量' },
-  { id: 'r2', name: 'R2 宝玉石判定', short: 'R2 宝玉石' },
-  { id: 'r3', name: 'R3 金含量备注', short: 'R3 金含量' },
-  { id: 'r4', name: 'R4 足金净金重', short: 'R4 净金重' },
-  { id: 'r5', name: 'R5 南红备注', short: 'R5 南红' },
-  { id: 'r6', name: 'R6 玛瑙覆膜', short: 'R6 玛瑙' },
-  { id: 'r7', name: 'R7 非洲翠', short: 'R7 非洲翠' },
-  { id: 'r8', name: 'R8 合成立方氧化锆', short: 'R8 合成立方氧化锆' },
+  { id: 'r1', name: 'R1 克重及单位', short: 'R1 克重及单位' },
+  { id: 'r2', name: 'R2 翡翠备注', short: 'R2 翡翠备注' },
+  { id: 'r3', name: 'R3 足金金含量备注', short: 'R3 足金金含量备注' },
+  { id: 'r4', name: 'R4 足金净金重备注', short: 'R4 足金净金重备注' },
+  { id: 'r5', name: 'R5 南红玛瑙备注', short: 'R5 南红玛瑙备注' },
+  { id: 'r6', name: 'R6 玛瑙（覆膜）', short: 'R6 玛瑙（覆膜）' },
+  { id: 'r7', name: 'R7 非洲翠备注', short: 'R7 非洲翠备注' },
+  { id: 'r8', name: 'R8 合成立方氧化锆备注', short: 'R8 合成立方氧化锆备注' },
 ];
 
 // 每条规则检查的源字段映射（用于动态列显示）
 const ruleSourceFields = {
   r1: ['重量'],
   r2: ['宝玉石结论', '备注'],
-  r3: ['质检结果', '备注', '贵金属结论'],
+  r3: ['质检结果', '备注', '贵金属结论', '商品名称', '商品材质'],
   r4: ['重量', '宝玉石结论', '贵金属结论', '备注'],
   r5: ['质检结果', '备注', '宝玉石结论', '商品名称', '商品材质', '配件材质'],
   r6: ['质检结果', '商品材质', '宝玉石结论', '备注'],
-  r7: ['商品名称', '商品材质', '配件材质', '备注'],
-  r8: ['配件材质', '宝玉石结论', '备注'],
+  r7: ['商品名称', '商品材质', '配件材质', '备注', '宝玉石结论'],
+  r8: ['配件材质', '宝玉石结论', '备注', '商品材质'],
 };
 
 // ==================== Drag & Drop ====================
@@ -2314,6 +2314,10 @@ function ruleR7(row) {
   const material = cleanVal(row['商品材质']);
   const accessory = cleanVal(row['配件材质']);
   const remark = cleanVal(row['备注']);
+  const gemstone = cleanVal(row['宝玉石结论']);
+
+  // 优先级最高：宝玉石结论为空 → 正确
+  if (!gemstone) return '正确';
 
   const fieldsText = name + material + accessory;
   const hasInFields = fieldsText.includes('非洲翠');
@@ -2555,14 +2559,14 @@ function renderStats() {
 function renderChart() {
   const container = document.getElementById('ruleChart');
   const ruleNamesFull = [
-    { id: 'r1', name: 'R1 重量判定', color: 'var(--gold-400)' },
-    { id: 'r2', name: 'R2 宝玉石判定', color: 'var(--red-400)' },
-    { id: 'r3', name: 'R3 金含量备注', color: 'var(--amber-400)' },
-    { id: 'r4', name: 'R4 足金净金重', color: 'var(--blue-400)' },
-    { id: 'r5', name: 'R5 南红备注', color: 'var(--red-400)' },
-    { id: 'r6', name: 'R6 玛瑙覆膜', color: 'var(--gold-400)' },
-    { id: 'r7', name: 'R7 非洲翠', color: 'var(--green-400)' },
-    { id: 'r8', name: 'R8 合成立方氧化锆', color: 'var(--amber-400)' },
+    { id: 'r1', name: 'R1 克重及单位', color: 'var(--gold-400)' },
+    { id: 'r2', name: 'R2 翡翠备注', color: 'var(--red-400)' },
+    { id: 'r3', name: 'R3 足金金含量备注', color: 'var(--amber-400)' },
+    { id: 'r4', name: 'R4 足金净金重备注', color: 'var(--blue-400)' },
+    { id: 'r5', name: 'R5 南红玛瑙备注', color: 'var(--red-400)' },
+    { id: 'r6', name: 'R6 玛瑙（覆膜）', color: 'var(--gold-400)' },
+    { id: 'r7', name: 'R7 非洲翠备注', color: 'var(--green-400)' },
+    { id: 'r8', name: 'R8 合成立方氧化锆备注', color: 'var(--amber-400)' },
   ];
   const ruleNames = ruleNamesFull.filter(r => columnFilterState[r.id]);
 
