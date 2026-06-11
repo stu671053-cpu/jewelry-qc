@@ -2244,13 +2244,10 @@ function ruleR6(row) {
   // 全局预检：质检结果=不通过 → 正确
   if (qcResult === '不通过') return '正确';
 
-  // 优先级最高：宝玉石结论为空 → 正确
-  if (!gemstone) return '正确';
-
   // B节点: 商品材质精确等于"玛瑙/玉髓（覆膜）"？
   if (material === '玛瑙/玉髓（覆膜）') {
-    // B=Yes → C节点: 宝玉石结论=玛瑙 / =玛瑙（覆膜）？
-    if (gemstone === '玛瑙' || gemstone === '玛瑙（覆膜）') {
+    // B=Yes → C节点: 宝玉石结论=玛瑙 / =玛瑙（覆膜）/ 为空？
+    if (gemstone === '玛瑙' || gemstone === '玛瑙（覆膜）' || !gemstone) {
       return '正确';  // C=Yes → D
     }
     // C=No → E节点: 备注精确等于"玛瑙" / =玛瑙（覆膜）？
