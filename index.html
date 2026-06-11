@@ -2215,23 +2215,8 @@ function ruleR5(row) {
     return remark.includes('南红') ? '正确' : '漏备注';
   }
 
-  // 未触发分支
-  // 判断2: 宝玉石结论=玛瑙？
-  if (gemstone === '玛瑙') {
-    if (keywords.some(kw => remark.includes(kw))) {
-      // 格式匹配 → 正确；不匹配 → 需核实
-      return /[配为伴].*(?:南红|保山红|凉山红|川料红|瓦西|九口红|锦红)/.test(remark) ? '正确' : '需核实';
-    }
-    return '正确';
-  }
-
-  // 判断3: 备注格式检查
-  if (!keywords.some(kw => remark.includes(kw))) return '正确';
-
-  // 备注含"配/为/伴"+文字+任一关键词(南红/保山红/凉山红等) → 正确
-  if (/[配为伴].*(?:南红|保山红|凉山红|川料红|瓦西|九口红|锦红)/.test(remark)) return '正确';
-
-  return '多备注';
+  // 未触发 → 不适用R5规则
+  return '';
 }
 
 // R6: 玛瑙覆膜检查 — 仅适用 商品材质="玛瑙/玉髓（覆膜）" 或 "玛瑙/玉髓"
