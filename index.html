@@ -2234,7 +2234,7 @@ function ruleR5(row) {
   return '多备注';
 }
 
-// R6: 玛瑙覆膜检查 (2026-06-09)
+// R6: 玛瑙覆膜检查 (2026-06-09) — 仅适用 商品材质="玛瑙/玉髓（覆膜）"
 function ruleR6(row) {
   const qcResult = cleanVal(row['质检结果']);
   const material = cleanVal(row['商品材质']);
@@ -2244,54 +2244,18 @@ function ruleR6(row) {
   // 全局预检：质检结果=不通过 → 正确
   if (qcResult === '不通过') return '正确';
 
-  // B节点: 商品材质精确等于"玛瑙/玉髓（覆膜）"？
-  if (material === '玛瑙/玉髓（覆膜）') {
-    // B=Yes → C节点: 宝玉石结论=玛瑙 / =玛瑙（覆膜）/ 为空？
-    if (gemstone === '玛瑙' || gemstone === '玛瑙（覆膜）' || !gemstone) {
-      return '正确';  // C=Yes → D
-    }
-    // C=No → E节点: 备注精确等于"玛瑙" / =玛瑙（覆膜）？
-    if (remark === '玛瑙' || remark === '玛瑙（覆膜）') {
-      return '正确';  // E=Yes → D
-    }
-    // E=No → F节点: 需核实结论
-    return '需核实结论';
-  }
+  // 仅当商品材质严格等于"玛瑙/玉髓（覆膜）"才适用R6
+  if (material !== '玛瑙/玉髓（覆膜）') return '';
 
-  // B=No → G节点: 商品材质精确等于"玛瑙/玉髓"？
-  if (material === '玛瑙/玉髓') {
-    // G=Yes → M节点: 宝玉石结论=玛瑙 或者=玉髓 或者为空值？
-    if (gemstone === '玛瑙' || gemstone === '玉髓' || gemstone === '') {
-      return '正确';  // M=Yes → D
-    }
-    // M=No → N节点: 宝玉石结论精确等于"玛瑙（覆膜）"？
-    if (gemstone === '玛瑙（覆膜）') {
-      return '应驳回';  // N=Yes → O
-    }
-    // N=No → P节点: 备注文本内包含"玛瑙（覆膜）"？
-    if (remark.includes('玛瑙（覆膜）') || remark.includes('玛瑙(覆膜)')) {
-      return '应驳回';  // P=Yes → O
-    }
-    // P=No → F节点: 需核实结论
-    return '需核实结论';
-  }
-
-  // G=No → H节点: 宝玉石结论≠玛瑙 并且 ≠玛瑙（覆膜）？
-  if (gemstone !== '玛瑙' && gemstone !== '玛瑙（覆膜）') {
-    // H=Yes → I节点: 备注文本内包含"玛瑙（覆膜）"？
-    if (remark.includes('玛瑙（覆膜）') || remark.includes('玛瑙(覆膜)')) {
-      // I=Yes → J节点: "玛瑙（覆膜）"前面存在文字：配/为/伴？
-      if (/[配为伴].*玛瑙[（(]覆膜[）)]/.test(remark)) {
-        return '正确';  // J=Yes → D
-      }
-      // J=No → L节点: 需核实备注
-      return '需核实备注';
-    }
-    // I=No → D节点: 正确
+  // C节点: 宝玉石结论=玛瑙 / =玛瑙（覆膜）/ 为空？
+  if (gemstone === '玛瑙' || gemstone === '玛瑙（覆膜）' || !gemstone) {
     return '正确';
   }
-
-  // H=No → 宝玉石结论是玛瑙或玛瑙（覆膜）→ 需核实结论
+  // E节点: 备注精确等于"玛瑙"或"玛瑙（覆膜）"？
+  if (remark === '玛瑙' || remark === '玛瑙（覆膜）') {
+    return '正确';
+  }
+  // F节点: 需核实结论
   return '需核实结论';
 }
 
