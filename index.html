@@ -2215,8 +2215,8 @@ function ruleR5(row) {
     return remark.includes('南红') ? '正确' : '漏备注';
   }
 
-  // 未触发 → 不适用R5规则
-  return '';
+  // 未触发 → 正确
+  return '正确';
 }
 
 // R6: 玛瑙覆膜检查 — 仅适用 商品材质="玛瑙/玉髓（覆膜）" 或 "玛瑙/玉髓"
