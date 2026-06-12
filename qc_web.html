@@ -628,7 +628,7 @@ body {
 /* Stats */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-bottom: 28px;
 }
@@ -1721,11 +1721,6 @@ td.row-num {
       <div class="stat-value" id="statError">0</div>
       <div class="stat-sub" id="statErrorSub"></div>
     </div>
-    <div class="stat-card warning">
-      <div class="stat-label">空值记录</div>
-      <div class="stat-value" id="statEmpty">0</div>
-      <div class="stat-sub" id="statEmptySub"></div>
-    </div>
     <div class="stat-card success">
       <div class="stat-label">全部正常</div>
       <div class="stat-value" id="statOk">0</div>
@@ -2491,17 +2486,14 @@ function animateValue(el, start, end, duration = 800) {
 function renderStats() {
   const total = processedData.length;
   const errors = processedData.filter(d => d._status === 'error').length;
-  const empties = processedData.filter(d => d._status === 'empty').length;
-  const oks = total - errors - empties;
+  const oks = total - errors;
 
   animateValue(document.getElementById('statTotal'), 0, total);
   animateValue(document.getElementById('statError'), 0, errors);
-  animateValue(document.getElementById('statEmpty'), 0, empties);
   animateValue(document.getElementById('statOk'), 0, oks);
 
   document.getElementById('statTotalSub').textContent = '条数据记录';
   document.getElementById('statErrorSub').textContent = errors > 0 ? `占比 ${(errors/total*100).toFixed(1)}%` : '无异常';
-  document.getElementById('statEmptySub').textContent = empties > 0 ? `占比 ${(empties/total*100).toFixed(1)}%` : '无空值';
   document.getElementById('statOkSub').textContent = oks > 0 ? `占比 ${(oks/total*100).toFixed(1)}%` : '-';
 
   document.getElementById('statsSection').style.display = '';
