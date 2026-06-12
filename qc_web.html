@@ -1966,8 +1966,14 @@ function cleanVal(val) {
   return s;
 }
 
+// 全局前置：质检结果=不通过 → 所有规则返回正确
+function isQCFailed(row) {
+  return cleanVal(row['质检结果']) === '不通过';
+}
+
 // R1: 重量判定
 function ruleR1(row) {
+  if (isQCFailed(row)) return '正确';
   const weight = cleanVal(row['重量']);
   if (!weight) return '';
 
@@ -2015,6 +2021,7 @@ const KEYWORD_PAIRS = [
 ];
 
 function ruleR2(row) {
+  if (isQCFailed(row)) return '正确';
   const gemstone = cleanVal(row['宝玉石结论']);
   const remark = cleanVal(row['备注']);
 
@@ -2075,12 +2082,9 @@ function hasDuplicateOutside(remark) {
 const FIELDS_999 = ['商品名称', '商品材质', '镶嵌材质', '商品质量', '配件材质'];
 
 function ruleR3(row) {
-  const qcResult = cleanVal(row['质检结果']);
+  if (isQCFailed(row)) return '正确';
   const remark = cleanVal(row['备注']);
   const preciousMetal = cleanVal(row['贵金属结论']);
-
-  // 前置条件
-  if (qcResult && qcResult !== '通过') return '正常';
 
   const has999 = hasStandalone999(row);
   const isZujin = (preciousMetal === '足金');
@@ -2109,6 +2113,7 @@ function hasStandalone999(row) {
 
 // R4: 足金净金重检查 (2026-06-06 最新逻辑)
 function ruleR4(row) {
+  if (isQCFailed(row)) return '正确';
   const pm = cleanVal(row['贵金属结论']);
   const weight = cleanVal(row['重量']);
   const gemstone = cleanVal(row['宝玉石结论']);
@@ -2197,15 +2202,12 @@ function ruleR4(row) {
 
 // R5: 南红备注检查 (2026-06-08)
 function ruleR5(row) {
-  const qcResult = cleanVal(row['质检结果']);
+  if (isQCFailed(row)) return '正确';
   const remark = cleanVal(row['备注']);
   const gemstone = cleanVal(row['宝玉石结论']);
   const name = cleanVal(row['商品名称']);
   const material = cleanVal(row['商品材质']);
   const fitting = cleanVal(row['配件材质']);
-
-  // 优先级0: 质检结果=不通过 → 正确
-  if (qcResult === '不通过') return '正确';
 
   // 判断1: 触发条件 - 关键字检查（不被括号包裹）
   const keywords = ['南红', '保山红', '凉山红', '川料红', '瓦西', '九口红', '锦红'];
@@ -2226,13 +2228,10 @@ function ruleR5(row) {
 
 // R6: 玛瑙覆膜检查 — 仅适用 商品材质="玛瑙/玉髓（覆膜）" 或 "玛瑙/玉髓"
 function ruleR6(row) {
-  const qcResult = cleanVal(row['质检结果']);
+  if (isQCFailed(row)) return '正确';
   const material = cleanVal(row['商品材质']);
   const gemstone = cleanVal(row['宝玉石结论']);
   const remark = cleanVal(row['备注']);
-
-  // 全局预检：质检结果=不通过 → 正确
-  if (qcResult === '不通过') return '正确';
 
   // 仅当商品材质为"玛瑙/玉髓（覆膜）"或"玛瑙/玉髓"才适用R6，否则→正确
   if (material !== '玛瑙/玉髓（覆膜）' && material !== '玛瑙/玉髓') return '正确';
@@ -2258,6 +2257,7 @@ function ruleR6(row) {
 
 // R7: 非洲翠备注检查
 function ruleR7(row) {
+  if (isQCFailed(row)) return '正确';
   const name = cleanVal(row['商品名称']);
   const material = cleanVal(row['商品材质']);
   const accessory = cleanVal(row['配件材质']);
@@ -2280,6 +2280,7 @@ function ruleR7(row) {
 
 // R8: 合成立方氧化锆备注检查
 function ruleR8(row) {
+  if (isQCFailed(row)) return '正确';
   const accessory = cleanVal(row['配件材质']);
   const gemstone = cleanVal(row['宝玉石结论']);
   const remark = cleanVal(row['备注']);
