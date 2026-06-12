@@ -1971,20 +1971,24 @@ function isQCFailed(row) {
   return cleanVal(row['质检结果']) === '不通过';
 }
 
-// R1: 重量判定 (按流程图: 格式→克重→异常/克重极低/正确)
+// R1: 重量判定 (按流程图: 格式→克重→错误/克重极低/正确)
 function ruleR1(row) {
   if (isQCFailed(row)) return '正确';
   const weight = cleanVal(row['重量']);
   if (!weight) return '';
 
-  // 判断1: 【重量】只有 g或者克（无数值）→ 正确
-  if (weight.trim() === 'g' || weight.trim() === '克') return '正确';
+  // 先去掉括号内的额外说明
+  const cleaned = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
+
+  // 判断1: 去掉括号后只有 g或克（无数值）
+  if (cleaned === 'g' || cleaned === '克') {
+    // 状态非质检中 → 纯单位视为错误
+    return cleanVal(row['状态']) === '质检中' ? '正确' : '错误';
+  }
 
   // 判断2: 格式检查 — 两位小数+g或克，整数不超过3位（如 0.05g / 39.22克）
-  // 允许括号包裹的额外说明
-  const cleaned = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
   const formatMatch = cleaned.match(/^(\d{1,3})\.(\d{2})(g|克)$/);
-  if (!formatMatch) return '异常';
+  if (!formatMatch) return '错误';
 
   // 判断3: ≤0.1g？
   const numVal = parseFloat(formatMatch[1] + '.' + formatMatch[2]);
@@ -1993,11 +1997,13 @@ function ruleR1(row) {
   return '正确';
 }
 
-// R2: 翡翠备注 (按流程图 — 负面词列表)
+// R2: 翡翠备注 (按流程图 — 负面词+结构检查)
 const NEGATIVE_WORDS = ['含其他矿物', '颜色成因未定', '颜色成因未做分析', '成因未做分析', '充填', '修补'];
 
-function hasNegativeWord(remark) {
-  return NEGATIVE_WORDS.some(w => remark.includes(w));
+function hasNegInBracket(remark) {
+  // 检查负面词是否在括号内（如"托帕石（颜色成因未定）"）
+  const brackets = remark.match(/[（(]([^）)]*)[）)]/g) || [];
+  return brackets.some(b => NEGATIVE_WORDS.some(w => b.includes(w)));
 }
 
 function ruleR2(row) {
@@ -2007,17 +2013,29 @@ function ruleR2(row) {
   const hasAmark = remark.includes('翡翠(A货)') || remark.includes('翡翠（A货）');
 
   if (!gemstone.includes('翡翠')) {
-    // 宝玉石结论 ≠ 翡翠：备注有翡翠(A货)→多备注，否则正确
     return hasAmark ? '多备注' : '正确';
   }
 
   // 宝玉石结论 = 翡翠
   if (hasAmark) {
-    // 备注有翡翠(A货) + 含负面词 → 多备注，否则正确
-    return hasNegativeWord(remark) ? '多备注' : '正确';
+    // 有翡翠(A货) + 负面词在同一括号内或括号外 → 多备注；负面词在另一个宝玉石括号内 → 正确
+    const cuiBracket = remark.match(/翡翠[（(][Aa]货[）)]/);
+    if (!cuiBracket) return NEGATIVE_WORDS.some(w => remark.includes(w)) ? '多备注' : '正确';
+    const cuiStart = cuiBracket.index;
+    const cuiEnd = cuiStart + cuiBracket[0].length;
+    // 检查负面词是否在翡翠(A货)之外的括号内（属于其他宝石）
+    const otherBrackets = remark.match(/[（(]([^）)]*)[）)]/g) || [];
+    const negInOtherBracket = otherBrackets.some(b => {
+      const idx = remark.indexOf(b);
+      return idx !== cuiStart && NEGATIVE_WORDS.some(w => b.includes(w));
+    });
+    if (negInOtherBracket) return '正确';  // 负面词属于其他宝石
+    // 负面词在翡翠括号内或括号外 → 多备注
+    return NEGATIVE_WORDS.some(w => remark.includes(w)) ? '多备注' : '正确';
   }
-  // 备注无翡翠(A货)：含负面词 → 漏备注，否则正确
-  return hasNegativeWord(remark) ? '漏备注' : '正确';
+
+  // 无翡翠(A货): 检查是否【其他宝玉石+（负面词）】结构 → 漏备注，否则正确
+  return hasNegInBracket(remark) ? '漏备注' : '正确';
 }
 
 // R3: 金含量备注检查 (按流程图 — 三路径逻辑)
@@ -2068,7 +2086,7 @@ function hasStandalone999(row) {
     const val = cleanVal(row[field]);
     if (!val) continue;
     if (val.includes('足银') && val.includes('999')) continue;
-    if (/(?<!\d)999(?!\d)/.test(val)) return true;
+    if (/(?<![a-zA-Z0-9])999(?![a-zA-Z0-9])/.test(val)) return true;
   }
   return false;
 }
@@ -2087,29 +2105,35 @@ function ruleR4(row) {
       // 宝玉石为空
       const remarkOk = remark === '' || remark === '---' || remark.includes('金含量≥999‰');
       if (remarkOk) {
-        // 备注正常 → 重量仅含净金重? (无数值，括号内只有"净金重")
         const pureWeight = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
-        if (!pureWeight || pureWeight === '净金重') return '正确';
-        // 含数值 + 括号内有额外说明 (如 "1.35g（净金重、含绳）") → 多备注
-        if (/[（(].*净金重.*[、,]/.test(weight)) return '多备注';
-        // 纯数值格式 (如 "1.35g") → 漏备注
-        if (/^\d+\.?\d*g$/.test(pureWeight)) return '漏备注';
-        return '正确';
+        const hasNet = weight.includes('净金重');
+        // 无净金重 + 纯克重格式 → 漏备注净金重（需补充净金重说明）
+                if (!hasNet) {
+          // 无净金重 + 纯克重格式无任何括号说明 → 漏备注净金重
+          const hasBrackets = /[（(]/.test(weight);
+          if (/^\d+\.?\d*g$/.test(pureWeight) && !hasBrackets) return '漏备注净金重';
+          return '正确';
+        }
+        // 只有净金重，无数值 → 正确
+        if (pureWeight === '净金重' || !pureWeight) return '正确';
+        // 含数值 + 括号内仅净金重无额外内容 → 正确
+        const bracketContent = weight.match(/[（(]([^）)]*)[）)]/g) || [];
+        const allPure = bracketContent.every(c => c.replace(/[（(（,]/, '').replace(/[）)]/, '').trim() === '净金重');
+        if (allPure) return '正确';
+        // 含数值 + 括号内有净金重+额外内容 → 多备注
+        return '多备注净金重';
       }
       // 备注不正常 → 重量含净金重? → 多备注/正确
-      const hasNet = weight.includes('净金重');
-      return hasNet ? '多备注' : '正确';
+      return weight.includes('净金重') ? '多备注净金重' : '正确';
     }
     // 宝玉石不为空
     if (!weight) return '正确';
-    const noBracket = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
     if (/(?:净金重.*不含)|(?:不含.*净金重)/.test(weight)) return '正确';
-    if (/^\d+\.?\d*g$/.test(noBracket)) return '正确';
-    return '多备注';
+    return '多备注净金重';
   }
 
   // 分支B: 贵金属结论 ≠ 足金 → 重量含净金重? → 多备注/正确
-  if (weight && weight.includes('净金重')) return '多备注';
+  if (weight && weight.includes('净金重')) return '多备注净金重';
   return '正确';
 }
 
@@ -2131,15 +2155,19 @@ function ruleR5(row) {
   });
 
   if (triggered) {
-    // 备注有南红 → 正确，否则漏备注
     if (!remark.includes('南红')) return '漏备注';
     // 宝玉石结论=玛瑙 + 备注有南红 → 核实
-    if (gemstone === '玛瑙') return '核实';
-    return '正确';
+    return gemstone === '玛瑙' ? '核实' : '正确';
   }
 
-  // 未触发 → 备注是否匹配【配/为/伴】【文字】【南红】
-  if (remark.includes('南红')) return '多备注';
+  // 未触发 → 备注有南红?
+  if (remark.includes('南红')) {
+    // 配/为/伴在南红前面 → 正确
+    if (/[配为伴].*南红/.test(remark)) return '正确';
+    // 宝玉石结论=玛瑙 + 备注有南红 → 需核实
+    if (gemstone === '玛瑙') return '需核实';
+    return '多备注';
+  }
   return '正确';
 }
 
