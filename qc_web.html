@@ -1156,6 +1156,35 @@ td.row-num {
   white-space: normal;
 }
 
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.copy-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.copy-btn:active {
+  color: var(--gold-500);
+  border-color: var(--gold-400);
+  transform: scale(0.95);
+}
+
 /* Chart area */
 .chart-container {
   margin-bottom: 28px;
@@ -2745,8 +2774,15 @@ function showDetail(idx) {
   `;
 
   for (const f of allFields) {
-    const val = cleanVal(row[f]);
-    html += `<div class="detail-item"><div class="detail-label">${f}</div><div class="detail-value">${esc(val) || '-'}</div></div>`;
+    let val = cleanVal(row[f]);
+    let copyBtn = '';
+    // 订单码：10位显示 + 复制按钮
+    if (f === '订单码') {
+      const padded = padOrderCode(row[f]);
+      val = padded;
+      copyBtn = `<button class="copy-btn" onclick="event.stopPropagation();copyToClipboard('${esc(padded)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+    }
+    html += `<div class="detail-item"><div class="detail-label">${f}</div><div class="detail-value">${esc(val) || '-'}${copyBtn}</div></div>`;
   }
 
   html += '</div>';
@@ -2920,6 +2956,14 @@ function esc(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制：' + text);
+  }).catch(() => {
+    showToast('复制失败，请手动复制', 'error');
+  });
 }
 
 function truncate(str, len) {
