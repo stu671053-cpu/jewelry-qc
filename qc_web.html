@@ -2115,25 +2115,25 @@ function ruleR4(row) {
     const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰';
 
     if (remarkOk) {
-      // yes: 【重量】仅含（净金重）？
+      // yes: 【重量】含 "()" ？（有括号）
       const pureWeight = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
-      // 提取括号内容，去掉括号符号
-      const brackets = weight.match(/[（(]([^）)]*)[）)]/g) || [];
-      const bracketText = brackets.map(b => b.replace(/[（(）)]/g, '').trim()).join('');
+      const hasBrackets = /[（(]/.test(weight);
 
-      // 仅含净金重 = 括号内只有"净金重"（或净金重+不含x）
-      const isOnlyNetGold = bracketText === '净金重' ||
-        /^净金重[、,，]?不含/.test(bracketText);
-
-      if (isOnlyNetGold) return '正确';
-
-      // n → 净金重+含绳等额外内容（如"净金重、含绳"、"净金重,含链"）→ 多备注
-      if (bracketText.includes('净金重') && /[含配]/.test(bracketText.replace('净金重', ''))) {
-        return '多备注';
+      if (hasBrackets) {
+        // y: 格式为 1.35g (净金重、含x) ？
+        // 提取括号内容
+        const bracketContent = weight.match(/[（(]([^）)]*)[）)]/);
+        const bracketText = bracketContent ? bracketContent[1].replace(/[、,，]/g, '').trim() : '';
+        // 含"净金重"且括号内还有其他内容（含/配等）→ 多备注
+        if (bracketText.includes('净金重') && bracketText.replace('净金重', '').length > 0) {
+          return '多备注';
+        }
+        return '正确';
+      } else {
+        // n: 格式为纯克重如1.35g？
+        if (/^\d+\.?\d*g$/.test(pureWeight)) return '漏备注';
+        return '正确';
       }
-      // n → 1.35g（纯克重，括号内无净金重）→ 漏备注
-      if (/^\d+\.?\d*g$/.test(pureWeight)) return '漏备注';
-      return '正确';
     } else {
       // n: 【重量】是否含（净金重）？
       return weight.includes('净金重') ? '多备注' : '正确';
