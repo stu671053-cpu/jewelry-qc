@@ -901,7 +901,12 @@ td.row-num {
   color: var(--blue-400);
   border: 1px solid rgba(96,165,250,0.22);
 }
-* Empty state */
+.badge-warn {
+  background: rgba(245,158,11,0.10);
+  color: var(--amber-400);
+  border: 1px solid rgba(245,158,11,0.22);
+}
+/* Empty state */
 .empty-state {
   padding: 64px 32px;
   text-align: center;
@@ -2152,9 +2157,13 @@ function ruleR5(row) {
   if (isQCFailed(row)) return '正确';
   const remark = cleanVal(row['备注']);
   const gemstone = cleanVal(row['宝玉石结论']);
+  const metal = cleanVal(row['贵金属结论']);
   const name = cleanVal(row['商品名称']);
   const material = cleanVal(row['商品材质']);
   const fitting = cleanVal(row['配件材质']);
+
+  // 宝玉石结论和贵金属结论同时为空 → 正确
+  if (!gemstone && !metal) return '正确';
 
   const keywords = ['南红', '保山红', '凉山红', '川料红', '瓦西', '九口红', '锦红'];
   const triggered = [name, material, fitting].some(field => {
@@ -2680,14 +2689,15 @@ function renderTable(data) {
 function renderBadge(val) {
   if (!val) return '<span class="badge badge-error">异常</span>';
   const v = String(val).trim();
-  // 正常/正确 -> 绿色
+  // 正确/正常 → 绿色
   if (v === '正常' || v === '正确') return '<span class="badge badge-ok">正确</span>';
-  // 包含"异常" -> 红色
-  if (v.includes('异常')) return '<span class="badge badge-error">' + esc(v) + '</span>';
-  // 需核实 -> 蓝色
-  if (v === '需核实') return '<span class="badge badge-info">需核实</span>';
-  // 其他情况：包含"正确"/"ok"/"OK" -> 绿色，否则红色
-  if (v.includes('正确') || v.toLowerCase().includes('ok')) return '<span class="badge badge-ok">正确</span>';
+  // 克重极低 → 黄色
+  if (v.includes('克重极低')) return '<span class="badge badge-warn">克重极低</span>';
+  // 包含"核实"或"核对" → 蓝色
+  if (v.includes('核实') || v.includes('核对')) return '<span class="badge badge-info">' + esc(v) + '</span>';
+  // 包含"正确" → 绿色
+  if (v.includes('正确')) return '<span class="badge badge-ok">正确</span>';
+  // 其余 → 红色
   return '<span class="badge badge-error">' + esc(truncate(v, 10)) + '</span>';
 }
 
@@ -2783,35 +2793,44 @@ function exportResults() {
   }
 
   // 导出完整表格：原表所有字段 + 8条规则处理结果
-  // 不受筛选影响（筛选逻辑已注释，如需恢复请联系开发者）
-  const allKeys = new Set();
-  // 按照原始Excel列顺序添加字段
+  // 不受筛选影响。导出时智能过滤空列，不修改原数据。
+  const ruleLabels = ruleMeta.map(r => r.short);
+
+  // 候选列：originalHeaders 中的真实字段 + _row 中的非内部字段
+  const candidateKeys = new Set();
   if (originalHeaders.length > 0) {
     originalHeaders.forEach(h => {
-      if (h) allKeys.add(h);
-    });
-    // 补充可能缺失的字段
-    processedData.forEach(d => {
-      Object.keys(d._row).forEach(k => allKeys.add(k));
-    });
-  } else {
-    processedData.forEach(d => {
-      Object.keys(d._row).forEach(k => allKeys.add(k));
+      if (h && !h.startsWith('Column_') && h !== '订单码') candidateKeys.add(h);
     });
   }
+  // 补充 _row 中的实际 key（排除 XLSX 内部键）
+  processedData.forEach(d => {
+    Object.keys(d._row).forEach(k => {
+      if (k && k !== '订单码' && !k.startsWith('__') && !k.startsWith('Column_')) {
+        candidateKeys.add(k);
+      }
+    });
+  });
 
-  const ruleLabels = ruleMeta.map(r => r.short);
-  const headerOrder = ['#', '订单码', ...Array.from(allKeys), ...ruleLabels];
+  // 只保留有实际数据的列（至少一行有非空值）
+  const allKeys = [];
+  candidateKeys.forEach(k => {
+    const hasData = processedData.some(d => {
+      const v = d._row[k];
+      return v != null && String(v).trim() !== '';
+    });
+    if (hasData) allKeys.push(k);
+  });
+
+  const headerOrder = ['#', '订单码', ...allKeys, ...ruleLabels];
 
   const exportData = processedData.map(d => {
     const row = {};
     row['#'] = d._idx;
-    row['订单码'] = d._row['订单码'] || '';
-    // 原表所有字段
+    row['订单码'] = cleanVal(d._row['订单码']) || '';
     allKeys.forEach(k => {
-      row[k] = d._row[k] || '';
+      row[k] = d._row[k] != null ? d._row[k] : '';
     });
-    // 8条规则结果列
     ruleMeta.forEach(r => {
       row[r.short] = d[r.id] || '';
     });
@@ -2819,6 +2838,17 @@ function exportResults() {
   });
 
   const ws = XLSX.utils.json_to_sheet(exportData, { header: headerOrder });
+  // 设置列宽，避免过宽
+  const colWidths = headerOrder.map((h, i) => {
+    if (h === '#') return { wch: 6 };
+    if (h === '订单码') return { wch: 16 };
+    // 规则列
+    if (ruleLabels.includes(h)) return { wch: 14 };
+    // 普通字段列
+    const maxLen = Math.min(Math.max(h.length + 4, 10), 40);
+    return { wch: maxLen };
+  });
+  ws['!cols'] = colWidths;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '审查结果');
   XLSX.writeFile(wb, '珠宝质检审查结果.xlsx');
