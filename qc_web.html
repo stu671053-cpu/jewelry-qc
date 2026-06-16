@@ -1937,6 +1937,12 @@ function handleFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
+function padOrderCode(val) {
+  if (!val && val !== 0) return '';
+  const s = typeof val === 'number' ? String(Math.floor(val)) : String(val).trim();
+  return s.padStart(10, '0');
+}
+
 // ==================== Rules Engine (JS) ====================
 
 // Excel日期序列号转字符串
@@ -2519,7 +2525,7 @@ function applyFilters() {
     if (search) {
       filtered = filtered.filter(d => {
         const name = cleanVal(d._row['商品名称']).toLowerCase();
-        const orderCode = cleanVal(d._row['订单码']||'').toLowerCase();
+        const orderCode = padOrderCode(d._row['订单码']).toLowerCase();
         return name.includes(search) || orderCode.includes(search);
       });
     }
@@ -2545,7 +2551,7 @@ function getVisibleColumns() {
     // 显示所有基础字段（按照原始Excel列顺序） + 所有可见规则列
     const fieldsToShow = originalHeaders.length > 0 ? originalHeaders : ['商品名称', '重量', '宝玉石结论', '贵金属结论', '备注'];
     fieldsToShow.forEach(f => {
-      if (f && !cols.some(c => c.field === f)) {
+      if (f && !cols.some(c => c.field === f || c.label === f)) {
         cols.push({ type: 'field', field: f, label: f });
       }
     });
@@ -2556,7 +2562,7 @@ function getVisibleColumns() {
     // 只显示筛选规则的源字段 + 该规则结果列
     const src = ruleSourceFields[appliedRuleFilter] || [];
     src.forEach(f => {
-      if (!cols.some(c => c.field === f)) {
+      if (!cols.some(c => c.field === f || c.label === f)) {
         cols.push({ type: 'field', field: f, label: f });
       }
     });
@@ -2671,7 +2677,7 @@ function renderTable(data) {
       if (c.type === 'index') {
         rowHtml += `<td class="row-num sticky-col" id="col-num">${d._idx}</td>`;
       } else if (c.type === 'order-code') {
-        const val = cleanVal(d._row['订单码']||'');
+        const val = padOrderCode(d._row['订单码']);
         rowHtml += `<td class="sticky-col" id="col-order-code" title="${esc(val)}">${esc(truncate(val, 18))}</td>`;
       } else if (c.type === 'field') {
         const val = cleanVal(d._row[c.field]);
@@ -2827,7 +2833,8 @@ function exportResults() {
   const exportData = processedData.map(d => {
     const row = {};
     row['#'] = d._idx;
-    row['订单码'] = cleanVal(d._row['订单码']) || '';
+    // 订单码：10位数字，配合导出格式 0000000000
+    row['订单码'] = parseInt(padOrderCode(d._row['订单码']), 10) || '';
     allKeys.forEach(k => {
       row[k] = d._row[k] != null ? d._row[k] : '';
     });
@@ -2838,7 +2845,17 @@ function exportResults() {
   });
 
   const ws = XLSX.utils.json_to_sheet(exportData, { header: headerOrder });
-  // 设置列宽，避免过宽
+
+  // 订单码列（B列，index=1）设为 10 位数字格式，保留前导0
+  const sheetRange = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = sheetRange.s.r + 1; R <= sheetRange.e.r; R++) {
+    const addr = XLSX.utils.encode_cell({ r: R, c: 1 });
+    if (ws[addr] && typeof ws[addr].v === 'number') {
+      ws[addr].z = '0000000000';
+    }
+  }
+
+  // 设置列宽
   const colWidths = headerOrder.map((h, i) => {
     if (h === '#') return { wch: 6 };
     if (h === '订单码') return { wch: 16 };
