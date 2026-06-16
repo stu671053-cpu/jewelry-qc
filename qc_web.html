@@ -2855,6 +2855,22 @@ function exportResults() {
     }
   }
 
+  // 长数字ID列（如质检批次号）：强制文本类型，防止科学计数法
+  const idLikeCols = ['质检批次号', '批次号', '编号', '检测编号'];
+  idLikeCols.forEach(idCol => {
+    const ci = headerOrder.indexOf(idCol);
+    if (ci >= 0) {
+      for (let R = sheetRange.s.r + 1; R <= sheetRange.e.r; R++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: ci });
+        if (ws[addr] && ws[addr].v != null && ws[addr].t !== 's') {
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v);
+          delete ws[addr].z; // 清除数字格式
+        }
+      }
+    }
+  });
+
   // 设置列宽
   const colWidths = headerOrder.map((h, i) => {
     if (h === '#') return { wch: 6 };
