@@ -1055,6 +1055,7 @@ td.row-num {
   .mascot-float { width: 100px; top: -6px; right: -6px; }
 }
 
+/* === DISABLED: Detail modal ===
 /* Detail modal */
 .modal-overlay {
   display: none;
@@ -1183,6 +1184,44 @@ td.row-num {
   color: var(--gold-500);
   border-color: var(--gold-400);
   transform: scale(0.95);
+}
+
+*/
+/* Table copy button */
+.copy-btn-tbl {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  margin-left: auto;
+}
+
+.copy-btn-tbl:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.copy-btn-tbl:active {
+  color: var(--gold-500);
+  background: var(--gold-100);
+  transform: scale(0.92);
+}
+
+.order-code-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Chart area */
@@ -1608,7 +1647,7 @@ td.row-num {
   pointer-events: none;
 }
 .col-num { left: 0; }
-.col-order-code { left: 50px; }
+.col-order-code { left: 50px; display: flex; align-items: center; gap: 6px; }
 
 /* Column Resize Handle */
 .col-resize-handle {
@@ -1638,8 +1677,8 @@ td.row-num {
 
 <div class="toast" id="toast"></div>
 
-<div class="modal-overlay" id="detailModal">
-  <div class="modal" id="modalContent"></div>
+<!-- <div class="modal-overlay" id="detailModal">
+  <div class="modal" id="modalContent"></div> -->
 </div>
 
 <div class="app-container">
@@ -2830,14 +2869,14 @@ function renderTable(data) {
 
   tbody.innerHTML = data.map(d => {
     const rowClass = d._status === 'error' ? 'error-row' : '';
-    let rowHtml = `<tr class="${rowClass}" onclick="showDetail(${d._idx - 1})" style="cursor:pointer">`;
+    let rowHtml = `<tr class="${rowClass}"  style="cursor:pointer">`;
 
     cols.forEach(c => {
       if (c.type === 'index') {
         rowHtml += `<td class="row-num sticky-col col-num">${d._idx}</td>`;
       } else if (c.type === 'order-code') {
         const val = padOrderCode(d._row['订单码']);
-        rowHtml += `<td class="sticky-col col-order-code" title="${esc(val)}">${esc(truncate(val, 18))}</td>`;
+        rowHtml += `<td class="sticky-col col-order-code" title="${esc(val)}"><span class="order-code-text">${esc(truncate(val, 18))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td>`;
       } else if (c.type === 'field') {
         const val = cleanVal(d._row[c.field]);
         rowHtml += `<td title="${esc(val)}">${esc(truncate(val, 20))}</td>`;
@@ -2890,6 +2929,7 @@ function renderPagination(total, totalPages) {
   document.getElementById('pagination').innerHTML = html;
 }
 
+/* === DISABLED: Detail Modal ===
 // ==================== Detail Modal ====================
 function showDetail(idx) {
   const d = processedData[idx];
@@ -2929,6 +2969,7 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('detailModal')) closeModal();
 });
 
+*/
 // ==================== Filters & Pagination ====================
 function goPage(p) {
   currentPage = p;
