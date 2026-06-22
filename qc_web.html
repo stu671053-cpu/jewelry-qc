@@ -2205,9 +2205,8 @@ function ruleR4(row) {
   // 分支A: 贵金属结论 = 足金（n → 不在本图，返回正确）
   if (pm !== '足金') return '正确';
 
-  // 第一步：重量包含"不含"？（先去掉括号内容，括号内是有效排除说明）
-  const weightNoBrackets = weight ? weight.replace(/[（(][^）)]*[）)]/g, '').trim() : '';
-  if (weight && weightNoBrackets.includes('不含')) {
+  // 第一步：重量包含"不含"且宝玉石结论不为空
+  if (weight && /不含/.test(weight) && gemstone) {
     // y: 重量含"净金重"？
     if (weight.includes('净金重')) return '正确';
     return '漏备注';
