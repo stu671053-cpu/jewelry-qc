@@ -2205,13 +2205,11 @@ function ruleR4(row) {
   // 分支A: 贵金属结论 = 足金（n → 不在本图，返回正确）
   if (pm !== '足金') return '正确';
 
-  // 第一步：重量包含"不含"？（如"不含链"、"不含石"、"不含绳"等）
-  if (weight && /不含/.test(weight)) {
+  // 第一步：重量包含"不含"？（先去掉括号内容，括号内是有效排除说明）
+  const weightNoBrackets = weight ? weight.replace(/[（(][^）)]*[）)]/g, '').trim() : '';
+  if (weight && weightNoBrackets.includes('不含')) {
     // y: 重量含"净金重"？
     if (weight.includes('净金重')) return '正确';
-    // n: "不含"在括号内 → 有效排除说明（如"（不含绳）"），视为正确
-    const bracketContent = weight.match(/[（(]([^）)]*)[）)]/);
-    if (bracketContent && bracketContent[1].includes('不含')) return '正确';
     return '漏备注';
   }
 
