@@ -1782,7 +1782,7 @@ td.row-num {
       <div class="rule-card" id="rule-r9">
         <div class="rule-indicator"></div>
         <div class="rule-content">
-          <div class="rule-name">R9 · 商称核对</div>
+          <div class="rule-name">R9 · 款式核实</div>
           <div class="rule-desc">核对商品名称中的类别与饰品类型是否一致</div>
         </div>
         <div class="rule-toggle active" data-rule="r9" onclick="toggleRule(this)"></div>
@@ -1860,7 +1860,7 @@ td.row-num {
                 <label><input type="checkbox" value="r6" onchange="updatePendingRules(this)"> R6 玛瑙（覆膜）</label>
                 <label><input type="checkbox" value="r7" onchange="updatePendingRules(this)"> R7 非洲翠备注</label>
                 <label><input type="checkbox" value="r8" onchange="updatePendingRules(this)"> R8 合成立方氧化锆备注</label>
-                <label><input type="checkbox" value="r9" onchange="updatePendingRules(this)"> R9 商称核对</label>
+                <label><input type="checkbox" value="r9" onchange="updatePendingRules(this)"> R9 款式核实</label>
                 <label><input type="checkbox" value="r10" onchange="updatePendingRules(this)"> R10 重量比对</label>
               </div>
             </div>
@@ -1891,7 +1891,7 @@ td.row-num {
             <th>R6 玛瑙（覆膜）</th>
             <th>R7 非洲翠备注</th>
             <th>R8 合成立方氧化锆备注</th>
-            <th>R9 商称核对</th>
+            <th>R9 款式核实</th>
             <th>R10 重量比对</th>
           </tr>
         </thead>
@@ -1940,7 +1940,7 @@ const ruleMeta = [
   { id: 'r6', name: 'R6 玛瑙（覆膜）', short: 'R6 玛瑙（覆膜）' },
   { id: 'r7', name: 'R7 非洲翠备注', short: 'R7 非洲翠备注' },
   { id: 'r8', name: 'R8 合成立方氧化锆备注', short: 'R8 合成立方氧化锆备注' },
-  { id: 'r9', name: 'R9 商称核对', short: 'R9 商称核对' },
+  { id: 'r9', name: 'R9 款式核实', short: 'R9 款式核实' },
   { id: 'r10', name: 'R10 重量比对', short: 'R10 重量比对' },
 ];
 
@@ -2365,7 +2365,7 @@ function ruleR8(row) {
   }
 }
 
-// R9: 商称核对 — 按流程图
+// R9: 款式核实 — 按流程图
 function ruleR9(row) {
   if (isQCFailed(row)) return '正确';
   const name = cleanVal(row['商品名称']);
@@ -2678,7 +2678,7 @@ function renderChart() {
     { id: 'r6', name: 'R6 玛瑙（覆膜）', color: 'var(--gold-400)' },
     { id: 'r7', name: 'R7 非洲翠备注', color: 'var(--green-400)' },
     { id: 'r8', name: 'R8 合成立方氧化锆备注', color: 'var(--amber-400)' },
-    { id: 'r9', name: 'R9 商称核对', color: 'var(--green-400)' },
+    { id: 'r9', name: 'R9 款式核实', color: 'var(--green-400)' },
     { id: 'r10', name: 'R10 重量比对', color: 'var(--amber-400)' },
   ];
   const ruleNames = ruleNamesFull.filter(r => columnFilterState[r.id]);
