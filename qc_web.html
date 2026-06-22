@@ -2377,6 +2377,9 @@ function ruleR9(row) {
   // 前置：饰品类型=="饰品"过于泛化，无法核对 → 正确
   if (jewelryType === '饰品') return '正确';
 
+  // 同步判断：商品名称直接包含饰品类型文字 → 正确
+  if (name.includes(jewelryType)) return '正确';
+
   // 饰品类型词列表
   const typeWords = ['摆件', '吊坠', '耳饰', '挂件', '挂坠', '戒指', '链坠', '饰品', '手串', '手链', '手镯', '项链'];
 
