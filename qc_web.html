@@ -1055,7 +1055,6 @@ td.row-num {
   .mascot-float { width: 100px; top: -6px; right: -6px; }
 }
 
-/* === DISABLED: Detail modal ===
 /* Detail modal */
 .modal-overlay {
   display: none;
@@ -1186,7 +1185,6 @@ td.row-num {
   transform: scale(0.95);
 }
 
-*/
 /* Table copy button */
 .copy-btn-tbl {
   flex-shrink: 0;
@@ -1677,8 +1675,8 @@ td.row-num {
 
 <div class="toast" id="toast"></div>
 
-<!-- <div class="modal-overlay" id="detailModal">
-  <div class="modal" id="modalContent"></div> -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" id="modalContent"></div>
 </div>
 
 <div class="app-container">
@@ -2878,7 +2876,7 @@ function renderTable(data) {
 
   tbody.innerHTML = data.map(d => {
     const rowClass = d._status === 'error' ? 'error-row' : '';
-    let rowHtml = `<tr class="${rowClass}"  style="cursor:pointer">`;
+    let rowHtml = `<tr class="${rowClass}" onclick="showDetail(${d._idx - 1})" style="cursor:pointer">`;
 
     cols.forEach(c => {
       if (c.type === 'index') {
@@ -2938,7 +2936,6 @@ function renderPagination(total, totalPages) {
   document.getElementById('pagination').innerHTML = html;
 }
 
-/* === DISABLED: Detail Modal ===
 // ==================== Detail Modal ====================
 function showDetail(idx) {
   const d = processedData[idx];
@@ -2978,7 +2975,6 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('detailModal')) closeModal();
 });
 
-*/
 // ==================== Filters & Pagination ====================
 function goPage(p) {
   currentPage = p;
