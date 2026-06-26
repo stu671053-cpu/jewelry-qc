@@ -2130,16 +2130,17 @@ function ruleR3(row) {
   const isMetalZujin = (metal === '足金');
   const hasGoldContent = remark.includes('金含量≥999‰');
 
-  // 路径3：主逻辑 — 字段含"999"
+  // 路径2：字段不含独立999
   if (!has999) {
-    if (!hasZujin) {
-      return isMetalZujin
-        ? (hasGoldContent ? '需再次核对确认' : '正确')
-        : (hasGoldContent ? '多备注' : '正确');
+    if (hasZujin) {
+      return isMetalZujin ? '正确' : '需核实结论';
+    } else {
+      if (isMetalZujin) {
+        return hasGoldContent ? '需再次核对确认' : '正确';
+      } else {
+        return hasGoldContent ? '多备注' : '正确';
+      }
     }
-    return isMetalZujin
-      ? (hasGoldContent ? '需再次核对确认' : '正确')
-      : '需核实结论';
   }
 
   if (hasZujin) {
@@ -2206,6 +2207,8 @@ function ruleR4(row) {
         return '正确';
       }
     } else {
+      // n: 备注含"未检"（如配链未检/xx未检）→ 正确
+      if (/未检/.test(remark)) return '正确';
       // n: 【重量】是否含（净金重）？
       return weight.includes('净金重') ? '多备注' : '正确';
     }
