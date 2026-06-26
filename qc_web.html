@@ -210,17 +210,6 @@ body {
   border-color: var(--gold-300);
 }
 
-.btn-ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--text-secondary);
-}
-
-.btn-ghost:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-
 /* Upload Section */
 .upload-section {
   margin-bottom: 28px;
@@ -759,25 +748,6 @@ body {
 }
 .search-box:focus-within {
   border-color: var(--gold-400);
-}
-
-.search-box input {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 13px;
-  outline: none;
-  width: 160px;
-  font-family: var(--font-body);
-}
-
-.search-box input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.search-icon {
-  color: var(--text-tertiary);
-  font-size: 14px;
 }
 
 /* Table */
@@ -2754,6 +2724,8 @@ function getVisibleColumns() {
     });
   } else {
     // 只显示筛选规则的源字段 + 该规则结果列
+    // 始终显示 【状态】字段
+    cols.push({ type: 'field', field: '状态', label: '状态' });
     const src = ruleSourceFields[appliedRuleFilter] || [];
     src.forEach(f => {
       if (!cols.some(c => c.field === f || c.label === f)) {
