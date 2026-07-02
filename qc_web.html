@@ -708,6 +708,32 @@ body {
   gap: 8px;
 }
 
+.field-filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(201,169,110,0.08);
+  border: 1px solid rgba(201,169,110,0.25);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--gold-300);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+.field-filter-close {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-left: 2px;
+  font-weight: 500;
+}
+.field-filter-close:hover { opacity: 1; }
+.field-filter-tag:hover {
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.12);
+}
+
 .search-box {
   display: flex;
   align-items: center;
@@ -1513,6 +1539,111 @@ td.row-num {
   box-shadow: 0 2px 8px rgba(201,169,110,0.25);
 }
 
+/* ========== Field Filter Dropdown ========== */
+.field-filter-dropdown {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 160px;
+  max-width: 280px;
+  max-height: 340px;
+  overflow: hidden;
+}
+.field-filter-dropdown.active { display: flex; flex-direction: column; }
+.field-filter-header {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gold-300);
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-display);
+}
+.field-filter-list {
+  flex: 1;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.field-filter-list::-webkit-scrollbar { width: 4px; }
+.field-filter-list::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+.field-filter-item {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 100ms;
+}
+.field-filter-item:hover {
+  background: var(--bg-elevated);
+  color: var(--gold-400);
+}
+.field-filter-item.active {
+  background: rgba(201,169,110,0.12);
+  color: var(--gold-300);
+  font-weight: 500;
+}
+.field-filter-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px 10px;
+}
+.field-filter-clear {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 100ms;
+}
+.field-filter-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+}
+.field-filter-clear:active { background: var(--bg-surface); }
+
+/* Column filter button on table headers */
+.col-filter-btn {
+  margin-left: 4px;
+  cursor: pointer;
+  font-size: 9px;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: transparent;
+  padding: 1px 4px;
+  vertical-align: middle;
+  transition: all 100ms;
+}
+.col-filter-btn:hover {
+  color: var(--gold-300);
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.08);
+}
+.col-filter-btn.active {
+  color: var(--gold-300);
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.15);
+}
+th.has-filter { cursor: default; }
+
 /* ========== Header Brand Enhancement ========== */
 .brand-text {
   display: flex;
@@ -1616,6 +1747,7 @@ td.row-num {
 }
 .col-num { left: 0; }
 .col-order-code { left: 50px; display: flex; align-items: center; gap: 6px; }
+.col-batch { left: 180px; display: flex; align-items: center; gap: 6px; }
 
 /* Column Resize Handle */
 .col-resize-handle {
@@ -1799,6 +1931,7 @@ td.row-num {
           <span class="search-icon">⌕</span>
           <input type="text" id="searchInput" placeholder="搜索 订单码/商品名称...">
         </div>
+        <span class="field-filter-tag" id="fieldFilterTag" style="display:none" onclick="clearFieldFilter()"></span>
       </div>
       <div class="toolbar-right">
         <div class="filter-wrapper">
@@ -1867,6 +2000,17 @@ td.row-num {
       </table>
     </div>
     <div class="pagination" id="pagination"></div>
+
+    <!-- Field filter dropdown -->
+    <div class="field-filter-dropdown" id="fieldFilterDropdown">
+      <div class="field-filter-header">
+        <span id="fieldFilterDropdownTitle"></span>
+      </div>
+      <div class="field-filter-list" id="fieldFilterList"></div>
+      <div class="field-filter-footer">
+        <button class="field-filter-clear" onclick="clearFieldFilter()">清除筛选</button>
+      </div>
+    </div>
   </section>
 
   <footer class="app-footer">
@@ -1889,6 +2033,7 @@ let originalHeaders = []; // 保存原始Excel列顺序
 // Filter state (applied after confirm)
 let appliedStatus = 'all';      // 'all' | 'error' | 'ok'
 let appliedRuleFilter = 'all';  // 'all' | 'r1'..'r8'
+let fieldFilter = { field: '', value: '' }; // 字段值筛选
 
 // Pending filter state (before confirm)
 let pendingStatus = 'all';
@@ -2354,33 +2499,32 @@ function ruleR9(row) {
   // 饰品类型词列表
   const typeWords = ['摆件', '吊坠', '耳饰', '挂件', '挂坠', '戒指', '链坠', '饰品', '手串', '手链', '手镯', '项链'];
 
-  // 找到商品名称中第一个匹配的饰品类型词
-  let matchedWord = '';
-  let matchedIndex = Infinity;
+  // 收集商品名称中所有匹配的饰品类型词
+  const matchedWords = [];
   for (const w of typeWords) {
-    const idx = name.indexOf(w);
-    if (idx >= 0 && idx < matchedIndex) {
-      matchedIndex = idx;
-      matchedWord = w;
-    }
+    if (name.indexOf(w) >= 0) matchedWords.push(w);
   }
 
   // 不含饰品类型词 → 正确
-  if (!matchedWord) return '正确';
+  if (matchedWords.length === 0) return '正确';
 
-  // 饰品类型词为"饰品" → 正确（过于泛化，无法确定具体类别）
-  if (matchedWord === '饰品') return '正确';
+  // 过滤掉"饰品"（过于泛化）
+  const filtered = matchedWords.filter(w => w !== '饰品');
+  if (filtered.length === 0) return '正确';
 
-  // 别名映射：吊坠/挂件/挂坠 → 吊坠类，手串/手链 → 手串类
+  // 别名映射：吊坠/挂件/挂坠/项链/链坠 ↔ 项链，手串/手链 ↔ 手串
   const aliasMap = {
-    '挂件': '吊坠', '挂坠': '吊坠',
+    '吊坠': '项链', '挂件': '项链', '挂坠': '项链', '链坠': '项链',
     '手链': '手串'
   };
-  const normalizedWord = aliasMap[matchedWord] || matchedWord;
   const normalizedType = aliasMap[jewelryType] || jewelryType;
 
-  // 归一化后的类别相同即可（同类互认）
-  return normalizedWord === normalizedType ? '正确' : '异常';
+  // 遍历所有匹配词，只要有一个归一后与饰品类型一致即正确
+  for (const w of filtered) {
+    const normalizedWord = aliasMap[w] || w;
+    if (normalizedWord === normalizedType) return '正确';
+  }
+  return '异常';
 }
 
 // R10: 重量比对 — 按流程图
@@ -2507,6 +2651,7 @@ function confirmFilterPanel() {
     appliedRuleFilter = 'all';
   }
   updateFilterBadge();
+  fieldFilter = { field: '', value: '' };
   const dd = document.getElementById('filterDropdown');
   const btn = document.getElementById('filterBtn');
   if (dd) dd.classList.remove('active');
@@ -2520,6 +2665,7 @@ function resetFilterPanel() {
   pendingRules = [];
   appliedStatus = 'all';
   appliedRuleFilter = 'all';
+  fieldFilter = { field: '', value: '' };
   document.querySelectorAll('.filter-status-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.status === 'all');
     b.style.display = '';
@@ -2558,6 +2704,97 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// ==================== Field Filter ====================
+function toggleFieldFilter(event, field) {
+  const dd = document.getElementById('fieldFilterDropdown');
+  const btn = event.target;
+
+  if (dd.classList.contains('active') && dd.dataset.field === field) {
+    dd.classList.remove('active');
+    return;
+  }
+
+  dd.dataset.field = field;
+  const isRule = field.startsWith('r') && /^r\d+$/.test(field);
+  const meta = isRule ? ruleMeta.find(r => r.id === field) : null;
+  const title = meta ? meta.short : field;
+  document.getElementById('fieldFilterDropdownTitle').textContent = '按 ' + title + ' 筛选';
+
+  // 从当前已筛选的异常数据中收集去重值
+  let filtered = processedData;
+  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status !== 'ok');
+  else if (appliedStatus === 'ok') filtered = filtered.filter(d => d._status === 'ok');
+  if (appliedRuleFilter !== 'all') {
+    filtered = filtered.filter(d => {
+      const val = d[appliedRuleFilter];
+      return val && val !== '正常' && val !== '正确' && val !== '';
+    });
+  }
+
+  const values = [];
+  const seen = new Set();
+  for (const d of filtered) {
+    const v = isRule ? String(d[field] || '') : cleanVal(d._row[field]);
+    if (v && !seen.has(v)) { seen.add(v); values.push(v); }
+  }
+  values.sort();
+
+  const list = document.getElementById('fieldFilterList');
+  list.innerHTML = values.map(v => {
+    const activeClass = fieldFilter.field === field && fieldFilter.value === v ? ' active' : '';
+    const display = esc(truncate(v, 30));
+    return `<button class="field-filter-item${activeClass}" onclick="setFieldFilter('${esc(field)}', '${esc(v)}')">${display}</button>`;
+  }).join('');
+
+  const rect = btn.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = Math.min(rect.left, window.innerWidth - 310) + 'px';
+  dd.classList.add('active');
+}
+
+function setFieldFilter(field, value) {
+  if (fieldFilter.field === field && fieldFilter.value === value) {
+    fieldFilter = { field: '', value: '' };
+  } else {
+    fieldFilter = { field: field, value: value };
+  }
+  const dd = document.getElementById('fieldFilterDropdown');
+  dd.classList.remove('active');
+  currentPage = 1;
+  updateFieldFilterBadge();
+  applyFilters();
+}
+
+function clearFieldFilter() {
+  fieldFilter = { field: '', value: '' };
+  const dd = document.getElementById('fieldFilterDropdown');
+  if (dd) dd.classList.remove('active');
+  updateFieldFilterBadge();
+  applyFilters();
+}
+
+function updateFieldFilterBadge() {
+  const el = document.getElementById('fieldFilterTag');
+  if (!el) return;
+  if (fieldFilter.field && fieldFilter.value) {
+    // 规则列显示规则名称，字段列显示字段名
+    const isRule = fieldFilter.field.startsWith('r') && /^r\d+$/.test(fieldFilter.field);
+    const meta = isRule ? ruleMeta.find(r => r.id === fieldFilter.field) : null;
+    const label = meta ? meta.short : fieldFilter.field;
+    el.innerHTML = `${esc(label)}: ${esc(truncate(fieldFilter.value, 15))} <span class="field-filter-close" onclick="event.stopPropagation();clearFieldFilter()">x</span>`;
+    el.style.display = 'inline-flex';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// Close field filter dropdown on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.field-filter-dropdown') && !e.target.closest('.col-filter-btn')) {
+    const dd = document.getElementById('fieldFilterDropdown');
+    if (dd) dd.classList.remove('active');
+  }
+});
 
 // ==================== Processing ====================
 function processAndRender() {
@@ -2689,11 +2926,24 @@ function applyFilters() {
     });
   }
 
+  // Field value filter
+  if (fieldFilter.field && fieldFilter.value) {
+    const isRule = fieldFilter.field.startsWith('r') && /^r\d+$/.test(fieldFilter.field);
+    filtered = filtered.filter(d => {
+      const val = isRule ? String(d[fieldFilter.field] || '') : cleanVal(d._row[fieldFilter.field]);
+      return val === fieldFilter.value;
+    });
+    updateFieldFilterBadge();
+  } else {
+    updateFieldFilterBadge();
+  }
+
     if (search) {
       filtered = filtered.filter(d => {
         const name = cleanVal(d._row['商品名称']).toLowerCase();
         const orderCode = padOrderCode(d._row['订单码']).toLowerCase();
-        return name.includes(search) || orderCode.includes(search);
+        const batch = cleanVal(d._row['入库批次号']).toLowerCase();
+        return name.includes(search) || orderCode.includes(search) || batch.includes(search);
       });
     }
 
@@ -2708,10 +2958,11 @@ function applyFilters() {
 }
 
 function getVisibleColumns() {
-  // 始终显示 # 和 订单码
+  // 始终显示 # 和 订单码 和 批次
   const cols = [
     { type: 'index', label: '#', style: 'width:50px', class: 'sticky-col', id: 'col-num' },
     { type: 'order-code', label: '订单码', class: 'sticky-col', id: 'col-order-code' },
+    { type: 'batch', label: '入库批次号', class: 'sticky-col', id: 'col-batch' },
   ];
 
   if (appliedRuleFilter === 'all') {
@@ -2823,13 +3074,24 @@ function renderTable(data) {
   const cols = getVisibleColumns();
 
   // 生成表头
-  let headerHtml = cols.map(c => {
+  let headerHtml = cols.map((c, ci) => {
     let resizeHandle = '<div class="col-resize-handle"></div>';
     if (c.type === 'index') {
       return `<th style="${c.style}" class="${c.class} col-num">${c.label}${resizeHandle}</th>`;
     }
     if (c.type === 'order-code') {
       return `<th class="${c.class} col-order-code">${c.label}${resizeHandle}</th>`;
+    }
+    if (c.type === 'batch') {
+      return `<th class="${c.class} col-batch">${c.label}${resizeHandle}</th>`;
+    }
+    if (c.type === 'field') {
+      const btnClass = fieldFilter.field === c.field ? ' active' : '';
+      return `<th class="has-filter"><span>${c.label}</span><button class="col-filter-btn${btnClass}" onclick="event.stopPropagation();toggleFieldFilter(event,'${esc(c.field)}')" title="筛选 ${c.label}">▼</button>${resizeHandle}</th>`;
+    }
+    if (c.type === 'rule') {
+      const btnClass = fieldFilter.field === c.ruleId ? ' active' : '';
+      return `<th class="has-filter"><span>${c.label}</span><button class="col-filter-btn${btnClass}" onclick="event.stopPropagation();toggleFieldFilter(event,'${c.ruleId}')" title="筛选 ${c.label}">▼</button>${resizeHandle}</th>`;
     }
     return `<th>${c.label}${resizeHandle}</th>`;
   }).join('');
@@ -2859,6 +3121,9 @@ function renderTable(data) {
       } else if (c.type === 'order-code') {
         const val = padOrderCode(d._row['订单码']);
         rowHtml += `<td class="sticky-col col-order-code" title="${esc(val)}"><span class="order-code-text">${esc(truncate(val, 18))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td>`;
+      } else if (c.type === 'batch') {
+        const val = cleanVal(d._row['入库批次号']);
+        rowHtml += `<td class="sticky-col col-batch" title="${esc(val)}"><span class="order-code-text">${esc(truncate(val, 14))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制入库批次号"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td>`;
       } else if (c.type === 'field') {
         const val = cleanVal(d._row[c.field]);
         rowHtml += `<td title="${esc(val)}">${esc(truncate(val, 20))}</td>`;
@@ -3089,6 +3354,7 @@ function resetAll() {
   originalHeaders = []; // 清空原始列顺序
   appliedStatus = 'all';
 appliedRuleFilter = 'all';
+  fieldFilter = { field: '', value: '' };
   currentPage = 1;
 
   const zone = document.getElementById('uploadZone');
