@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>域骉控股 - 珠宝质检自动审查系统</title>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <!-- Google Fonts removed for performance -->
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2329,7 +2329,7 @@ function ruleR4(row) {
   // n: 宝玉石结论为空？
   if (!gemstone) {
     // y: 判断【备注】仅含金含量≥999‰ / --- / 空值？
-    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰' || /^金含量≥999‰.*---$/.test(remark);
+    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰';
 
     if (remarkOk) {
       // yes: 【重量】含 "()" ？（有括号）
