@@ -2319,8 +2319,8 @@ function ruleR4(row) {
   // 分支A: 贵金属结论 = 足金（n → 不在本图，返回正确）
   if (pm !== '足金') return '正确';
 
-  // 第一步：重量包含"不含"且宝玉石结论不为空
-  if (weight && /不含/.test(weight) && gemstone) {
+  // 第一步：重量包含"不含"
+  if (weight && /不含/.test(weight)) {
     // y: 重量含"净金重"？
     if (weight.includes('净金重')) return '正确';
     return '漏备注';
@@ -2329,7 +2329,7 @@ function ruleR4(row) {
   // n: 宝玉石结论为空？
   if (!gemstone) {
     // y: 判断【备注】仅含金含量≥999‰ / --- / 空值？
-    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰';
+    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰' || /^金含量≥999‰.*---$/.test(remark);
 
     if (remarkOk) {
       // yes: 【重量】含 "()" ？（有括号）
@@ -2366,20 +2366,19 @@ function ruleR4(row) {
 }
 
 
-// R5: 南红备注检查 (按流程图)
+// R5: 南红备注检查 (按流程图 2026-07-03 更新)
 function ruleR5(row) {
   if (isQCFailed(row)) return '正确';
   const remark = cleanVal(row['备注']);
   const gemstone = cleanVal(row['宝玉石结论']);
-  const metal = cleanVal(row['贵金属结论']);
   const name = cleanVal(row['商品名称']);
   const material = cleanVal(row['商品材质']);
   const fitting = cleanVal(row['配件材质']);
 
-  // 宝玉石结论和贵金属结论同时为空 → 正确
-  if (!gemstone && !metal) return '正确';
-
+  // 关键词列表（含西...等）
   const keywords = ['南红', '保山红', '凉山红', '川料红', '瓦西', '九口红', '锦红'];
+
+  // 字段(名称/材质/配件) 中是否包含关键词？（去括号后匹配）
   const triggered = [name, material, fitting].some(field => {
     if (!field) return false;
     const noBrackets = field.replace(/[（(][^）)]*[）)]/g, '');
@@ -2387,15 +2386,22 @@ function ruleR5(row) {
   });
 
   if (triggered) {
+    // 触发分支: 备注含"南红"？
     return remark.includes('南红') ? '正确' : '漏备注';
   }
 
-  // 未触发分支（按流程图：两个并行判断，先判断前缀再判断玛瑙）
-  // 分支B优先: 备注包含【配/为/伴】+【南红】或为空 → 正确
-  if (/[配为伴].*南红/.test(remark) || remark === '') return '正确';
-  // 分支A: 宝玉石结论=玛瑙 + 备注有南红 → 核实
-  if (gemstone === '玛瑙' && remark.includes('南红')) return '核实';
-  return remark.includes('南红') ? '多备注' : '正确';
+  // 未触发分支
+  // 判断: 备注含【配/为/伴】+【南红】或备注为空？
+  const prefixMatch = /[配为伴].*南红/.test(remark) || remark === '';
+  if (prefixMatch) return '正确';
+
+  // 备注不含"南红"？
+  if (!remark.includes('南红')) return '正确';
+
+  // 宝玉石结论 == "玛瑙"?
+  if (gemstone === '玛瑙') return '正确';
+
+  return '核实';
 }
 
 // R6: 玛瑙覆膜检查 — 按流程图 (三材质分支)
@@ -2567,7 +2573,7 @@ function ruleR10(row) {
   // 重量克重 >= 商品质量克重 → 正确（实重≥标重即合格）
   if (weightGrams >= qualityGrams) return '正确';
 
-  const diff = Math.abs(qualityGrams - weightGrams);
+  const diff = Math.round(Math.abs(qualityGrams - weightGrams) * 100) / 100;
 
   // 商品材质+镶嵌材质+配件材质 包含"银"？
   if (/银/.test(allMaterials)) {
