@@ -1746,8 +1746,11 @@ th.has-filter { cursor: default; }
   pointer-events: none;
 }
 .col-num { left: 0; }
-.col-order-code { left: 50px; display: flex; align-items: center; gap: 6px; }
-.col-batch { left: 180px; display: flex; align-items: center; gap: 6px; }
+.col-order-code { left: 50px; min-width: 130px; }
+.col-batch { left: 180px; min-width: 130px; }
+
+/* Internal flex wrapper for sticky cells with copy buttons */
+.cell-flex { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 /* Column Resize Handle */
 .col-resize-handle {
@@ -2329,7 +2332,7 @@ function ruleR4(row) {
   // n: 宝玉石结论为空？
   if (!gemstone) {
     // y: 判断【备注】仅含金含量≥999‰ / --- / 空值？
-    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰';
+    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰' || (remark.includes('金含量≥999‰') && remark.includes('---'));
 
     if (remarkOk) {
       // yes: 【重量】含 "()" ？（有括号）
@@ -2369,8 +2372,11 @@ function ruleR4(row) {
 // R5: 南红备注检查 (按流程图 2026-07-03 更新)
 function ruleR5(row) {
   if (isQCFailed(row)) return '正确';
-  const remark = cleanVal(row['备注']);
   const gemstone = cleanVal(row['宝玉石结论']);
+  const metal = cleanVal(row['贵金属结论']);
+  // 前置判断：宝玉石结论和贵金属结论同时为空 → 正确
+  if (!gemstone && !metal) return '正确';
+  const remark = cleanVal(row['备注']);
   const name = cleanVal(row['商品名称']);
   const material = cleanVal(row['商品材质']);
   const fitting = cleanVal(row['配件材质']);
@@ -3126,10 +3132,10 @@ function renderTable(data) {
         rowHtml += `<td class="row-num sticky-col col-num">${d._idx}</td>`;
       } else if (c.type === 'order-code') {
         const val = padOrderCode(d._row['订单码']);
-        rowHtml += `<td class="sticky-col col-order-code" title="${esc(val)}"><span class="order-code-text">${esc(truncate(val, 18))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td>`;
+        rowHtml += `<td class="sticky-col col-order-code" title="${esc(val)}"><div class="cell-flex"><span class="order-code-text">${esc(truncate(val, 18))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></td>`;
       } else if (c.type === 'batch') {
         const val = cleanVal(d._row['入库批次号']);
-        rowHtml += `<td class="sticky-col col-batch" title="${esc(val)}"><span class="order-code-text">${esc(truncate(val, 14))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制入库批次号"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td>`;
+        rowHtml += `<td class="sticky-col col-batch" title="${esc(val)}"><div class="cell-flex"><span class="order-code-text">${esc(truncate(val, 14))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制入库批次号"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></td>`;
       } else if (c.type === 'field') {
         const val = cleanVal(d._row[c.field]);
         rowHtml += `<td title="${esc(val)}">${esc(truncate(val, 20))}</td>`;
