@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: jewelry-qc
+    env: python
+    buildCommand: pip install -r qc_server/requirements.txt
+    startCommand: python qc_server/app.py
+    plan: free
+    envVars:
+      - key: LOUPE_COOKIE
+        sync: false
+      - key: LOUPE_BASE_URL
+        sync: false

@@ -383,19 +383,26 @@ def background_checker():
 # ==================== 启动 ====================
 
 if __name__ == "__main__":
+    # Render 环境变量支持
+    import os
+    loupe_cookie = os.environ.get("LOUPE_COOKIE", "")
+    if loupe_cookie:
+        sync_engine.loupe["auth"]["cookie"] = loupe_cookie
+        print("[配置] 已从环境变量加载 Cookie")
+
     notifier.start()
 
     checker_thread = threading.Thread(target=background_checker, daemon=True)
     checker_thread.start()
 
-    host = CONFIG.get("server", {}).get("host", "0.0.0.0")
-    port = CONFIG.get("server", {}).get("port", 5090)
+    host = "0.0.0.0"
+    port = int(os.environ.get("PORT", CONFIG.get("server", {}).get("port", 5090)))
 
     print(f"""
 ╔══════════════════════════════════════════════╗
 ║      珠宝检测AI自查大屏                      ║
 ╠══════════════════════════════════════════════╣
-║  Dashboard: http://localhost:{port}/          ║
+║  Dashboard: http://0.0.0.0:{port}            ║
 ║  规则数量:  {len(qc.rule_names)} 条
 ║  同步策略:  增量（仅拉新增/变化）
 ║  检测策略:  增量（仅检未审查）
