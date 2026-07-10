@@ -1,0 +1,3514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>域骉控股 - 珠宝质检自动审查系统</title>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="r11_mapping.js"></script>
+<!-- Google Fonts removed for performance -->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-deep: #f8f5f0;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #f5f0e8;
+  --border-subtle: rgba(180,140,60,0.12);
+  --border-default: rgba(180,140,60,0.22);
+  --border-strong: rgba(180,140,60,0.38);
+  --gold-100: #f5e6c4;
+  --gold-200: #e8cc8a;
+  --gold-300: #d4ad5e;
+  --gold-400: #c9a96e;
+  --gold-500: #b8943f;
+  --gold-600: #9a7a30;
+  --text-primary: #1a1410;
+  --text-secondary: rgba(26,20,16,0.55);
+  --text-tertiary: rgba(26,20,16,0.30);
+  --red-400: #ef4444;
+  --red-500: #dc2626;
+  --red-bg: rgba(239,68,68,0.05);
+  --red-border: rgba(239,68,68,0.18);
+  --green-400: #22c55e;
+  --green-500: #16a34a;
+  --green-bg: rgba(34,197,94,0.05);
+  --green-border: rgba(34,197,94,0.18);
+  --amber-400: #f59e0b;
+  --amber-500: #d97706;
+  --amber-bg: rgba(245,158,11,0.05);
+  --amber-border: rgba(245,158,11,0.18);
+  --blue-400: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.05);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
+  --shadow-glow: 0 0 20px rgba(201,169,110,0.05);
+  --font-display: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  height: 42px;
+  width: auto;
+  filter: brightness(1.15) contrast(1.05);
+  transition: transform 200ms ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.03);
+}
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold-200);
+  letter-spacing: 0.02em;
+}
+
+.brand-text p {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.04), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.btn:hover::before {
+  transform: translateX(100%);
+}
+
+.btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+  border-color: var(--gold-400);
+  color: var(--bg-deep);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(201,169,110,0.20);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold-400), var(--gold-300));
+  border-color: var(--gold-300);
+  box-shadow: 0 4px 16px rgba(201,169,110,0.30);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transform: none;
+}
+.btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+  border-color: var(--gold-400);
+  color: var(--bg-deep);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold-400), var(--gold-300));
+  border-color: var(--gold-300);
+}
+
+/* Upload Section */
+.upload-section {
+  margin-bottom: 28px;
+}
+
+.upload-zone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: 52px 32px 44px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  background: var(--bg-surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(201,169,110,0.04) 0%, transparent 70%);
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+  opacity: 0;
+}
+
+.upload-zone:hover::before {
+  opacity: 1;
+}
+
+.upload-zone:hover {
+  border-color: var(--gold-400);
+  background: var(--bg-card);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.upload-zone.drag-over {
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.06);
+  transform: scale(1.01);
+}
+
+.upload-zone.has-file {
+  border-color: var(--green-400);
+  border-style: solid;
+  background: rgba(34,197,94,0.03);
+}
+/* Mascot - top-right corner, transparent, no frame */
+.mascot-float {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 140px;
+  height: auto;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.25));
+  transition: transform 300ms ease;
+}
+
+.upload-zone:hover .mascot-float {
+  transform: translateY(-4px) scale(1.03);
+}
+
+
+@media (max-width: 768px) {
+  .mascot-float {
+    width: 100px;
+    top: -6px;
+    right: -6px;
+  }
+}
+
+.upload-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--gold-400);
+  border: 1px solid var(--border-default);
+}
+
+.upload-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.upload-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  margin-top: 16px;
+  text-align: left;
+}
+
+.file-info-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(34,197,94,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green-400);
+  font-size: 16px;
+}
+
+.file-info-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.file-info-size {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Rules Panel */
+.rules-panel {
+  margin-bottom: 28px;
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--gold-200);
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.rule-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.rule-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(201,169,110,0.15), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.rule-card:hover {
+  border-color: var(--border-default);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.rule-card:hover::before {
+  opacity: 1;
+}
+
+.rule-card.disabled {
+  opacity: 0.45;
+  transform: none;
+}
+
+.rule-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.rule-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-400);
+  margin-top: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(34,197,94,0.4);
+}
+
+.rule-card.disabled .rule-indicator {
+  background: var(--text-tertiary);
+  box-shadow: none;
+}
+
+.rule-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.rule-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.rule-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.rule-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: 1px solid var(--border-default);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rule-toggle.active {
+  background: var(--gold-500);
+  border-color: var(--gold-400);
+}
+
+.rule-toggle::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: all 200ms ease;
+}
+
+.rule-toggle.active::after {
+  left: 18px;
+}
+
+
+/* Column Filter Dropdown */
+.column-filter-wrapper {
+  position: relative;
+}
+
+.column-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 4px;
+  display: none;
+  z-index: 100;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.column-filter-dropdown.active {
+  display: block;
+}
+
+.column-filter-dropdown label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background 100ms;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.column-filter-dropdown label:hover {
+  background: var(--bg-elevated);
+}
+
+.column-filter-dropdown input[type="checkbox"] {
+  accent-color: var(--gold-400);
+  width: 14px;
+  height: 14px;
+}
+
+.column-filter-actions {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px 2px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+}
+
+.column-filter-actions button {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: var(--gold-400);
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.column-filter-actions button:hover {
+  text-decoration: underline;
+}
+/* Rule Filter Dropdown */
+.rule-filter-wrapper {
+  position: relative;
+}
+
+.rule-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 4px;
+  display: none;
+  z-index: 100;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.rule-filter-dropdown.active {
+  display: block;
+}
+
+.rule-filter-dropdown label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background 100ms;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.rule-filter-dropdown label:hover {
+  background: var(--bg-elevated);
+}
+
+.rule-filter-dropdown input[type="radio"] {
+  accent-color: var(--gold-400);
+  width: 14px;
+  height: 14px;
+}
+
+.rule-filter-actions {
+  padding: 6px 12px 2px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-default);
+}
+
+.stat-card.total::before { background: var(--gold-400); }
+.stat-card.error::before { background: var(--red-500); }
+.stat-card.warning::before { background: var(--amber-500); }
+.stat-card.success::before { background: var(--green-500); }
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card.total .stat-value { color: var(--gold-200); }
+.stat-card.error .stat-value { color: var(--red-400); }
+.stat-card.warning .stat-value { color: var(--amber-400); }
+.stat-card.success .stat-value { color: var(--green-400); }
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+}
+/* Results Table */
+.results-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+}
+
+.results-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(201,169,110,0.08);
+  border: 1px solid rgba(201,169,110,0.25);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--gold-300);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+.field-filter-close {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-left: 2px;
+  font-weight: 500;
+}
+.field-filter-close:hover { opacity: 1; }
+.field-filter-tag:hover {
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.12);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  transition: all var(--transition-normal);
+  min-width: 200px;
+}
+
+.search-box:focus-within {
+  border-color: var(--gold-400);
+  box-shadow: 0 0 0 3px rgba(201,169,110,0.10);
+  background: var(--bg-elevated);
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  width: 160px;
+  font-family: var(--font-body);
+}
+
+.search-box input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.search-icon {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.search-box:focus-within {
+  border-color: var(--gold-400);
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.table-container::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+thead th {
+  background: var(--bg-elevated);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-default);
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all var(--transition-fast);
+}
+
+tbody tr:hover {
+  background: rgba(201,169,110,0.04);
+}
+
+tbody tr.error-row {
+  background: var(--red-bg);
+  border-left: 2px solid var(--red-500);
+}
+
+tbody tr.error-row:hover {
+  background: rgba(239,68,68,0.10);
+}
+
+tbody td {
+  padding: 10px 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td.row-num {
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
+.badge-ok {
+  background: rgba(34,197,94,0.10);
+  color: var(--green-400);
+  border: 1px solid rgba(34,197,94,0.22);
+}
+
+.badge-error {
+  background: rgba(239,68,68,0.10);
+  color: var(--red-400);
+  border: 1px solid rgba(239,68,68,0.22);
+}
+
+.badge-info {
+  background: rgba(96,165,250,0.12);
+  color: var(--blue-400);
+  border: 1px solid rgba(96,165,250,0.25);
+}
+
+.badge-empty {
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+}
+
+.badge-correct {
+  background: rgba(96,165,250,0.10);
+  color: var(--blue-400);
+  border: 1px solid rgba(96,165,250,0.22);
+}
+.badge-warn {
+  background: rgba(245,158,11,0.10);
+  color: var(--amber-400);
+  border: 1px solid rgba(245,158,11,0.22);
+}
+/* Empty state */
+.empty-state {
+  padding: 64px 32px;
+  text-align: center;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.empty-icon {
+  font-size: 40px;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* Loading */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,15,20,0.90);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.loading-overlay.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--gold-400);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  position: relative;
+}
+
+.spinner::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px solid transparent;
+  border-top-color: var(--gold-300);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite reverse;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--gold-200);
+  letter-spacing: 0.02em;
+}
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.page-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.page-btn {
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-body);
+  transition: all 100ms;
+}
+
+.page-btn:hover { border-color: var(--border-default); color: var(--text-primary); }
+.page-btn.active { background: var(--gold-500); color: var(--bg-deep); border-color: var(--gold-400); font-weight: 600; }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-primary);
+  z-index: 200;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.toast.show {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.toast.success { border-left: 3px solid var(--green-400); }
+.toast.error { border-left: 3px solid var(--red-400); }
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .rules-grid { grid-template-columns: 1fr; }
+  .app-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .results-toolbar { flex-direction: column; align-items: flex-start; }
+  .mascot-float { width: 100px; top: -6px; right: -6px; }
+}
+
+/* Detail modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,15,20,0.80);
+  z-index: 150;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  width: 90%;
+  max-width: 680px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(20px) scale(0.98);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-overlay.active .modal {
+  transform: translateY(0) scale(1);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--gold-200);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detail-item {
+  padding: 12px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.detail-item.full {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  word-break: break-all;
+  white-space: normal;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.copy-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.copy-btn:active {
+  color: var(--gold-500);
+  border-color: var(--gold-400);
+  transform: scale(0.95);
+}
+
+/* Table copy button */
+.copy-btn-tbl {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  margin-left: auto;
+}
+
+.copy-btn-tbl:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.copy-btn-tbl:active {
+  color: var(--gold-500);
+  background: var(--gold-100);
+  transform: scale(0.92);
+}
+
+.order-code-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chart area */
+.chart-container {
+  margin-bottom: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-label {
+  width: 120px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  height: 24px;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 2px;
+}
+
+.bar-count {
+  width: 60px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ========== Filter Panel ========== */
+.filter-wrapper {
+  position: relative;
+}
+
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+.filter-btn:hover {
+  border-color: var(--gold-400);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 0 3px rgba(201,169,110,0.08);
+}
+
+.filter-btn:active {
+  transform: scale(0.97);
+}
+
+.filter-btn .filter-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.filter-btn .filter-chevron {
+  font-size: 10px;
+  opacity: 0.5;
+  transition: transform 200ms ease;
+}
+
+.filter-btn.active .filter-chevron {
+  transform: rotate(180deg);
+}
+
+.filter-btn .filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--gold-500);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 320px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-lg), 0 20px 40px rgba(0,0,0,0.15);
+  z-index: 2147483647;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.96);
+  transform-origin: top right;
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+.filter-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.filter-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-default);
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-section:last-of-type {
+  margin-bottom: 16px;
+}
+
+.filter-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-section-title::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 12px;
+  background: var(--gold-500);
+  border-radius: 2px;
+}
+
+.filter-status-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.filter-status-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-status-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.filter-status-btn.active {
+  background: rgba(201,169,110,0.12);
+  border-color: var(--gold-400);
+  color: var(--gold-300);
+  box-shadow: 0 0 0 2px rgba(201,169,110,0.08);
+}
+
+.filter-status-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 2px;
+  background: var(--gold-500);
+  border-radius: 1px;
+}
+
+.filter-rule-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.filter-rule-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.filter-rule-checkboxes label:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.filter-rule-checkboxes label:has(input:checked) {
+  background: rgba(201,169,110,0.08);
+  border-color: rgba(201,169,110,0.25);
+  color: var(--gold-300);
+}
+
+.filter-rule-checkboxes input[type="checkbox"] {
+  accent-color: var(--gold-500);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.filter-actions button {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-body);
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.filter-actions .btn-ghost {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.filter-actions .btn-ghost:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.filter-actions .btn-primary {
+  background: var(--gold-500);
+  color: #000;
+  border-color: var(--gold-400);
+}
+
+.filter-actions .btn-primary:hover {
+  background: var(--gold-400);
+  box-shadow: 0 2px 8px rgba(201,169,110,0.25);
+}
+
+/* ========== Field Filter Dropdown ========== */
+.field-filter-dropdown {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 160px;
+  max-width: 280px;
+  max-height: 340px;
+  overflow: hidden;
+}
+.field-filter-dropdown.active { display: flex; flex-direction: column; }
+.field-filter-header {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gold-300);
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-display);
+}
+.field-filter-list {
+  flex: 1;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.field-filter-list::-webkit-scrollbar { width: 4px; }
+.field-filter-list::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+.field-filter-item {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 100ms;
+}
+.field-filter-item:hover {
+  background: var(--bg-elevated);
+  color: var(--gold-400);
+}
+.field-filter-item.active {
+  background: rgba(201,169,110,0.12);
+  color: var(--gold-300);
+  font-weight: 500;
+}
+.field-filter-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px 10px;
+}
+.field-filter-clear {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 100ms;
+}
+.field-filter-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+}
+.field-filter-clear:active { background: var(--bg-surface); }
+
+/* Column filter button on table headers */
+.col-filter-btn {
+  margin-left: 4px;
+  cursor: pointer;
+  font-size: 9px;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: transparent;
+  padding: 1px 4px;
+  vertical-align: middle;
+  transition: all 100ms;
+}
+.col-filter-btn:hover {
+  color: var(--gold-300);
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.08);
+}
+.col-filter-btn.active {
+  color: var(--gold-300);
+  border-color: var(--gold-400);
+  background: rgba(201,169,110,0.15);
+}
+th.has-filter { cursor: default; }
+
+/* ========== Header Brand Enhancement ========== */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold-200);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.brand-text .brand-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-text .brand-subtitle::before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 1px;
+  background: var(--gold-500);
+  opacity: 0.4;
+}
+
+.brand-text .brand-tagline {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+  letter-spacing: 0.06em;
+}
+
+/* ========== Footer ========== */
+.app-footer {
+  margin-top: 48px;
+  padding: 32px 0;
+  border-top: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.app-footer::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-500), transparent);
+  opacity: 0.15;
+}
+
+.footer-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold-300);
+  letter-spacing: 0.04em;
+}
+
+.footer-content p {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* Sticky Columns */
+.data-table th.sticky-col,
+.data-table td.sticky-col {
+  position: sticky;
+  background: var(--bg-card);
+  z-index: 2;
+}
+.data-table th.sticky-col {
+  z-index: 3;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.04);
+}
+.sticky-col::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(to right, transparent, var(--border-subtle));
+  pointer-events: none;
+}
+.col-num { left: 0; }
+.col-order-code { left: 50px; min-width: 130px; }
+.col-batch { left: 180px; min-width: 130px; }
+
+/* Internal flex wrapper for sticky cells with copy buttons */
+.cell-flex { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* Column Resize Handle */
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+  transition: background 100ms;
+}
+.col-resize-handle:hover,
+.col-resize-handle.active {
+  background: var(--gold-400);
+  opacity: 0.5;
+}
+
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">正在解析文件...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="brand">
+      <img src="assets/logo.png" alt="域骉控股" class="brand-logo">
+      <div class="brand-text">
+        <h1>珠宝质检自动审查系统</h1>
+        <div class="brand-subtitle">规则引擎 v1.0</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="resetAll()" title="重置">↺ 重置</button>
+      <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">上传文件</button>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" style="display:none" onchange="handleFile(this.files[0])">
+    </div>
+  </header>
+
+  <!-- Upload Section with Mascot -->
+  <section class="upload-section" id="uploadSection">
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <img src="assets/mascot-transparent.png" alt="" class="mascot-float">
+      <div class="upload-icon">◆</div>
+      <div class="upload-title">拖拽 Excel 文件到此处</div>
+      <div class="upload-subtitle">或点击选择文件上传</div>
+      <div class="upload-hint">支持 .xlsx/.xls/.xlsm/.xlsb/.csv/.ods · 自动执行 11 项规则审查 · 结果可导出</div>
+    </div>
+  </section>
+
+  <!-- Rules Panel -->
+  <section class="rules-panel">
+    <div class="rules-header">
+      <h2 class="section-title">检查规则</h2>
+      <button class="btn btn-ghost" onclick="toggleAllRules()" style="font-size:12px">全部启用/禁用</button>
+    </div>
+    <div class="rules-grid">
+      <div class="rule-card" id="rule-r1">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R1 · 重量判定</div>
+          <div class="rule-desc">检测重量格式异常和极低重量</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r1" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r2">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R2 · 宝玉石判定</div>
+          <div class="rule-desc">检查宝玉石结论与备注一致性</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r2" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r3">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R3 · 金含量备注检查</div>
+          <div class="rule-desc">检查金含量备注是否规范</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r3" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r4">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R4 · 足金净金重检查</div>
+          <div class="rule-desc">检查足金产品净金重备注</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r4" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r5">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R5 · 南红备注检查</div>
+          <div class="rule-desc">检查南红备注格式是否合规</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r5" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r6">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R6 · 玛瑙覆膜检查</div>
+          <div class="rule-desc">检查玛瑙覆膜备注是否合规</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r6" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r7">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R7 · 非洲翠备注检查</div>
+          <div class="rule-desc">检查非洲翠备注是否匹配</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r7" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r8">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R8 · 合成立方氧化锆备注检查</div>
+          <div class="rule-desc">检查合成立方氧化锆备注是否合规</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r8" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r9">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R9 · 款式核实</div>
+          <div class="rule-desc">核对商品名称中的类别与饰品类型是否一致</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r9" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r10">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R10 · 重量比对</div>
+          <div class="rule-desc">比对该贵重商品质量与重量是否在合理差值范围内</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r10" onclick="toggleRule(this)"></div>
+      </div>
+      <div class="rule-card" id="rule-r11">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R11 · 材质结论对应</div>
+          <div class="rule-desc">核对商品材质、镶嵌材质、配件材质与贵金属/宝玉石结论的映射关系</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r11" onclick="toggleRule(this)"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats (hidden until data loaded) -->
+  <section class="stats-grid" id="statsSection" style="display:none">
+    <div class="stat-card total">
+      <div class="stat-label">总记录</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub" id="statTotalSub"></div>
+    </div>
+    <div class="stat-card error">
+      <div class="stat-label">异常记录</div>
+      <div class="stat-value" id="statError">0</div>
+      <div class="stat-sub" id="statErrorSub"></div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-label">全部正常</div>
+      <div class="stat-value" id="statOk">0</div>
+      <div class="stat-sub" id="statOkSub"></div>
+    </div>
+  </section>
+
+  <!-- Chart -->
+  <section class="chart-container" id="chartSection" style="display:none">
+    <div class="chart-title">各规则异常分布</div>
+    <div class="bar-chart" id="ruleChart"></div>
+  </section>
+
+  <!-- Results Table -->
+  <section class="results-section" id="resultsSection" style="display:none">
+    <div class="results-toolbar">
+      <div class="toolbar-left">
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="searchInput" placeholder="搜索 订单码/商品名称...">
+        </div>
+        <span class="field-filter-tag" id="fieldFilterTag" style="display:none" onclick="clearFieldFilter()"></span>
+      </div>
+      <div class="toolbar-right">
+        <div class="filter-wrapper">
+          <button class="filter-btn" onclick="toggleFilterPanel()" id="filterBtn">
+            <span class="filter-icon">◈</span>
+            <span>筛选</span>
+            <span class="filter-badge" id="filterBadge" style="display:none">0</span>
+            <span class="filter-chevron">▾</span>
+          </button>
+          <div class="filter-dropdown" id="filterDropdown">
+            <div class="filter-section">
+              <div class="filter-section-title">状态筛选</div>
+              <div class="filter-status-btns">
+                <button class="filter-status-btn active" data-status="all" onclick="selectFilterStatus('all', this)">全部</button>
+                <button class="filter-status-btn" data-status="ok" onclick="selectFilterStatus('ok', this)">正确</button>
+                <button class="filter-status-btn" data-status="error" onclick="selectFilterStatus('error', this)">异常</button>
+              </div>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-title">规则筛选（单选，选中后按该规则筛选）</div>
+              <div class="filter-rule-checkboxes">
+                <label><input type="checkbox" value="r1" onchange="updatePendingRules(this)"> R1 克重及单位</label>
+                <label><input type="checkbox" value="r2" onchange="updatePendingRules(this)"> R2 翡翠备注</label>
+                <label><input type="checkbox" value="r3" onchange="updatePendingRules(this)"> R3 足金金含量备注</label>
+                <label><input type="checkbox" value="r4" onchange="updatePendingRules(this)"> R4 足金净金重备注</label>
+                <label><input type="checkbox" value="r5" onchange="updatePendingRules(this)"> R5 南红玛瑙备注</label>
+                <label><input type="checkbox" value="r6" onchange="updatePendingRules(this)"> R6 玛瑙（覆膜）</label>
+                <label><input type="checkbox" value="r7" onchange="updatePendingRules(this)"> R7 非洲翠备注</label>
+                <label><input type="checkbox" value="r8" onchange="updatePendingRules(this)"> R8 合成立方氧化锆备注</label>
+                <label><input type="checkbox" value="r9" onchange="updatePendingRules(this)"> R9 款式核实</label>
+                <label><input type="checkbox" value="r10" onchange="updatePendingRules(this)"> R10 重量比对</label>
+                <label><input type="checkbox" value="r11" onchange="updatePendingRules(this)"> R11 材质结论对应</label>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn-ghost" onclick="resetFilterPanel()">重置</button>
+              <button class="btn-primary" onclick="confirmFilterPanel()">确定</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn" onclick="exportResults()">↓ 导出结果</button>
+      </div>
+    </div>
+    <div class="table-container" id="tableContainer">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>商品名称</th>
+            <th>重量</th>
+            <th>宝玉石结论</th>
+            <th>贵金属结论</th>
+            <th>备注</th>
+            <th>R1 克重及单位</th>
+            <th>R2 翡翠备注</th>
+            <th>R3 足金金含量备注</th>
+            <th>R4 足金净金重备注</th>
+            <th>R5 南红玛瑙备注</th>
+            <th>R6 玛瑙（覆膜）</th>
+            <th>R7 非洲翠备注</th>
+            <th>R8 合成立方氧化锆备注</th>
+            <th>R9 款式核实</th>
+            <th>R10 重量比对</th>
+            <th>R11 材质结论对应</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+
+    <!-- Field filter dropdown -->
+    <div class="field-filter-dropdown" id="fieldFilterDropdown">
+      <div class="field-filter-header">
+        <span id="fieldFilterDropdownTitle"></span>
+      </div>
+      <div class="field-filter-list" id="fieldFilterList"></div>
+      <div class="field-filter-footer">
+        <button class="field-filter-clear" onclick="clearFieldFilter()">清除筛选</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div class="footer-brand">◈ 域骉控股</div>
+      <p>珠宝质检自动审查系统 · 规则引擎 v1.0</p>
+      <p>专业检测 · 品质保障 · 值得信赖</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ==================== State ====================
+let rawData = [];
+let processedData = [];
+let currentPage = 1;
+const PAGE_SIZE = 100;
+let originalHeaders = []; // 保存原始Excel列顺序
+
+// Filter state (applied after confirm)
+let appliedStatus = 'all';      // 'all' | 'error' | 'ok'
+let appliedRuleFilter = 'all';  // 'all' | 'r1'..'r8'
+let fieldFilter = { field: '', value: '' }; // 字段值筛选
+
+// Pending filter state (before confirm)
+let pendingStatus = 'all';
+let pendingRules = [];
+
+// Rule toggle state (which rules to run)
+const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true, r9: true, r10: true, r11: true };
+
+// Column filter state (which rule columns to show)
+const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true, r9: true, r10: true, r11: true };
+const ruleMeta = [
+  { id: 'r1', name: 'R1 克重及单位', short: 'R1 克重及单位' },
+  { id: 'r2', name: 'R2 翡翠备注', short: 'R2 翡翠备注' },
+  { id: 'r3', name: 'R3 足金金含量备注', short: 'R3 足金金含量备注' },
+  { id: 'r4', name: 'R4 足金净金重备注', short: 'R4 足金净金重备注' },
+  { id: 'r5', name: 'R5 南红玛瑙备注', short: 'R5 南红玛瑙备注' },
+  { id: 'r6', name: 'R6 玛瑙（覆膜）', short: 'R6 玛瑙（覆膜）' },
+  { id: 'r7', name: 'R7 非洲翠备注', short: 'R7 非洲翠备注' },
+  { id: 'r8', name: 'R8 合成立方氧化锆备注', short: 'R8 合成立方氧化锆备注' },
+  { id: 'r9', name: 'R9 款式核实', short: 'R9 款式核实' },
+  { id: 'r10', name: 'R10 重量比对', short: 'R10 重量比对' },
+  { id: 'r11', name: 'R11 材质结论对应', short: 'R11 材质结论对应' },
+];
+
+// 每条规则检查的源字段映射（来源：自查案例.xlsx 各sheet末尾"需要的字段"）
+const ruleSourceFields = {
+  r1: ['商品材质', '宝玉石结论', '贵金属结论', '重量', '饰品类型'],
+  r2: ['商品材质', '宝玉石结论', '备注'],
+  r3: ['商品名称', '商品材质', '镶嵌材质', '配件材质', '贵金属结论', '备注'],
+  r4: ['商品材质', '宝玉石结论', '贵金属结论', '重量', '备注'],
+  r5: ['商品名称', '商品材质', '配件材质', '宝玉石结论', '备注'],
+  r6: ['商品材质', '宝玉石结论', '备注'],
+  r7: ['商品名称', '商品材质', '配件材质', '宝玉石结论', '备注'],
+  r8: ['商品材质', '配件材质', '宝玉石结论', '备注'],
+  r9: ['商品名称', '饰品类型'],
+  r10: ['商品质量', '重量', '商品材质', '镶嵌材质', '配件材质'],
+  r11: ['商品材质', '镶嵌材质', '配件材质', '贵金属结论', '宝玉石结论', '备注'],
+};
+
+// ==================== Drag & Drop ====================
+const uploadZone = document.getElementById('uploadZone');
+
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.classList.add('drag-over');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+  uploadZone.classList.remove('drag-over');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  const ext = file.name.toLowerCase();
+  const supported = ['.xlsx', '.xls', '.xlsm', '.xlsb', '.csv', '.ods'];
+  const isValid = supported.some(e => ext.endsWith(e));
+  if (file && isValid) {
+    handleFile(file);
+  } else {
+    showToast('请上传支持的格式 (.xlsx/.xls/.xlsm/.csv)', 'error');
+  }
+});
+
+// ==================== File Handling ====================
+function handleFile(file) {
+  if (!file) return;
+  showLoading('正在解析文件...');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      rawData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      // 提取原始列顺序（按照Excel第一行的顺序）
+      originalHeaders = [];
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+        const cell = sheet[cellAddress];
+        originalHeaders.push(cell ? String(cell.v) : `Column_${C + 1}`);
+      }
+
+      // Update upload zone
+      uploadZone.classList.add('has-file');
+      uploadZone.innerHTML = `
+        <div class="file-info" style="margin:0;display:flex;align-items:center;gap:12px;text-align:left">
+          <div class="file-info-icon">✓</div>
+          <div>
+            <div class="file-info-name">${file.name}</div>
+            <div class="file-info-size">${rawData.length} 条记录 · ${(file.size / 1024).toFixed(1)} KB</div>
+          </div>
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:12px" onclick="event.stopPropagation();resetAll()">重新上传</button>
+        </div>
+      `;
+
+      processAndRender();
+    } catch (err) {
+      hideLoading();
+      showToast('文件解析失败: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function padOrderCode(val) {
+  if (!val && val !== 0) return '';
+  const s = typeof val === 'number' ? String(Math.floor(val)) : String(val).trim();
+  return s.padStart(10, '0');
+}
+
+// ==================== Rules Engine (JS) ====================
+
+// Excel日期序列号转字符串
+function excelDateToString(serial) {
+  if (typeof serial !== 'number' || serial < 1000) return null;
+  // Excel日期系统：从1900-01-01开始，但有闰年bug，需减1修正
+  const excelEpoch = new Date(1899, 11, 30); // 1899-12-30（序列号0）
+  const days = Math.floor(serial);
+  const msPerDay = 86400000;
+  const date = new Date(excelEpoch.getTime() + days * msPerDay);
+  const fraction = serial - days;
+  date.setTime(date.getTime() + Math.round(fraction * msPerDay));
+  const pad = n => String(n).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth()+1) + '-' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
+}
+
+function cleanVal(val) {
+  // 处理JavaScript Date对象（XLSX cellDates选项可能返回此类型）
+  if (val instanceof Date) {
+    const pad = n => String(n).padStart(2, '0');
+    return val.getFullYear() + '-' + pad(val.getMonth()+1) + '-' + pad(val.getDate()) + ' ' + pad(val.getHours()) + ':' + pad(val.getMinutes()) + ':' + pad(val.getSeconds());
+  }
+  
+  // 处理Excel日期序列号（数字类型且在合理范围内）
+  if (typeof val === 'number' && val > 1000 && val < 1000000) {
+    const ds = excelDateToString(val);
+    if (ds) return ds;
+  }
+  
+  let s = String(val || '').trim().replace(/\t/g, '');
+  if (s === 'nan' || s === 'NaN' || s === 'None' || s === '') return '';
+  return s;
+}
+
+// 全局前置：质检结果=不通过 → 所有规则返回正确
+function isQCFailed(row) {
+  return cleanVal(row['质检结果']) === '不通过';
+}
+
+// R1: 重量判定 (按流程图: 格式→克重→错误/克重极低/正确)
+function ruleR1(row) {
+  if (isQCFailed(row)) return '正确';
+  const weight = cleanVal(row['重量']);
+  if (!weight) return '';
+
+  // 先去掉括号内的额外说明
+  const cleaned = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
+
+  // 判断1: 去掉括号后只有 g或克（无数值）
+  if (cleaned === 'g' || cleaned === '克') {
+    // 状态非质检中 → 纯单位视为错误
+    return cleanVal(row['状态']) === '质检中' ? '正确' : '错误';
+  }
+
+  // 判断2: 格式检查 — 两位小数+g或克，整数不超过3位（如 0.05g / 39.22克）
+  const formatMatch = cleaned.match(/^(\d{1,5})\.(\d{2})(g|克)$/);
+  if (!formatMatch) return '错误';
+
+  // 判断3: ≤0.1g？
+  const numVal = parseFloat(formatMatch[1] + '.' + formatMatch[2]);
+  if (numVal <= 0.1) return '克重极低';
+
+  return '正确';
+}
+
+// R2: 翡翠备注 (按流程图 — 负面词+结构检查)
+const NEGATIVE_WORDS = ['含其他矿物', '颜色成因未定', '颜色成因未做分析', '成因未做分析', '充填', '修补'];
+
+function hasNegInBracket(remark) {
+  // 检查负面词是否在括号内（如"托帕石（颜色成因未定）"）
+  const brackets = remark.match(/[（(]([^）)]*)[）)]/g) || [];
+  return brackets.some(b => NEGATIVE_WORDS.some(w => b.includes(w)));
+}
+
+function ruleR2(row) {
+  if (isQCFailed(row)) return '正确';
+  const gemstone = cleanVal(row['宝玉石结论']);
+  const remark = cleanVal(row['备注']);
+  const hasAmark = remark.includes('翡翠(A货)') || remark.includes('翡翠（A货）');
+
+  if (!gemstone.includes('翡翠')) {
+    return hasAmark ? '多备注' : '正确';
+  }
+
+  // 宝玉石结论 = 翡翠
+  if (hasAmark) {
+    // 有翡翠(A货) + 负面词在同一括号内或括号外 → 多备注；负面词在另一个宝玉石括号内 → 正确
+    const cuiBracket = remark.match(/翡翠[（(][Aa]货[）)]/);
+    if (!cuiBracket) return NEGATIVE_WORDS.some(w => remark.includes(w)) ? '多备注' : '正确';
+    const cuiStart = cuiBracket.index;
+    const cuiEnd = cuiStart + cuiBracket[0].length;
+    // 检查负面词是否在翡翠(A货)之外的括号内（属于其他宝石）
+    const otherBrackets = remark.match(/[（(]([^）)]*)[）)]/g) || [];
+    const negInOtherBracket = otherBrackets.some(b => {
+      const idx = remark.indexOf(b);
+      return idx !== cuiStart && NEGATIVE_WORDS.some(w => b.includes(w));
+    });
+    if (negInOtherBracket) return '正确';  // 负面词属于其他宝石
+    // 负面词在翡翠括号内或括号外 → 多备注
+    return NEGATIVE_WORDS.some(w => remark.includes(w)) ? '多备注' : '正确';
+  }
+
+  // 无翡翠(A货): 检查是否【其他宝玉石+（负面词）】结构 → 漏备注，否则正确
+  return hasNegInBracket(remark) ? '漏备注' : '正确';
+}
+
+// R3: 金含量备注检查 (按流程图 — 三路径逻辑)
+const FIELDS_999 = ['商品名称', '商品材质', '镶嵌材质', '商品质量', '配件材质'];
+
+function ruleR3(row) {
+  if (isQCFailed(row)) return '正确';
+  const gemstone = cleanVal(row['宝玉石结论']);
+  const metal = cleanVal(row['贵金属结论']);
+  const remark = cleanVal(row['备注']);
+  const name = cleanVal(row['商品名称']);
+  const material = cleanVal(row['商品材质']);
+
+  // 路径1：宝玉石结论和贵金属结论同时为空
+  if (!gemstone && !metal) {
+    return remark.includes('金含量≥999‰') ? '核实是否为复检' : '正确';
+  }
+
+  const has999 = hasStandalone999(row);
+  const hasZujin = [name, material, cleanVal(row['镶嵌材质']), cleanVal(row['商品质量']), cleanVal(row['配件材质'])].some(f => f && f.includes('足金'));
+  const isMetalZujin = (metal === '足金');
+  const hasGoldContent = remark.includes('金含量≥999‰');
+
+  // 路径2：字段不含独立999
+  if (!has999) {
+    if (hasZujin) {
+      return isMetalZujin ? '正确' : '需核实结论';
+    } else {
+      if (isMetalZujin) {
+        return hasGoldContent ? '需再次核对确认' : '正确';
+      } else {
+        return hasGoldContent ? '多备注' : '正确';
+      }
+    }
+  }
+
+  if (hasZujin) {
+    return isMetalZujin
+      ? (hasGoldContent ? '正确' : '漏备注')
+      : '正确';
+  }
+  return isMetalZujin
+    ? '正确'
+    : (hasGoldContent ? '多备注' : '正确');
+}
+
+function hasStandalone999(row) {
+  for (const field of FIELDS_999) {
+    const val = cleanVal(row[field]);
+    if (!val) continue;
+    if (val.includes('足银') && val.includes('999')) continue;
+    if (/(?<![a-zA-Z0-9])999(?![a-zA-Z0-9])/.test(val)) return true;
+  }
+  return false;
+}
+
+// R4: 足金净金重检查 (按流程图 2026-06-16 更新)
+function ruleR4(row) {
+  if (isQCFailed(row)) return '正确';
+  const pm = cleanVal(row['贵金属结论']);
+  const weight = cleanVal(row['重量']);
+  const gemstone = cleanVal(row['宝玉石结论']);
+  const remark = cleanVal(row['备注']);
+
+  // 分支A: 贵金属结论 = 足金（n → 不在本图，返回正确）
+  if (pm !== '足金') return '正确';
+
+  // 第一步：重量包含"不含"
+  if (weight && /不含/.test(weight)) {
+    // y: 重量含"净金重"？
+    if (weight.includes('净金重')) return '正确';
+    return '漏备注';
+  }
+
+  // n: 宝玉石结论为空？
+  if (!gemstone) {
+    // y: 判断【备注】仅含金含量≥999‰ / --- / 空值？
+    const remarkOk = remark === '' || remark === '---' || remark === '金含量≥999‰' || (remark.includes('金含量≥999‰') && remark.includes('---'));
+
+    if (remarkOk) {
+      // yes: 【重量】含 "()" ？（有括号）
+      const pureWeight = weight.replace(/[（(][^）)]*[）)]/g, '').trim();
+      const hasBrackets = /[（(]/.test(weight);
+
+      if (hasBrackets) {
+        // y: 格式为 1.35g (净金重、含x) ？
+        // 提取括号内容
+        const bracketContent = weight.match(/[（(]([^）)]*)[）)]/);
+        const bracketText = bracketContent ? bracketContent[1].replace(/[、,，]/g, '').trim() : '';
+        // 含"净金重"且括号内还有其他内容（含/配等）→ 多备注
+        if (bracketText.includes('净金重') && bracketText.replace('净金重', '').length > 0) {
+          return '多备注';
+        }
+        return '正确';
+      } else {
+        // n: 格式为纯克重如1.35g？
+        if (/^\d+\.?\d*g$/.test(pureWeight)) return '漏备注';
+        return '正确';
+      }
+    } else {
+      // n: 备注含"未检"（如配链未检/xx未检）→ 正确
+      if (/未检/.test(remark)) return '正确';
+      // n: 【重量】是否含（净金重）？
+      return weight.includes('净金重') ? '多备注' : '正确';
+    }
+  } else {
+    // n（宝玉石不为空）: 【重量】含"净金重"？
+    if (!weight) return '正确';
+    if (/不含/.test(weight) && weight.includes('净金重')) return '正确';
+    return weight.includes('净金重') ? '多备注' : '正确';
+  }
+}
+
+
+// R5: 南红备注检查 (按流程图 2026-07-03 更新)
+function ruleR5(row) {
+  if (isQCFailed(row)) return '正确';
+  const gemstone = cleanVal(row['宝玉石结论']);
+  const metal = cleanVal(row['贵金属结论']);
+  // 前置判断：宝玉石结论和贵金属结论同时为空 → 正确
+  if (!gemstone && !metal) return '正确';
+  const remark = cleanVal(row['备注']);
+  const name = cleanVal(row['商品名称']);
+  const material = cleanVal(row['商品材质']);
+  const fitting = cleanVal(row['配件材质']);
+
+  // 关键词列表（含西...等）
+  const keywords = ['南红', '保山红', '凉山红', '川料红', '瓦西', '九口红', '锦红'];
+
+  // 字段(名称/材质/配件) 中是否包含关键词？（去括号后匹配）
+  const triggered = [name, material, fitting].some(field => {
+    if (!field) return false;
+    const noBrackets = field.replace(/[（(][^）)]*[）)]/g, '');
+    return keywords.some(kw => noBrackets.includes(kw));
+  });
+
+  if (triggered) {
+    // 触发分支: 备注含"南红"？
+    return remark.includes('南红') ? '正确' : '漏备注';
+  }
+
+  // 未触发分支
+  // 判断: 备注含【配/为/伴】+【南红】或备注为空？
+  const prefixMatch = /[配为伴].*南红/.test(remark) || remark === '';
+  if (prefixMatch) return '正确';
+
+  // 备注不含"南红"？
+  if (!remark.includes('南红')) return '正确';
+
+  // 宝玉石结论 == "玛瑙"?
+  if (gemstone === '玛瑙') return '正确';
+
+  return '核实';
+}
+
+// R6: 玛瑙覆膜检查 — 按流程图 (三材质分支)
+function ruleR6(row) {
+  if (isQCFailed(row)) return '正确';
+  const material = cleanVal(row['商品材质']);
+  const gemstone = cleanVal(row['宝玉石结论']);
+  const remark = cleanVal(row['备注']);
+
+  // Branch 1: 玛瑙/玉髓（覆膜）
+  if (material === '玛瑙/玉髓（覆膜）') {
+    if (gemstone === '玛瑙' || gemstone === '玛瑙（覆膜）' || !gemstone) return '正确';
+    if (remark.includes('玛瑙') || remark.includes('玛瑙（覆膜）')) return '正确';
+    return '需核实结论';
+  }
+
+  // Branch 2: 商品材质包含"玛瑙"（非覆膜）
+  if (material.includes('玛瑙')) {
+    if (gemstone === '玛瑙' || gemstone === '玉髓' || gemstone === '') return '正确';
+    if (gemstone === '玛瑙（覆膜）') return '应驳回';
+    if (remark.includes('玛瑙（覆膜）') || remark.includes('玛瑙(覆膜)')) return '应驳回';
+    return '需核实结论';
+  }
+
+  // Branch 3: 其他材质（不含玛瑙）
+  if (gemstone === '玛瑙（覆膜）' || gemstone === '玛瑙') return '正确';
+  // 宝玉石结论不是玛瑙(覆膜)也不是玛瑙 → 备注有玛瑙(覆膜)?
+  if (remark.includes('玛瑙（覆膜）') || remark.includes('玛瑙(覆膜)')) {
+    // 前面含"配/为/伴"? → 正确，否则需核实备注
+    return /[配为伴].*玛瑙[（(]覆膜[）)]/.test(remark) ? '正确' : '需核实备注';
+  }
+  return '正确';
+}
+
+// R7: 非洲翠备注检查 (按流程图 2026-06-16 更新)
+function ruleR7(row) {
+  if (isQCFailed(row)) return '正确';
+  const name = cleanVal(row['商品名称']);
+  const material = cleanVal(row['商品材质']);
+  const accessory = cleanVal(row['配件材质']);
+  const remark = cleanVal(row['备注']);
+  const gemstone = cleanVal(row['宝玉石结论']);
+
+  // 宝玉石结论为空 → 正确
+  if (!gemstone) return '正确';
+
+  // 字段是否包含"非洲翠"
+  const fields = [name, material, accessory];
+  const hasInFields = fields.some(f => f && f.includes('非洲翠'));
+  const hasInRemark = remark.includes('非洲翠');
+
+  if (hasInFields) {
+    // y: 备注包含"非洲翠" → 正确 / 漏备注
+    return hasInRemark ? '正确' : '漏备注';
+  } else {
+    // n: 宝玉石结论=石英质玉？
+    if (gemstone === '石英质玉') {
+      // y: 备注有非洲翠但字段没有 → 需核实备注
+      return hasInRemark ? '需核实备注' : '正确';
+    }
+    return '正确';
+  }
+}
+
+// R8: 合成立方氧化锆备注检查
+function ruleR8(row) {
+  if (isQCFailed(row)) return '正确';
+  const accessory = cleanVal(row['配件材质']);
+  const gemstone = cleanVal(row['宝玉石结论']);
+  const remark = cleanVal(row['备注']);
+
+  const a = accessory.includes('合成立方氧化锆');
+  const b = gemstone.includes('合成立方氧化锆');
+  const c = remark.includes('合成立方氧化锆');
+  const d = /[配为伴].*合成立方氧化锆/.test(remark);
+
+  if (a) {
+    if (b) return '正确';
+    return c ? '正确' : '漏备注';
+  } else {
+    if (c) return d ? '正确' : '多备注';
+    return '正确';
+  }
+}
+
+// R9: 款式核实 — 按流程图
+function ruleR9(row) {
+  if (isQCFailed(row)) return '正确';
+  const name = cleanVal(row['商品名称']);
+  const jewelryType = cleanVal(row['饰品类型']);
+
+  // 饰品类型为空 → 正确
+  if (!jewelryType) return '正确';
+
+  // 前置：饰品类型=="饰品"过于泛化，无法核对 → 正确
+  if (jewelryType === '饰品') return '正确';
+
+  // 同步判断：商品名称直接包含饰品类型文字 → 正确
+  if (name.includes(jewelryType)) return '正确';
+
+  // 饰品类型词列表
+  const typeWords = ['摆件', '吊坠', '耳饰', '挂件', '挂坠', '戒指', '链坠', '饰品', '手串', '手链', '手镯', '项链'];
+
+  // 收集商品名称中所有匹配的饰品类型词
+  const matchedWords = [];
+  for (const w of typeWords) {
+    if (name.indexOf(w) >= 0) matchedWords.push(w);
+  }
+
+  // 不含饰品类型词 → 正确
+  if (matchedWords.length === 0) return '正确';
+
+  // 过滤掉"饰品"（过于泛化）
+  const filtered = matchedWords.filter(w => w !== '饰品');
+  if (filtered.length === 0) return '正确';
+
+  // 别名映射：吊坠/挂件/挂坠/项链/链坠 ↔ 项链，手串/手链 ↔ 手串
+  const aliasMap = {
+    '吊坠': '项链', '挂件': '项链', '挂坠': '项链', '链坠': '项链',
+    '手链': '手串'
+  };
+  const normalizedType = aliasMap[jewelryType] || jewelryType;
+
+  // 遍历所有匹配词，只要有一个归一后与饰品类型一致即正确
+  for (const w of filtered) {
+    const normalizedWord = aliasMap[w] || w;
+    if (normalizedWord === normalizedType) return '正确';
+  }
+  return '异常';
+}
+
+// R10: 重量比对 — 按流程图
+function ruleR10(row) {
+  if (isQCFailed(row)) return '正确';
+  const qualityWeight = cleanVal(row['商品质量']);
+  const weight = cleanVal(row['重量']);
+  const material = cleanVal(row['商品材质']);
+  const inlayMat = cleanVal(row['镶嵌材质']);
+  const fitting = cleanVal(row['配件材质']);
+
+  // 第一步：商品材质+镶嵌材质+配件材质 含"金"或"铂"或"银"？
+  const allMaterials = (material || '') + (inlayMat || '') + (fitting || '');
+  if (!/[金铂银]/.test(allMaterials)) return '正确';
+
+  // 商品质量必须为单纯克重：严格匹配 数字+g/克
+  const extractQualityGram = (str) => {
+    if (!str) return null;
+    if (/mm|cm|m\b|ct|克拉|[（(]/.test(str)) return null;
+    const m = str.match(/^(\d{1,5}(?:\.\d{1,2})?)\s*(g|克)$/i);
+    return m ? parseFloat(m[1]) : null;
+  };
+
+  // 重量只需包含单纯克重：从字符串中提取首个 数字+g/克 模式
+  const extractWeightGram = (str) => {
+    if (!str) return null;
+    const m = str.match(/(\d{1,5}(?:\.\d{1,2})?)\s*(g|克)/i);
+    return m ? parseFloat(m[1]) : null;
+  };
+
+  const qualityGrams = extractQualityGram(qualityWeight);
+  const weightGrams = extractWeightGram(weight);
+
+  // 商品质量不是单纯克重 → 正确
+  if (qualityGrams === null) return '正确';
+
+  // 重量无法解析为克重 → 无法比对，正确
+  if (weightGrams === null) return '正确';
+
+  // 重量克重 >= 商品质量克重 → 正确（实重≥标重即合格）
+  if (weightGrams >= qualityGrams) return '正确';
+
+  const diff = Math.round(Math.abs(qualityGrams - weightGrams) * 100) / 100;
+
+  // 商品材质+镶嵌材质+配件材质 包含"银"？
+  if (/银/.test(allMaterials)) {
+    return diff > 0.1 ? '异常' : '正常';
+  }
+
+  // 镶嵌材质+配件材质 包含"金"或"铂"？
+  const inlayAndFitting = (inlayMat || '') + (fitting || '');
+  if (/[金铂]/.test(inlayAndFitting)) {
+    return diff > 0.01 ? '异常' : '正常';
+  }
+
+  return diff > 0.01 ? '异常' : '正常';
+}
+
+// R11: 材质与结论对应关系检查
+function ruleR11(row) {
+  // 前置条件
+  if (isQCFailed(row)) return '正确';                    // ① 质检不通过 → 正确
+
+  const material = cleanVal(row['商品材质']);
+  const inlay = cleanVal(row['镶嵌材质']);
+  const fitting = cleanVal(row['配件材质']);
+  const metalConclusion = cleanVal(row['贵金属结论']);
+  const gemstoneConclusion = cleanVal(row['宝玉石结论']);
+  const remark = cleanVal(row['备注']);
+
+  if (!material && !inlay && !fitting) return '正确';    // ② 材质字段全空 → 正确
+  if (!metalConclusion && !gemstoneConclusion) return '正确'; // ③ 结论字段全空 → 正确
+
+  // 拆分多材质（逗号/顿号/分号分隔），去重
+  const splitMaterials = (str) => {
+    if (!str) return [];
+    return str.split(/[,，、;；]/).map(s => s.trim()).filter(Boolean);
+  };
+  const srcMaterials = [...new Set([
+    ...splitMaterials(material),
+    ...splitMaterials(inlay),
+    ...splitMaterials(fitting)
+  ])];
+
+  // Step 1: 过滤「不判断类」/「跳过类」→ 去掉对应字段
+  const validMaterials = srcMaterials.filter(m => !R11_MAPPING.skip.includes(m));
+  if (validMaterials.length === 0) return '正确';
+
+  // Step 2: 并行四路检查
+  let anyMatched = false;
+
+  for (const mat of validMaterials) {
+    // ── 合金类 ──
+    if (R11_MAPPING.alloy.some(a => mat.includes(a))) {
+      anyMatched = true;
+      // 合金类：贵金属结论或备注不能含贵金属字段
+      // 检查 metalConclusion 和 remark 是否含金属结论值
+      const allMetalVals = new Set();
+      Object.values(R11_MAPPING.metal).forEach(arr => arr.forEach(v => allMetalVals.add(v)));
+      const hasMetalInField = [...allMetalVals].some(v => metalConclusion === v);
+      // 也检查备注中是否提到
+      const remarkHasMetal = [...allMetalVals].some(v => remark.includes(v));
+      if (hasMetalInField || remarkHasMetal) return '材质漏检';
+      continue;
+    }
+
+    // ── 贵金属类 ──
+    const metalKey = Object.keys(R11_MAPPING.metal).find(k => mat === k);
+    if (metalKey) {
+      anyMatched = true;
+      const validConc = R11_MAPPING.metal[metalKey];
+      const matched = validConc.some(c => metalConclusion === c || remark.includes(c));
+      if (!matched) return '材质漏检';
+      continue;
+    }
+
+    // ── 其他类（宝玉石）──
+    const gemKey = Object.keys(R11_MAPPING.gemstone).find(k => mat === k);
+    if (gemKey) {
+      anyMatched = true;
+      const validConc = R11_MAPPING.gemstone[gemKey];
+      const matched = validConc.some(c => gemstoneConclusion === c || remark.includes(c));
+      if (!matched) return '材质漏检';
+      continue;
+    }
+  }
+
+  if (!anyMatched) return '找不到对应材质';
+  return '正确';
+}
+
+
+
+// ==================== Column Filter ====================
+
+
+
+
+
+
+// (旧版列筛选下拉关闭逻辑已移除)
+
+// Helper: get visible rule IDs
+function getVisibleRules() {
+  return ruleMeta.filter(r => columnFilterState[r.id]).map(r => r.id);
+}
+// ==================== Unified Filter Panel ====================
+
+function toggleFilterPanel() {
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (!dd) return;
+  const isActive = dd.classList.contains('active');
+  document.querySelectorAll('.filter-dropdown.active').forEach(d => d.classList.remove('active'));
+  if (btn) btn.classList.remove('active');
+  if (!isActive) {
+    dd.classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+}
+
+function selectFilterStatus(status, btn) {
+  pendingStatus = status;
+  document.querySelectorAll('.filter-status-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function updatePendingRules(changed) {
+  // 单选逻辑：选中一个规则时，自动取消其他
+  if (changed && changed.checked) {
+    document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => {
+      if (c !== changed) c.checked = false;
+    });
+    pendingRules = [changed.value];
+    // 选了规则 → 强制异常，隐藏全部/正确
+    pendingStatus = 'error';
+    document.querySelectorAll('.filter-status-btn').forEach(b => {
+      b.style.display = b.dataset.status === 'error' ? '' : 'none';
+      b.classList.toggle('active', b.dataset.status === 'error');
+    });
+  } else {
+    pendingRules = [];
+    // 取消规则 → 恢复全部状态按钮
+    pendingStatus = 'all';
+    document.querySelectorAll('.filter-status-btn').forEach(b => {
+      b.style.display = '';
+      b.classList.toggle('active', b.dataset.status === 'all');
+    });
+  }
+}
+
+function confirmFilterPanel() {
+  appliedStatus = pendingStatus;
+  if (pendingRules.length === 1) {
+    appliedRuleFilter = pendingRules[0];
+  } else {
+    appliedRuleFilter = 'all';
+  }
+  updateFilterBadge();
+  fieldFilter = { field: '', value: '' };
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (dd) dd.classList.remove('active');
+  if (btn) btn.classList.remove('active');
+  currentPage = 1;
+  applyFilters();
+}
+
+function resetFilterPanel() {
+  pendingStatus = 'all';
+  pendingRules = [];
+  appliedStatus = 'all';
+  appliedRuleFilter = 'all';
+  fieldFilter = { field: '', value: '' };
+  document.querySelectorAll('.filter-status-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === 'all');
+    b.style.display = '';
+  });
+  document.querySelectorAll('.filter-rule-checkboxes input[type="checkbox"]').forEach(c => c.checked = false);
+  updateFilterBadge();
+  const dd = document.getElementById('filterDropdown');
+  const btn = document.getElementById('filterBtn');
+  if (dd) dd.classList.remove('active');
+  if (btn) btn.classList.remove('active');
+  currentPage = 1;
+  applyFilters();
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById('filterBadge');
+  if (!badge) return;
+  let count = 0;
+  if (appliedStatus !== 'all') count++;
+  if (appliedRuleFilter !== 'all') count++;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.filter-wrapper')) {
+    const dd = document.getElementById('filterDropdown');
+    const btn = document.getElementById('filterBtn');
+    if (dd) dd.classList.remove('active');
+    if (btn) btn.classList.remove('active');
+  }
+});
+
+// ==================== Field Filter ====================
+function toggleFieldFilter(event, field) {
+  const dd = document.getElementById('fieldFilterDropdown');
+  const btn = event.target;
+
+  if (dd.classList.contains('active') && dd.dataset.field === field) {
+    dd.classList.remove('active');
+    return;
+  }
+
+  dd.dataset.field = field;
+  const isRule = field.startsWith('r') && /^r\d+$/.test(field);
+  const meta = isRule ? ruleMeta.find(r => r.id === field) : null;
+  const title = meta ? meta.short : field;
+  document.getElementById('fieldFilterDropdownTitle').textContent = '按 ' + title + ' 筛选';
+
+  // 从当前已筛选的异常数据中收集去重值
+  let filtered = processedData;
+  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status !== 'ok');
+  else if (appliedStatus === 'ok') filtered = filtered.filter(d => d._status === 'ok');
+  if (appliedRuleFilter !== 'all') {
+    filtered = filtered.filter(d => {
+      const val = d[appliedRuleFilter];
+      return val && val !== '正常' && val !== '正确' && val !== '';
+    });
+  }
+
+  const values = [];
+  const seen = new Set();
+  for (const d of filtered) {
+    const v = isRule ? String(d[field] || '') : cleanVal(d._row[field]);
+    if (v && !seen.has(v)) { seen.add(v); values.push(v); }
+  }
+  values.sort();
+
+  const list = document.getElementById('fieldFilterList');
+  list.innerHTML = values.map(v => {
+    const activeClass = fieldFilter.field === field && fieldFilter.value === v ? ' active' : '';
+    const display = esc(truncate(v, 30));
+    return `<button class="field-filter-item${activeClass}" onclick="setFieldFilter('${esc(field)}', '${esc(v)}')">${display}</button>`;
+  }).join('');
+
+  const rect = btn.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = Math.min(rect.left, window.innerWidth - 310) + 'px';
+  dd.classList.add('active');
+}
+
+function setFieldFilter(field, value) {
+  if (fieldFilter.field === field && fieldFilter.value === value) {
+    fieldFilter = { field: '', value: '' };
+  } else {
+    fieldFilter = { field: field, value: value };
+  }
+  const dd = document.getElementById('fieldFilterDropdown');
+  dd.classList.remove('active');
+  currentPage = 1;
+  updateFieldFilterBadge();
+  applyFilters();
+}
+
+function clearFieldFilter() {
+  fieldFilter = { field: '', value: '' };
+  const dd = document.getElementById('fieldFilterDropdown');
+  if (dd) dd.classList.remove('active');
+  updateFieldFilterBadge();
+  applyFilters();
+}
+
+function updateFieldFilterBadge() {
+  const el = document.getElementById('fieldFilterTag');
+  if (!el) return;
+  if (fieldFilter.field && fieldFilter.value) {
+    // 规则列显示规则名称，字段列显示字段名
+    const isRule = fieldFilter.field.startsWith('r') && /^r\d+$/.test(fieldFilter.field);
+    const meta = isRule ? ruleMeta.find(r => r.id === fieldFilter.field) : null;
+    const label = meta ? meta.short : fieldFilter.field;
+    el.innerHTML = `${esc(label)}: ${esc(truncate(fieldFilter.value, 15))} <span class="field-filter-close" onclick="event.stopPropagation();clearFieldFilter()">x</span>`;
+    el.style.display = 'inline-flex';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// Close field filter dropdown on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.field-filter-dropdown') && !e.target.closest('.col-filter-btn')) {
+    const dd = document.getElementById('fieldFilterDropdown');
+    if (dd) dd.classList.remove('active');
+  }
+});
+
+// ==================== Processing ====================
+function processAndRender() {
+  showLoading('正在执行规则审查...');
+  setTimeout(() => {
+    processedData = rawData.map((row, idx) => {
+      const r1 = ruleState.r1 ? ruleR1(row) : '';
+      const r2 = ruleState.r2 ? ruleR2(row) : '';
+      const r3 = ruleState.r3 ? ruleR3(row) : '';
+      const r4 = ruleState.r4 ? ruleR4(row) : '';
+      const r5 = ruleState.r5 ? ruleR5(row) : '';
+      const r6 = ruleState.r6 ? ruleR6(row) : '';
+      const r7 = ruleState.r7 ? ruleR7(row) : '';
+      const r8 = ruleState.r8 ? ruleR8(row) : '';
+      const r9 = ruleState.r9 ? ruleR9(row) : '';
+      const r10 = ruleState.r10 ? ruleR10(row) : '';
+      const r11 = ruleState.r11 ? ruleR11(row) : '';
+
+      const results = [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11];
+      const hasError = results.some(r => r && r !== '正常' && r !== '正确');
+      const allEmpty = results.every(r => r === '');
+      const allOk = !hasError && !allEmpty;
+
+      return {
+        _idx: idx + 1,
+        _row: row,
+        r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
+        _status: allEmpty ? 'empty' : (hasError ? 'error' : 'ok')
+      };
+    });
+
+    currentPage = 1;
+    renderStats();
+    renderChart();
+    applyFilters();
+    hideLoading();
+    showToast(`审查完成！共 ${rawData.length} 条记录`, 'success');
+  }, 100);
+}
+
+// ==================== Rendering ====================
+
+// ==================== Animated Counter ====================
+function animateValue(el, start, end, duration = 800) {
+  const range = end - start;
+  const startTime = performance.now();
+  
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + range * eased);
+    el.textContent = current.toLocaleString();
+    
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+  
+  requestAnimationFrame(update);
+}
+
+function renderStats() {
+  const total = processedData.length;
+  const errors = processedData.filter(d => d._status === 'error').length;
+  const oks = total - errors;
+
+  animateValue(document.getElementById('statTotal'), 0, total);
+  animateValue(document.getElementById('statError'), 0, errors);
+  animateValue(document.getElementById('statOk'), 0, oks);
+
+  document.getElementById('statTotalSub').textContent = '条数据记录';
+  document.getElementById('statErrorSub').textContent = errors > 0 ? `占比 ${(errors/total*100).toFixed(1)}%` : '无异常';
+  document.getElementById('statOkSub').textContent = oks > 0 ? `占比 ${(oks/total*100).toFixed(1)}%` : '-';
+
+  document.getElementById('statsSection').style.display = '';
+  document.getElementById('chartSection').style.display = '';
+  document.getElementById('resultsSection').style.display = '';
+}
+
+function renderChart() {
+  const container = document.getElementById('ruleChart');
+  const ruleNamesFull = [
+    { id: 'r1', name: 'R1 克重及单位', color: 'var(--gold-400)' },
+    { id: 'r2', name: 'R2 翡翠备注', color: 'var(--red-400)' },
+    { id: 'r3', name: 'R3 足金金含量备注', color: 'var(--amber-400)' },
+    { id: 'r4', name: 'R4 足金净金重备注', color: 'var(--blue-400)' },
+    { id: 'r5', name: 'R5 南红玛瑙备注', color: 'var(--red-400)' },
+    { id: 'r6', name: 'R6 玛瑙（覆膜）', color: 'var(--gold-400)' },
+    { id: 'r7', name: 'R7 非洲翠备注', color: 'var(--green-400)' },
+    { id: 'r8', name: 'R8 合成立方氧化锆备注', color: 'var(--amber-400)' },
+    { id: 'r9', name: 'R9 款式核实', color: 'var(--green-400)' },
+    { id: 'r10', name: 'R10 重量比对', color: 'var(--amber-400)' },
+    { id: 'r11', name: 'R11 材质结论对应', color: 'var(--gold-400)' },
+  ];
+  const ruleNames = ruleNamesFull.filter(r => columnFilterState[r.id]);
+
+  const maxCount = Math.max(
+    ...ruleNames.map(r => processedData.filter(d => d[r.id] && d[r.id] !== '正常' && d[r.id] !== '正确' && d[r.id] !== '').length),
+    1
+  );
+
+  container.innerHTML = ruleNames.map(r => {
+    const count = processedData.filter(d => d[r.id] && d[r.id] !== '正常' && d[r.id] !== '正确' && d[r.id] !== '').length;
+    const pct = (count / maxCount * 100).toFixed(1);
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${r.name}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${r.color}"></div>
+        </div>
+        <div class="bar-count">${count} 条异常</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function applyFilters() {
+  const search = (document.getElementById('searchInput').value || '').toLowerCase();
+  let filtered = processedData;
+
+  if (appliedStatus === 'error') filtered = filtered.filter(d => d._status !== 'ok');
+  else if (appliedStatus === 'ok') filtered = filtered.filter(d => d._status === 'ok');
+
+  // Rule filter (appliedRuleFilter: all or specific rule)
+  if (appliedRuleFilter !== 'all') {
+    filtered = filtered.filter(d => {
+      const val = d[appliedRuleFilter];
+      return val && val !== '正常' && val !== '正确' && val !== '';
+    });
+  }
+
+  // Field value filter
+  if (fieldFilter.field && fieldFilter.value) {
+    const isRule = fieldFilter.field.startsWith('r') && /^r\d+$/.test(fieldFilter.field);
+    filtered = filtered.filter(d => {
+      const val = isRule ? String(d[fieldFilter.field] || '') : cleanVal(d._row[fieldFilter.field]);
+      return val === fieldFilter.value;
+    });
+    updateFieldFilterBadge();
+  } else {
+    updateFieldFilterBadge();
+  }
+
+    if (search) {
+      filtered = filtered.filter(d => {
+        const name = cleanVal(d._row['商品名称']).toLowerCase();
+        const orderCode = padOrderCode(d._row['订单码']).toLowerCase();
+        const batch = cleanVal(d._row['入库批次号']).toLowerCase();
+        return name.includes(search) || orderCode.includes(search) || batch.includes(search);
+      });
+    }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageData = filtered.slice(start, start + PAGE_SIZE);
+
+  renderTable(pageData);
+  renderPagination(filtered.length, totalPages);
+}
+
+function getVisibleColumns() {
+  // 始终显示 # 和 订单码 和 批次
+  const cols = [
+    { type: 'index', label: '#', style: 'width:50px', class: 'sticky-col', id: 'col-num' },
+    { type: 'order-code', label: '订单码', class: 'sticky-col', id: 'col-order-code' },
+    { type: 'batch', label: '入库批次号', class: 'sticky-col', id: 'col-batch' },
+  ];
+
+  if (appliedRuleFilter === 'all') {
+    // 显示所有基础字段（按照原始Excel列顺序） + 所有可见规则列
+    const fieldsToShow = originalHeaders.length > 0 ? originalHeaders : ['商品名称', '重量', '宝玉石结论', '贵金属结论', '备注'];
+    fieldsToShow.forEach(f => {
+      if (f && !cols.some(c => c.field === f || c.label === f)) {
+        cols.push({ type: 'field', field: f, label: f });
+      }
+    });
+    ruleMeta.filter(r => columnFilterState[r.id]).forEach(r => {
+      cols.push({ type: 'rule', ruleId: r.id, label: r.short });
+    });
+  } else {
+    // 只显示筛选规则的源字段 + 该规则结果列
+    // 始终显示 【状态】字段
+    cols.push({ type: 'field', field: '状态', label: '状态' });
+    const src = ruleSourceFields[appliedRuleFilter] || [];
+    src.forEach(f => {
+      if (!cols.some(c => c.field === f || c.label === f)) {
+        cols.push({ type: 'field', field: f, label: f });
+      }
+    });
+    const rule = ruleMeta.find(r => r.id === appliedRuleFilter);
+    if (rule) {
+      cols.push({ type: 'rule', ruleId: rule.id, label: rule.short });
+    }
+  }
+
+  return cols;
+}
+
+// ==================== Column Resize ====================
+let _resizeState = null;
+
+function initColumnResize() {
+  const ths = document.querySelectorAll('thead th');
+  ths.forEach(th => {
+    let handle = th.querySelector('.col-resize-handle');
+    if (!handle) {
+      handle = document.createElement('div');
+      handle.className = 'col-resize-handle';
+      th.style.position = 'relative';
+      th.appendChild(handle);
+    }
+  });
+  document.removeEventListener('mousedown', _onResizeMouseDown);
+  document.addEventListener('mousedown', _onResizeMouseDown);
+}
+
+function _onResizeMouseDown(e) {
+  const handle = e.target.closest('.col-resize-handle');
+  if (!handle) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const th = handle.parentElement;
+  _resizeState = {
+    th: th,
+    startX: e.pageX,
+    startWidth: th.offsetWidth,
+    table: th.closest('table'),
+  };
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', _onResizeMouseMove);
+  document.addEventListener('mouseup', _onResizeMouseUp);
+}
+
+function _onResizeMouseMove(e) {
+  if (!_resizeState) return;
+  const delta = e.pageX - _resizeState.startX;
+  const newWidth = Math.max(30, _resizeState.startWidth + delta);
+  _resizeState.th.style.width = newWidth + 'px';
+  _resizeState.th.style.minWidth = newWidth + 'px';
+}
+
+function _onResizeMouseUp() {
+  if (!_resizeState) return;
+  _resizeState = null;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  document.removeEventListener('mousemove', _onResizeMouseMove);
+  document.removeEventListener('mouseup', _onResizeMouseUp);
+}
+
+// [disabled] MutationObserver for column resize - was causing page spin
+// const _origRenderTable = renderTable;
+// const _resizeObserver = new MutationObserver(() => { initColumnResize(); });
+// document.addEventListener('DOMContentLoaded', ...);
+
+// Search input debounce
+let _searchTimer = null;
+(function() {
+  const si = document.getElementById('searchInput');
+  if (si) {
+    si.addEventListener('input', function() {
+      clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(applyFilters, 250);
+    });
+  }
+})();
+
+
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  const thead = document.querySelector('thead tr');
+
+  // 动态列
+  const cols = getVisibleColumns();
+
+  // 生成表头
+  let headerHtml = cols.map((c, ci) => {
+    let resizeHandle = '<div class="col-resize-handle"></div>';
+    if (c.type === 'index') {
+      return `<th style="${c.style}" class="${c.class} col-num">${c.label}${resizeHandle}</th>`;
+    }
+    if (c.type === 'order-code') {
+      return `<th class="${c.class} col-order-code">${c.label}${resizeHandle}</th>`;
+    }
+    if (c.type === 'batch') {
+      return `<th class="${c.class} col-batch">${c.label}${resizeHandle}</th>`;
+    }
+    if (c.type === 'field') {
+      const btnClass = fieldFilter.field === c.field ? ' active' : '';
+      return `<th class="has-filter"><span>${c.label}</span><button class="col-filter-btn${btnClass}" onclick="event.stopPropagation();toggleFieldFilter(event,'${esc(c.field)}')" title="筛选 ${c.label}">▼</button>${resizeHandle}</th>`;
+    }
+    if (c.type === 'rule') {
+      const btnClass = fieldFilter.field === c.ruleId ? ' active' : '';
+      return `<th class="has-filter"><span>${c.label}</span><button class="col-filter-btn${btnClass}" onclick="event.stopPropagation();toggleFieldFilter(event,'${c.ruleId}')" title="筛选 ${c.label}">▼</button>${resizeHandle}</th>`;
+    }
+    return `<th>${c.label}${resizeHandle}</th>`;
+  }).join('');
+  thead.innerHTML = headerHtml;
+
+  if (data.length === 0) {
+    const colCount = cols.length;
+    tbody.innerHTML = `
+      <tr><td colspan="${colCount}">
+        <div class="empty-state">
+          <div class="empty-icon">◇</div>
+          <div class="empty-title">无匹配记录</div>
+          <div class="empty-desc">尝试调整筛选条件</div>
+        </div>
+      </td></tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = data.map(d => {
+    const rowClass = d._status === 'error' ? 'error-row' : '';
+    let rowHtml = `<tr class="${rowClass}" onclick="showDetail(${d._idx - 1})" style="cursor:pointer">`;
+
+    cols.forEach(c => {
+      if (c.type === 'index') {
+        rowHtml += `<td class="row-num sticky-col col-num">${d._idx}</td>`;
+      } else if (c.type === 'order-code') {
+        const val = padOrderCode(d._row['订单码']);
+        rowHtml += `<td class="sticky-col col-order-code" title="${esc(val)}"><div class="cell-flex"><span class="order-code-text">${esc(truncate(val, 18))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></td>`;
+      } else if (c.type === 'batch') {
+        const val = cleanVal(d._row['入库批次号']);
+        rowHtml += `<td class="sticky-col col-batch" title="${esc(val)}"><div class="cell-flex"><span class="order-code-text">${esc(truncate(val, 14))}</span><button class="copy-btn-tbl" onclick="event.stopPropagation();copyToClipboard('${esc(val)}')" title="复制入库批次号"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></td>`;
+      } else if (c.type === 'field') {
+        const val = cleanVal(d._row[c.field]);
+        rowHtml += `<td title="${esc(val)}">${esc(truncate(val, 20))}</td>`;
+      } else if (c.type === 'rule') {
+        rowHtml += `<td>${renderBadge(d[c.ruleId])}</td>`;
+      }
+    });
+
+    rowHtml += '</tr>';
+    return rowHtml;
+  }).join('');
+}
+
+function renderBadge(val) {
+  if (val === '' || val == null) return '<span class="badge badge-empty">-</span>';
+  if (!val) return '<span class="badge badge-error">异常</span>';
+  const v = String(val).trim();
+  // 正确/正常 → 绿色
+  if (v === '正常' || v === '正确') return '<span class="badge badge-ok">正确</span>';
+  // 克重极低 → 黄色
+  if (v.includes('克重极低')) return '<span class="badge badge-warn">克重极低</span>';
+  // 包含"核实"或"核对" → 蓝色
+  if (v.includes('核实') || v.includes('核对')) return '<span class="badge badge-info">' + esc(v) + '</span>';
+  // 包含"正确" → 绿色
+  if (v.includes('正确')) return '<span class="badge badge-ok">正确</span>';
+  // 其余 → 红色
+  return '<span class="badge badge-error">' + esc(truncate(v, 10)) + '</span>';
+}
+
+function renderPagination(total, totalPages) {
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+
+  let pages = [];
+  const range = 2;
+  for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
+    pages.push(i);
+  }
+
+  const html = `
+    <span>显示 ${start}-${end} / 共 ${total} 条</span>
+    <div class="page-btns">
+      <button class="page-btn" onclick="goPage(1)" ${currentPage===1?'disabled':''}>«</button>
+      <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>
+      ${pages.map(p => `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`).join('')}
+      <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>
+      <button class="page-btn" onclick="goPage(${totalPages})" ${currentPage===totalPages?'disabled':''}>»</button>
+    </div>
+  `;
+  document.getElementById('pagination').innerHTML = html;
+}
+
+// ==================== Detail Modal ====================
+function showDetail(idx) {
+  const d = processedData[idx];
+  const row = d._row;
+  const allFields = Object.keys(row).filter(k => k !== '__rowNum__');
+
+  let html = `
+    <div class="modal-header">
+      <div class="modal-title">记录详情 #${d._idx}</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="detail-grid">
+  `;
+
+  for (const f of allFields) {
+    let val = cleanVal(row[f]);
+    let copyBtn = '';
+    // 订单码：10位显示 + 复制按钮
+    if (f === '订单码') {
+      const padded = padOrderCode(row[f]);
+      val = padded;
+      copyBtn = `<button class="copy-btn" onclick="event.stopPropagation();copyToClipboard('${esc(padded)}')" title="复制订单码"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+    }
+    html += `<div class="detail-item"><div class="detail-label">${f}</div><div class="detail-value">${esc(val) || '-'}${copyBtn}</div></div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('active');
+}
+
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('detailModal')) closeModal();
+});
+
+// ==================== Filters & Pagination ====================
+function goPage(p) {
+  currentPage = p;
+  applyFilters();
+  document.getElementById('tableContainer').scrollTop = 0;
+}
+
+// ==================== Rule Toggles ====================
+function toggleRule(el) {
+  const rule = el.dataset.rule;
+  ruleState[rule] = !ruleState[rule];
+  el.classList.toggle('active');
+  document.getElementById('rule-' + rule).classList.toggle('disabled');
+
+  if (rawData.length > 0) processAndRender();
+}
+
+function toggleAllRules() {
+  const allOn = Object.values(ruleState).every(v => v);
+  const newState = !allOn;
+  for (const k of Object.keys(ruleState)) {
+    ruleState[k] = newState;
+    const toggle = document.querySelector(`.rule-toggle[data-rule="${k}"]`);
+    toggle.classList.toggle('active', newState);
+    document.getElementById('rule-' + k).classList.toggle('disabled', !newState);
+  }
+  if (rawData.length > 0) processAndRender();
+}
+
+// ==================== Export ====================
+function exportResults() {
+  if (processedData.length === 0) {
+    showToast('没有数据可导出', 'error');
+    return;
+  }
+
+  // 导出完整表格：原表所有字段 + 11条规则处理结果
+  // 不受筛选影响。导出时智能过滤空列，不修改原数据。
+  const ruleLabels = ruleMeta.map(r => r.short);
+
+  // 候选列：originalHeaders 中的真实字段 + _row 中的非内部字段
+  const candidateKeys = new Set();
+  if (originalHeaders.length > 0) {
+    originalHeaders.forEach(h => {
+      if (h && !h.startsWith('Column_') && h !== '订单码') candidateKeys.add(h);
+    });
+  }
+  // 补充 _row 中的实际 key（排除 XLSX 内部键）
+  processedData.forEach(d => {
+    Object.keys(d._row).forEach(k => {
+      if (k && k !== '订单码' && !k.startsWith('__') && !k.startsWith('Column_')) {
+        candidateKeys.add(k);
+      }
+    });
+  });
+
+  // 只保留有实际数据的列（至少一行有非空值）
+  const allKeys = [];
+  candidateKeys.forEach(k => {
+    const hasData = processedData.some(d => {
+      const v = d._row[k];
+      return v != null && String(v).trim() !== '';
+    });
+    if (hasData) allKeys.push(k);
+  });
+
+  const headerOrder = ['#', '订单码', ...allKeys, ...ruleLabels];
+
+  const exportData = processedData.map(d => {
+    const row = {};
+    row['#'] = d._idx;
+    // 订单码：10位数字，配合导出格式 0000000000
+    row['订单码'] = parseInt(padOrderCode(d._row['订单码']), 10) || '';
+    allKeys.forEach(k => {
+      row[k] = d._row[k] != null ? d._row[k] : '';
+    });
+    ruleMeta.forEach(r => {
+      row[r.short] = d[r.id] || '';
+    });
+    return row;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportData, { header: headerOrder });
+
+  // 显示导出加载状态
+  showLoading('正在导出...');
+
+  // 订单码列（B列，index=1）设为 10 位数字格式，保留前导0
+  const sheetRange = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = sheetRange.s.r + 1; R <= sheetRange.e.r; R++) {
+    const addr = XLSX.utils.encode_cell({ r: R, c: 1 });
+    if (ws[addr] && typeof ws[addr].v === 'number') {
+      ws[addr].z = '0000000000';
+    }
+  }
+
+  // 长数字ID列（如质检批次号）：强制文本类型，防止科学计数法
+  const idLikeCols = ['质检批次号', '批次号', '编号', '检测编号'];
+  idLikeCols.forEach(idCol => {
+    const ci = headerOrder.indexOf(idCol);
+    if (ci >= 0) {
+      for (let R = sheetRange.s.r + 1; R <= sheetRange.e.r; R++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: ci });
+        if (ws[addr] && ws[addr].v != null && ws[addr].t !== 's') {
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v);
+          delete ws[addr].z; // 清除数字格式
+        }
+      }
+    }
+  });
+
+  // 设置列宽
+  const colWidths = headerOrder.map((h, i) => {
+    if (h === '#') return { wch: 6 };
+    if (h === '订单码') return { wch: 16 };
+    // 规则列
+    if (ruleLabels.includes(h)) return { wch: 14 };
+    // 普通字段列
+    const maxLen = Math.min(Math.max(h.length + 4, 10), 40);
+    return { wch: maxLen };
+  });
+  ws['!cols'] = colWidths;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '审查结果');
+  XLSX.writeFile(wb, '珠宝质检审查结果.xlsx');
+  hideLoading();
+  showToast('导出成功！已导出完整数据（不受筛选影响）', 'success');
+}
+
+
+// ==================== Theme ====================
+// ==================== Reset ====================
+function resetAll() {
+  rawData = [];
+  processedData = [];
+  originalHeaders = []; // 清空原始列顺序
+  appliedStatus = 'all';
+appliedRuleFilter = 'all';
+  fieldFilter = { field: '', value: '' };
+  currentPage = 1;
+
+  const zone = document.getElementById('uploadZone');
+  zone.classList.remove('has-file');
+  zone.innerHTML = `
+    <div class="upload-icon">◆</div>
+    <div class="upload-title">拖拽 Excel 文件到此处</div>
+    <div class="upload-subtitle">或点击选择文件上传</div>
+    <div class="upload-hint">支持 .xlsx/.xls/.xlsm/.xlsb/.csv/.ods · 自动执行 11 项规则审查 · 结果可导出</div>
+  `;
+
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('chartSection').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('searchInput').value = '';
+}
+
+// ==================== Utilities ====================
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制：' + text);
+  }).catch(() => {
+    showToast('复制失败，请手动复制', 'error');
+  });
+}
+
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.substring(0, len) + '...' : str;
+}
+
+function showLoading(text) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loading').classList.add('active');
+}
+
+function hideLoading() {
+  document.getElementById('loading').classList.remove('active');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type + ' show';
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+</script>
+
+</body>
+</html>
