@@ -80,23 +80,13 @@ body::before {
   opacity: 0.5;
 }
 
-.header-brand { display: flex; align-items: center; gap: 1.2vw; }
-
-/* 钻石 Logo (CSS) */
-.diamond-logo {
-  width: 3.2vw; height: 3.2vw;
-  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-  background: linear-gradient(135deg, #8b95a8, #7b8ba3, #8b95a8);
-  box-shadow: 0 0 20px rgba(123,139,163,0.2), inset 0 0 8px rgba(255,255,255,0.2);
-  animation: gemShine 4s ease-in-out infinite;
+.header {
+  display: flex; align-items: center;
 }
-@keyframes gemShine {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.2); }
-}
-
 .header-title {
-  font-size: 2.2vw; font-weight: 700; letter-spacing: 1px;
+  flex: 1; text-align: center;
+  font-size: 4.5vw; font-weight: 900;
+  letter-spacing: 0.5vw;
   background: linear-gradient(135deg, var(--text) 30%, var(--gold) 60%, var(--text) 90%);
   background-size: 200% 100%;
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -107,12 +97,6 @@ body::before {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
-
-.header-subtitle {
-  font-size: 1vw; color: var(--text-dim); letter-spacing: 2px; font-weight: 500;
-}
-
-.header-right { display: flex; align-items: center; gap: 2.5vw; }
 .clock {
   font-family: "SF Mono", "JetBrains Mono", monospace;
   font-size: 2.5vw; font-weight: 200; letter-spacing: 3px;
@@ -205,16 +189,9 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 <div class="scan-line"></div>
 <div class="container">
   <div class="header">
-    <div class="header-brand">
-      <div class="diamond-logo"></div>
-      <div>
-        <div class="header-title">{{ tenant }} · 珠宝检测AI自查大屏</div>
-        <div class="header-subtitle">JEWELRY QC AI MONITOR</div>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="clock" id="clock">--:--:--</div>
-    </div>
+    <img src="/static/logo.png" alt="logo" style="height:3.5vw;width:auto;">
+    <div class="header-title">{{ tenant }} · 珠宝检测AI自查大屏</div>
+    <div class="clock" id="clock">--:--:--</div>
   </div>
 
   <div class="alert-bar" id="alert">

@@ -24,17 +24,31 @@ from sync_service import SyncEngine
 # ---------- 初始化 ----------
 BASE_DIR = Path(__file__).parent
 
+# 租户环境变量（必须在初始化前读取）
+import os
+TENANT = os.environ.get("TENANT", "域骉控股")
+TENANT_COLOR = os.environ.get("TENANT_COLOR", "#1a1a2e")
+
 with open(BASE_DIR / "config.json", "r", encoding="utf-8") as f:
     CONFIG = json.load(f)
 
+# 租户独立数据库
+tenant_db = f"../data/{TENANT}_qic_quality.db"
+CONFIG["database"]["path"] = tenant_db
+
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 
-db = Database()
+db = Database(db_path=tenant_db)
+# 确保 qic_orders 表存在（sync_service._ensure_tables）
+sync_engine = SyncEngine(enable_qc=False)
+sync_engine.db_path = str(BASE_DIR / tenant_db)
+sync_engine._ensure_tables()
+loupe_cookie = os.environ.get("LOUPE_COOKIE", "")
+if loupe_cookie:
+    sync_engine.loupe["auth"]["cookie"] = loupe_cookie
+    sync_engine.session.headers["Cookie"] = loupe_cookie  # 同步更新 HTTP Session
 qc = QCService()
 notifier = Notifier(CONFIG)
-
-# 同步引擎（用于从 Loupe API 拉取数据）
-sync_engine = SyncEngine(enable_qc=False)
 
 # 同步状态文件
 SYNC_STATE_PATH = BASE_DIR / "sync_state.json"
@@ -386,17 +400,9 @@ def background_checker():
 # ==================== 启动 ====================
 
 if __name__ == "__main__":
-    # Render 环境变量支持
-    import os
-    loupe_cookie = os.environ.get("LOUPE_COOKIE", "")
+    print(f"[配置] 租户: {TENANT} | 数据库: {tenant_db}")
     if loupe_cookie:
-        sync_engine.loupe["auth"]["cookie"] = loupe_cookie
-        print("[配置] 已从环境变量加载 Cookie")
-
-    # 租户配置
-    TENANT = os.environ.get("TENANT", "域骉控股")
-    TENANT_COLOR = os.environ.get("TENANT_COLOR", "#1a1a2e")
-    print(f"[配置] 租户: {TENANT}")
+        print(f"[配置] Cookie来源: 环境变量 ({len(loupe_cookie)}字符)")
 
     notifier.start()
 
