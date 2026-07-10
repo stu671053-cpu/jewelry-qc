@@ -25,6 +25,9 @@ class QCEngine:
         "r6_agate_coating": {"商品材质", "宝玉石结论", "备注"},
         "r7_african_jade": {"商品名称", "商品材质", "配件材质", "备注"},
         "r8_cubic_zirconia": {"配件材质", "宝玉石结论", "备注"},
+        "r9_style_check": {"商品名称", "饰品类型"},
+        "r10_weight_compare": {"商品质量", "重量", "商品材质", "镶嵌材质", "配件材质"},
+        "r11_material_conclusion": {"商品材质", "镶嵌材质", "配件材质", "贵金属结论", "宝玉石结论", "备注"},
     }
 
     def __init__(self, config_path: str = None):

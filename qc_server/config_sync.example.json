@@ -1,0 +1,31 @@
+{
+  "loupe": {
+    "base_url": "https://qms.bytedance.com",
+    "auth": {
+      "cookie": "你的Cookie字符串"
+    },
+    "apis": {
+      "order_search": {
+        "method": "POST",
+        "path": "/api/quality/loupe/inspection/order/list"
+      },
+      "order_detail": {
+        "method": "POST",
+        "path": "/api/quality/loupe/inspection/order/list"
+      }
+    },
+    "search_params": {
+      "checkType": 1,
+      "inspectionBatchStartTime": 0,
+      "inspectionBatchEndTime": 0
+    },
+    "pagination": {
+      "type": "offset",
+      "page_size": 50,
+      "delay_ms": 1500
+    }
+  },
+  "database": {
+    "path": "../data/qic_quality.db"
+  }
+}

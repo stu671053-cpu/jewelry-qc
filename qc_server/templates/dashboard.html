@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>珠宝检测AI自查大屏</title>
+<style>
+:root {
+  --bg: #f5f6f8;
+  --surface: rgba(255,255,255,0.82);
+  --text: #1a1f2e;
+  --text-dim: #7b8ba3;
+  --gold: #b8960f;
+  --gold-glow: rgba(184,150,15,0.2);
+  --gold-border: rgba(184,150,15,0.3);
+  --ruby: #d63045;
+  --ruby-bg: rgba(214,48,69,0.06);
+  --emerald: #1f9d63;
+  --emerald-bg: rgba(31,157,99,0.06);
+  --sapphire: #3b82e8;
+  --sapphire-bg: rgba(59,130,232,0.06);
+  --amber: #d4880f;
+  --amber-bg: rgba(212,136,15,0.06);
+  --border: rgba(0,0,0,0.07);
+  --glass-blur: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "SF Pro Display", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  width: 100vw; height: 100vh; overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 背景光晕 ── */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 25% 15%, rgba(184,150,15,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 35% at 75% 75%, rgba(59,130,232,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 50% 50%, rgba(214,48,69,0.03) 0%, transparent 60%);
+}
+
+/* ── 扫描线 ── */
+.scan-line {
+  position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 0; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(31,157,99,0.3), rgba(31,157,99,0.6), rgba(31,157,99,0.3), transparent);
+  animation: scanDown 6s linear infinite;
+  box-shadow: 0 0 30px rgba(31,157,99,0.15);
+}
+@keyframes scanDown {
+  0% { top: -5%; opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { top: 105%; opacity: 0; }
+}
+
+.container {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  padding: 1.5vw 3vw; gap: 1.5vh;
+}
+
+/* ── 顶部 Header ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5vh 2vw;
+  background: var(--surface);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border);
+  border-radius: 1.2vw; position: relative; overflow: hidden;
+}
+.header::before {
+  content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), #d4af37, var(--gold), transparent);
+  opacity: 0.5;
+}
+
+.header-brand { display: flex; align-items: center; gap: 1.2vw; }
+
+/* 钻石 Logo (CSS) */
+.diamond-logo {
+  width: 3.2vw; height: 3.2vw;
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+  background: linear-gradient(135deg, #8b95a8, #7b8ba3, #8b95a8);
+  box-shadow: 0 0 20px rgba(123,139,163,0.2), inset 0 0 8px rgba(255,255,255,0.2);
+  animation: gemShine 4s ease-in-out infinite;
+}
+@keyframes gemShine {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+.header-title {
+  font-size: 2.2vw; font-weight: 700; letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--text) 30%, var(--gold) 60%, var(--text) 90%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: titleShift 6s ease-in-out infinite;
+}
+@keyframes titleShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.header-subtitle {
+  font-size: 1vw; color: var(--text-dim); letter-spacing: 2px; font-weight: 500;
+}
+
+.header-right { display: flex; align-items: center; gap: 2.5vw; }
+.clock {
+  font-family: "SF Mono", "JetBrains Mono", monospace;
+  font-size: 2.5vw; font-weight: 200; letter-spacing: 3px;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+
+/* ── 告警条 ── */
+.alert-bar {
+  display: flex; align-items: center; gap: 1vw;
+  padding: 0; max-height: 0; overflow: hidden;
+  background: var(--ruby-bg); border: 1px solid transparent;
+  border-radius: 1vw; transition: all 0.3s ease; opacity: 0;
+}
+.alert-bar.show {
+  max-height: 8vh; padding: 1.2vh 1.5vw;
+  border-color: rgba(214,48,69,0.2); opacity: 1;
+}
+.alert-bar::before {
+  content: ''; display: inline-block; width: 0.5vw; height: 0.5vw;
+  background: var(--ruby); border-radius: 50%;
+  box-shadow: 0 0 10px rgba(214,48,69,0.3);
+  animation: rubyBlink 0.8s infinite;
+}
+@keyframes rubyBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.2; transform: scale(1.6); }
+}
+.alert-text { font-size: 1.7vw; font-weight: 600; color: var(--ruby); }
+
+/* ── 统计卡片 ── */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5vw; }
+.stat-card {
+  border-radius: 1.2vw; padding: 2.5vh 1.5vw; text-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+.stat-card .num {
+  font-size: 5.5vw; font-weight: 800; line-height: 1.1; color: #fff;
+}
+.stat-card .label {
+  font-size: 1.6vw; margin-top: 0.8vh;
+  letter-spacing: 2px; font-weight: 500; color: rgba(255,255,255,0.85);
+}
+.stat-card.sapphire { background: linear-gradient(135deg, #3b82e8, #2563eb); }
+.stat-card.emerald  { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-card.amber    { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stat-card.ruby     { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+/* ── 表格 ── */
+.table-wrap {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 1vw;
+}
+table { width: 100%; border-collapse: collapse; font-size: 1.6vw; }
+thead { position: sticky; top: 0; background: #fafbfd; z-index: 1; }
+th {
+  padding: 1.2vh 1.2vw; text-align: left; font-weight: 600;
+  font-size: 1.3vw; color: var(--text-dim);
+  border-bottom: 2px solid var(--border); letter-spacing: 1px;
+}
+td { padding: 1.2vh 1.2vw; border-bottom: 1px solid #f2f3f6; }
+tr:hover { background: #fafbfd; }
+tr.new-row { animation: rowIn 0.5s ease-out; }
+@keyframes rowIn { from { background: var(--ruby-bg) } to { background: transparent } }
+
+.order-code {
+  font-family: "SF Mono", monospace; font-size: 1.7vw; font-weight: 700; color: var(--ruby);
+}
+.operator { color: var(--sapphire); font-weight: 600; }
+.anomaly-tags { display: flex; flex-wrap: wrap; gap: 0.5vw; }
+.anomaly-tag {
+  display: inline-block; padding: 0.4vh 0.8vw; border-radius: 0.3vw;
+  font-size: 1.4vw; font-weight: 700;
+}
+.anomaly-tag.danger { background: var(--ruby-bg); color: var(--ruby); border: 1px solid rgba(214,48,69,0.2); }
+.anomaly-tag.warn { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(212,136,15,0.2); }
+
+.empty { text-align: center; padding: 10vh; }
+.empty .icon { font-size: 6vw; }
+.empty .txt { font-size: 3vw; margin-top: 2vh; }
+.empty .sub { font-size: 1.8vw; color: var(--text-dim); margin-top: 1vh; }
+
+.footer {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 1.1vw; color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+<div class="scan-line"></div>
+<div class="container">
+  <div class="header">
+    <div class="header-brand">
+      <div class="diamond-logo"></div>
+      <div>
+        <div class="header-title">域骉控股 · 珠宝检测AI自查大屏</div>
+        <div class="header-subtitle">JEWELRY QC AI MONITOR</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="alert-bar" id="alert">
+    <span class="alert-text" id="alertText"></span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card sapphire">
+      
+      <div class="num" id="sTotal">0</div>
+      <div class="label">总订单数</div>
+    </div>
+    <div class="stat-card emerald">
+      
+      <div class="num" id="sDone">0</div>
+      <div class="label">已完成</div>
+    </div>
+    <div class="stat-card amber">
+      
+      <div class="num" id="sProgress">0</div>
+      <div class="label">进行中</div>
+    </div>
+    <div class="stat-card ruby">
+      
+      <div class="num" id="sAnomaly">0</div>
+      <div class="label">异常</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:15%">订单码</th>
+          <th style="width:12%">批次码</th>
+          <th style="width:10%">操作人</th>
+          <th style="width:16%">对应规则</th>
+          <th>详情</th>
+          <th style="width:12%">时间</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    <span id="fLeft"></span>
+    <span id="fRight"></span>
+  </div>
+</div>
+
+<script>
+let lastAnomaly = 0;
+let anomalySound = null;
+try { anomalySound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/////w=='); } catch(e) {}
+
+async function refresh() {
+  try {
+    const [anomR, statsR] = await Promise.all([fetch('/api/anomalies'), fetch('/api/stats')]);
+    const anom = await anomR.json();
+    const stats = await statsR.json();
+    const dist = stats.status_distribution || {};
+
+    const done = dist['503'] || 0;
+    const total = Object.values(dist).reduce((a,b) => a+b, 0);
+    const anomaly = anom.total;
+    // 已完成的正常订单 = 503总数 - 异常数
+    const doneOk = Math.max(0, done - anomaly);
+    const progress = total - done;
+    document.getElementById('sTotal').textContent = total;
+    document.getElementById('sDone').textContent = doneOk;
+    document.getElementById('sProgress').textContent = progress;
+    document.getElementById('sAnomaly').textContent = anomaly;
+
+    if (anom.total > lastAnomaly && lastAnomaly > 0) {
+      document.getElementById('alertText').textContent = '⚠ ' + (anom.total - lastAnomaly) + ' 条新异常！请及时处理';
+      document.getElementById('alert').className = 'alert-bar show';
+      setTimeout(() => document.getElementById('alert').className = 'alert-bar', 10000);
+      if (anomalySound) anomalySound.play().catch(() => {});
+    }
+    lastAnomaly = anom.total;
+
+    const tbody = document.getElementById('tbody');
+    if (!anom.anomalies.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
+    } else {
+      tbody.innerHTML = anom.anomalies.map(a => {
+        const rows = a.items.map(it => {
+          const cls = it.value.includes('漏') || it.value.includes('异常') ? 'danger' : 'warn';
+          const time = (a.check_time||'').slice(11,19);
+          return '<tr class="new-row">'
+            + '<td><span class="order-code">'+a.order_code+'</span></td>'
+            + '<td style="color:var(--text-dim)">'+(a.batch_code||'-')+'</td>'
+            + '<td><span class="operator">'+(a.operator||'-')+'</span></td>'
+            + '<td style="font-weight:600">'+it.rule+'</td>'
+            + '<td><span class="anomaly-tag '+cls+'">'+it.value+'</span></td>'
+            + '<td style="color:var(--text-dim)">'+(time||'-')+'</td></tr>';
+        });
+        return rows.join('');
+      }).join('');
+    }
+
+    const n = new Date();
+    document.getElementById('fLeft').textContent = '更新: ' + n.toLocaleTimeString('zh-CN');
+    document.getElementById('fRight').textContent = '检测: ' + (stats.today_checked||0) + ' | 异常: ' + (stats.today_anomaly||0);
+  } catch(e) { console.error(e); }
+}
+
+function updateClock() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
+
+refresh();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "database": {
+    "type": "sqlite",
+    "path": "../data/qic_quality.db",
+    "table": "qic_orders"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5090,
+    "debug": false
+  },
+  "qc": {
+    "check_interval_minutes": 1,
+    "batch_size": 200
+  },
+  "notification": {
+    "enabled": true,
+    "type": "wecom_bot",
+    "wecom_bot": {
+      "bot_id": "aibkktt4ELTnlyJWMtvdfXIfFyZ00Lm2fVt",
+      "secret": "5VvC8jOEyUX3dkWCIgU0OeSMC5O8IwBqquabeOIB3TG",
+      "chat_id": ""
+    },
+    "wechat_work": {
+      "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE"
+    }
+  },
+  "rules": {
+    "enabled": ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10"],
+    "ignore_status": ["质检中", "待审核"]
+  }
+}

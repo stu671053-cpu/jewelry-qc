@@ -49,3 +49,21 @@ rules:
     column: 合成立方氧化锆备注检查
     enabled: true
     priority: 8
+
+  - id: r9_style_check
+    name: 款式核实
+    column: 款式核实
+    enabled: true
+    priority: 9
+
+  - id: r10_weight_compare
+    name: 重量比对
+    column: 重量比对
+    enabled: true
+    priority: 10
+
+  - id: r11_material_conclusion
+    name: 材质结论对应
+    column: 材质结论对应
+    enabled: true
+    priority: 11

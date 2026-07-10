@@ -35,3 +35,24 @@ qc_web_*.html
 .pytest_cache/
 tests/__pycache__/
 rules/__pycache__/
+
+# Database files
+data/
+*.db
+
+# Runtime state
+qc_server/sync_state.json
+
+# AI assistant
+.workbuddy/
+
+# Logs
+*.log
+logs/
+
+# Sensitive config (your Cookie!)
+qc_server/config_sync.json
+
+# Exported files
+API字段映射_导出表.xlsx
+API接口文档.md

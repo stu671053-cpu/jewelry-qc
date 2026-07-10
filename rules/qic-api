@@ -1,0 +1,87 @@
+Loupe 质检数据导出工具
+将字节跳动 Loupe 质检系统（抖音电商 QIC）的全过程数据同步到本地数据库。
+快速开始
+第一步：抓包获取 API 配置
+在 Chrome 中打开 Loupe 系统 并登录
+按 F12 打开 DevTools → 切换到 Network 标签
+勾选 "Preserve log"（保留日志）
+在 Loupe 中正常操作：
+  搜索/浏览订单列表
+  点击一个订单查看详情
+  查看质检报告（如果有）
+在 Network 面板 右键 → "Save all as HAR with content"，保存为 network.har
+运行 HAR 解析工具：
+python har_parser.py /path/to/network.har
+复制 loupe_apis_extracted.json 中的 API 路径，填入 config.json
+第二步：填入 Cookie
+在 Chrome DevTools 中：
+随便点一个 XHR 请求 → Request Headers → 复制完整的 Cookie 值
+粘贴到 config.json 的 loupe.auth.cookie 中
+第三步：测试连接
+python sync_service.py --test
+看到 ✅ API 连接成功 即可继续。
+第四步：开始同步
+# 全量同步（首次使用）
+python sync_service.py --mode full
+
+# 增量同步（后续定时运行）
+python sync_service.py --mode incremental
+
+# 拉取单个订单
+python sync_service.py --fetch-order QC20240701001
+配置说明
+编辑 config.json：
+{
+  "loupe": {
+    "base_url": "https://qms.bytedance.com",
+    "auth": {
+      "cookie": "你的 Cookie 字符串"
+    },
+    "apis": {
+      "order_search": {
+        "method": "POST",
+        "path": "/实际抓包得到的搜索API路径"
+      },
+      "order_detail": {
+        "method": "GET",
+        "path": "/实际抓包得到的详情API路径"
+      }
+    },
+    "pagination": {
+      "type": "offset",
+      "page_size": 50,
+      "delay_ms": 500
+    }
+  },
+  "database": {
+    "type": "sqlite",
+    "sqlite": { "path": "./data/qic_quality.db" }
+  }
+}
+Cookie 过期怎么办？
+Cookie 通常 24 小时内有效。建议：
+使用 cron 定时运行，缩短单次同步时长
+或在脚本中加入企业微信机器人通知，Cookie 过期时提醒更新
+定时任务
+# 每小时增量同步
+0 * * * * cd /path/to/loupe-export && /path/to/venv/bin/python sync_service.py --mode incremental
+
+# 每天凌晨 3 点全量对账
+0 3 * * * cd /path/to/loupe-export && /path/to/venv/bin/python sync_service.py --mode full
+数据库表
+      表名
+      说明
+      qic_orders
+      质检订单主表（核心）
+      qic_inspection_logs
+      质检流转日志（状态变更记录）
+      qic_exceptions
+      质检异常/驳回记录
+      sync_log
+      同步任务日志
+API 适配说明
+脚本设计为通用适配，核心逻辑不依赖特定的 API 路径。你只需要：
+通过 HAR 抓包拿到真实的 API path
+填入 config.json
+脚本会自动适配分页格式（offset / cursor）、响应结构（list / records / items）
+如果遇到不兼容的响应格式，修改 SyncEngine._extract_list() 和 _has_more() 方法即可。
