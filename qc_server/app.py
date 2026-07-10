@@ -67,13 +67,16 @@ bg_status = {
 
 @app.route("/")
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html",
+                           tenant=TENANT,
+                           tenant_color=TENANT_COLOR)
 
 
 @app.route("/tv")
 def tv_dashboard():
-    """TV 大屏（与主页面相同模板）"""
-    return render_template("dashboard.html")
+    return render_template("dashboard.html",
+                           tenant=TENANT,
+                           tenant_color=TENANT_COLOR)
 
 
 # ==================== API 接口 ====================
@@ -389,6 +392,11 @@ if __name__ == "__main__":
     if loupe_cookie:
         sync_engine.loupe["auth"]["cookie"] = loupe_cookie
         print("[配置] 已从环境变量加载 Cookie")
+
+    # 租户配置
+    TENANT = os.environ.get("TENANT", "域骉控股")
+    TENANT_COLOR = os.environ.get("TENANT_COLOR", "#1a1a2e")
+    print(f"[配置] 租户: {TENANT}")
 
     notifier.start()
 

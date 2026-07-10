@@ -1,12 +1,29 @@
+# 两个独立部署实例，同一个仓库，不同环境变量
 services:
   - type: web
-    name: jewelry-qc
+    name: jewelry-qc-guoguan
     env: python
     buildCommand: pip install -r qc_server/requirements.txt
     startCommand: python qc_server/app.py
     plan: free
     envVars:
+      - key: TENANT
+        value: 国关
       - key: LOUPE_COOKIE
         sync: false
-      - key: LOUPE_BASE_URL
+      - key: TENANT_COLOR
+        value: "#1a3a5c"
+
+  - type: web
+    name: jewelry-qc-zhongjin
+    env: python
+    buildCommand: pip install -r qc_server/requirements.txt
+    startCommand: python qc_server/app.py
+    plan: free
+    envVars:
+      - key: TENANT
+        value: 中金
+      - key: LOUPE_COOKIE
         sync: false
+      - key: TENANT_COLOR
+        value: "#5c1a1a"
