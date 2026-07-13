@@ -32,8 +32,11 @@ TENANT_COLOR = os.environ.get("TENANT_COLOR", "#1a1a2e")
 with open(BASE_DIR / "config.json", "r", encoding="utf-8") as f:
     CONFIG = json.load(f)
 
-# 租户独立数据库
-tenant_db = f"../data/{TENANT}_qic_quality.db"
+# 租户独立数据库（中金用原有数据库，其他租户新库）
+if TENANT == "中金":
+    tenant_db = "../data/qic_quality.db"
+else:
+    tenant_db = f"../data/{TENANT}_qic_quality.db"
 CONFIG["database"]["path"] = tenant_db
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
@@ -208,8 +211,11 @@ def _do_incremental_sync_and_check(notify: bool = False):
     state = load_sync_state()
     last_sync = state.get("last_sync_time", 0)
 
-    # 用上次同步时间作为起始，防止漏数据（往前推 10 分钟保险）
-    ts_start = max(0, last_sync - 600)
+    # 用上次同步时间作为起始（首次同步从今天0点开始）
+    if last_sync == 0:
+        ts_start = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    else:
+        ts_start = max(0, last_sync - 600)  # 往前推10分钟防漏
     ts_end = int(datetime.now().timestamp())
 
     print(f"[增量同步] 时间范围: {ts_start} ~ {ts_end}")
@@ -334,7 +340,10 @@ def background_checker():
             # 1. 增量同步
             state = load_sync_state()
             last_sync = state.get("last_sync_time", 0)
-            ts_start = max(0, last_sync - 600)  # 往前推 10 分钟防漏
+            if last_sync == 0:
+                ts_start = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+            else:
+                ts_start = max(0, last_sync - 600)
             ts_end = int(datetime.now().timestamp())
 
             sync_engine.loupe["search_params"]["inspectionBatchStartTime"] = ts_start

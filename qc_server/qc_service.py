@@ -69,7 +69,7 @@ class QCService:
 
     def check_batch(self, orders: list) -> list:
         """
-        批量检测订单（自动跳过未完成的订单）
+        批量检测订单（非503订单标记为跳过，避免重复拉取）
         返回: [{ order_code, results, status, anomalies }]
         """
         output = []
@@ -77,10 +77,17 @@ class QCService:
         for order in orders:
             order_code = order.get("订单码", "")
 
-            # 跳过未完成的订单（状态 != 503）
+            # 跳过未完成的订单（标记为skipped，不再重复检查）
             status = str(order.get("状态", "")).strip()
             if status and status != "503":
                 skipped += 1
+                output.append({
+                    "order_code": order_code,
+                    "order": order,
+                    "results": {},
+                    "status": "skipped",
+                    "anomalies": [],
+                })
                 continue
 
             result = self.check_order(order)

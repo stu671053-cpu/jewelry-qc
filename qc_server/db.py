@@ -67,13 +67,12 @@ class Database:
                     notified INTEGER DEFAULT 0
                 )
             """)
-            # 兼容旧表: 如果 r11 列不存在则添加
             try:
                 conn.execute("ALTER TABLE qc_check_results ADD COLUMN r11_material_conclusion TEXT")
             except sqlite3.OperationalError:
                 pass
-            # 确保索引存在
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_qc_results_code ON qc_check_results(order_code)")
+            # 唯一索引：每个订单最多一条检测结果
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_qc_results_unique ON qc_check_results(order_code)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_qc_results_time ON qc_check_results(check_time)")
             conn.commit()
 
@@ -147,11 +146,11 @@ class Database:
                 return []
 
     def save_check_result(self, order_code: str, results: dict, status: str):
-        """保存单条检测结果（允许同订单码多次检测）"""
+        """保存单条检测结果（INSERT OR REPLACE，依赖唯一索引防重复）"""
         with self._conn() as conn:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             conn.execute("""
-                INSERT INTO qc_check_results
+                INSERT OR REPLACE INTO qc_check_results
                 (order_code, check_time, status,
                  r1_weight, r2_gemstone, r3_gold_content, r4_net_weight,
                  r5_nanhong, r6_agate_coating, r7_african_jade, r8_cubic_zirconia,
@@ -180,7 +179,7 @@ class Database:
             conn.commit()
 
     def save_check_results_batch(self, results_list: list):
-        """批量保存检测结果（允许同订单码多次检测）"""
+        """批量保存检测结果（INSERT OR REPLACE，依赖唯一索引防重复）"""
         with self._conn() as conn:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for item in results_list:
@@ -188,7 +187,7 @@ class Database:
                 results = item["results"]
                 status = item["status"]
                 conn.execute("""
-                    INSERT INTO qc_check_results
+                    INSERT OR REPLACE INTO qc_check_results
                     (order_code, check_time, status,
                      r1_weight, r2_gemstone, r3_gold_content, r4_net_weight,
                      r5_nanhong, r6_agate_coating, r7_african_jade, r8_cubic_zirconia,
