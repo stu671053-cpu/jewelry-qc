@@ -216,10 +216,19 @@ class Database:
             conn.commit()
 
     def get_stats(self) -> dict:
-        """获取检测统计"""
+        """获取检测统计（业务日：6AM~次日6AM）"""
         with self._conn() as conn:
             try:
-                today = datetime.now().strftime("%Y-%m-%d")
+                # 业务日范围
+                from datetime import timedelta
+                now = datetime.now()
+                today6 = now.replace(hour=6, minute=0, second=0, microsecond=0)
+                if now >= today6:
+                    biz_start = today6.strftime("%Y-%m-%d %H:%M:%S")
+                    biz_end = (today6 + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    biz_start = (today6 - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                    biz_end = today6.strftime("%Y-%m-%d %H:%M:%S")
 
                 total = conn.execute(
                     "SELECT COUNT(*) FROM qc_check_results"
@@ -231,14 +240,14 @@ class Database:
                     "SELECT COUNT(*) FROM qc_check_results WHERE notified = 1"
                 ).fetchone()[0]
 
-                # 今日统计
+                # 本业务日统计
                 today_checked = conn.execute(
-                    "SELECT COUNT(*) FROM qc_check_results WHERE check_time >= ?",
-                    (today,)
+                    "SELECT COUNT(*) FROM qc_check_results WHERE check_time >= ? AND check_time < ?",
+                    (biz_start, biz_end)
                 ).fetchone()[0]
                 today_anomaly = conn.execute(
-                    "SELECT COUNT(*) FROM qc_check_results WHERE status = 'anomaly' AND check_time >= ?",
-                    (today,)
+                    "SELECT COUNT(*) FROM qc_check_results WHERE status = 'anomaly' AND check_time >= ? AND check_time < ?",
+                    (biz_start, biz_end)
                 ).fetchone()[0]
 
                 # 订单状态分布（原始 Loupe 状态）

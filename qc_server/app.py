@@ -57,6 +57,20 @@ notifier = Notifier(CONFIG)
 SYNC_STATE_PATH = BASE_DIR / "sync_state.json"
 
 
+def business_day_range():
+    """返回当前业务日：凌晨6点到次日凌晨6点"""
+    from datetime import timedelta
+    now = datetime.now()
+    today6 = now.replace(hour=6, minute=0, second=0, microsecond=0)
+    if now >= today6:
+        start = today6
+        end = today6 + timedelta(days=1)
+    else:
+        end = today6
+        start = today6 - timedelta(days=1)
+    return start.strftime("%Y-%m-%d %H:%M:%S"), end.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def load_sync_state() -> dict:
     if SYNC_STATE_PATH.exists():
         with open(SYNC_STATE_PATH, "r") as f:
@@ -108,8 +122,8 @@ def api_stats():
 
 @app.route("/api/anomalies")
 def api_anomalies():
-    """获取今日异常订单（仅读 DB，不触发 API）"""
-    today = datetime.now().strftime("%Y-%m-%d")
+    """获取本业务日异常订单（6AM~次日6AM）"""
+    biz_start, biz_end = business_day_range()
     with db._conn() as conn:
         rows = conn.execute("""
             SELECT r.order_code, r.check_time, r.status,
@@ -122,10 +136,10 @@ def api_anomalies():
             FROM qc_check_results r
             LEFT JOIN qic_orders o ON r.order_code = o.订单码
             WHERE r.status = 'anomaly'
-              AND r.check_time >= ?
+              AND r.check_time >= ? AND r.check_time < ?
             ORDER BY r.check_time DESC
             LIMIT 200
-        """, (today,)).fetchall()
+        """, (biz_start, biz_end)).fetchall()
 
     rule_labels = {
         "r1_weight": "R1 重量判定", "r2_gemstone": "R2 宝玉石判定",
@@ -154,7 +168,7 @@ def api_anomalies():
         })
 
     return jsonify({
-        "today": today,
+        "today": biz_start[:10],
         "total": len(anomalies),
         "anomalies": anomalies,
     })
