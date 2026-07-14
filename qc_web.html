@@ -2222,10 +2222,8 @@ function ruleR1(row) {
   const formatMatch = cleaned.match(/^(\d{1,5})\.(\d{2})(g|克)$/);
   if (!formatMatch) return '错误';
 
-  // 判断3: ≤0.1g？
-  const numVal = parseFloat(formatMatch[1] + '.' + formatMatch[2]);
-  if (numVal <= 0.1) return '克重极低';
-
+  return '正确';
+  
   return '正确';
 }
 
@@ -2441,7 +2439,9 @@ function ruleR6(row) {
   if (material.includes('玛瑙')) {
     if (gemstone === '玛瑙' || gemstone === '玉髓' || gemstone === '') return '正确';
     if (gemstone === '玛瑙（覆膜）') return '应驳回';
+    // P节点：备注含玛瑙(覆膜)→应驳回，含玛瑙→正确，都不含→需核实
     if (remark.includes('玛瑙（覆膜）') || remark.includes('玛瑙(覆膜)')) return '应驳回';
+    if (remark.includes('玛瑙')) return '正确';
     return '需核实结论';
   }
 

@@ -202,6 +202,10 @@ class Rule:
     RULE_NAME = "R11_材质结论对应"
 
     def apply(self, row: dict) -> str:
+        # 质检不通过 → 正确
+        if row.get('质检结果', '') == '不通过':
+            return '正确'
+
         material = str(row.get('商品材质', '')).strip()
         inlay = str(row.get('镶嵌材质', '')).strip()
         fitting = str(row.get('配件材质', '')).strip()

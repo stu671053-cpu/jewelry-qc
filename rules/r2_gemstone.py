@@ -1,87 +1,54 @@
 """
-R2 宝玉石判定规则
-
-规则1 - 少备注: 宝玉石结论含"翡翠" → 备注必须含 翡翠(A货)/含其他矿物/颜色成因未定/颜色成因未做分析 之一
-规则2 - 多备注(来源不匹配): 宝玉石结论不含"翡翠" → 但备注含 翡翠(A货)
-规则3 - 多备注(重复): 括号外关键词至多出现一次，括号内不计入
-
-判定优先级: 规则1(少备注) → 规则3(重复) → 规则2(来源不匹配)
-重复比来源不匹配更具体，优先报告
+R2: 宝玉石判定（复刻 qc_web.html ruleR2）
 """
-
 import re
 
+# JS NEGATIVE_WORDS
+NEGATIVE_WORDS = ['含其他矿物', '颜色成因未定', '颜色成因未做分析', '成因未做分析', '充填', '修补']
 
-# 需要检查的关键词（中英文括号两种形式，视为同一组）
-KEYWORD_PAIRS = [
-    ("翡翠(A货)", "翡翠（A货）"),  # 中英文括号视为同一个关键词
-    ("含其他矿物", None),
-    ("颜色成因未定", None),
-    ("颜色成因未做分析", None),
-]
+
+def _has_neg_in_bracket(remark: str) -> bool:
+    """检查负面词是否在括号内"""
+    brackets = re.findall(r'[（(]([^）)]*)[）)]', remark)
+    return any(any(w in b for w in NEGATIVE_WORDS) for b in brackets)
 
 
 class Rule:
-    """宝玉石判定"""
+    RULE_NAME = "R2_宝玉石判定"
 
     def apply(self, row: dict) -> str:
-        gemstone = str(row.get("宝玉石结论", "")).strip().replace("\t", "")
-        remark = str(row.get("备注", "")).strip().replace("\t", "")
+        if row.get('质检结果', '') == '不通过':
+            return '正确'
 
-        if gemstone in ("nan", "NaN", ""):
-            gemstone = ""
-        if remark in ("nan", "NaN", ""):
-            remark = ""
+        gemstone = str(row.get('宝玉石结论', '')).strip()
+        remark = str(row.get('备注', '')).strip()
+        if gemstone.lower() in ('nan', 'none', ''): gemstone = ''
+        if remark.lower() in ('nan', 'none', ''): remark = ''
 
-        # 规则1: 少备注（最高优先级）
-        if "翡翠" in gemstone:
-            has_required = self._has_any_keyword(remark)
-            if not has_required:
-                return "少备注"
+        has_amark = '翡翠(A货)' in remark or '翡翠（A货）' in remark
 
-        # 规则3: 多备注(重复) — 括号外的关键词至多出现一次（优先于来源不匹配）
-        if self._has_duplicate_outside(remark):
-            return "多备注(重复)"
+        if '翡翠' not in gemstone:
+            return '多备注' if has_amark else '正确'
 
-        # 规则2: 多备注(来源不匹配)
-        if "翡翠" not in gemstone:
-            if "翡翠(A货)" in remark or "翡翠（A货）" in remark:
-                return "多备注(来源不匹配)"
-
-        return "正常"
-
-    @staticmethod
-    def _has_any_keyword(remark: str) -> bool:
-        """备注中是否包含任一关键词（中英文括号都识别）"""
-        for kw, kw_alt in KEYWORD_PAIRS:
-            if kw in remark:
-                return True
-            if kw_alt and kw_alt in remark:
-                return True
-        return False
-
-    @staticmethod
-    def _has_duplicate_outside(remark: str) -> bool:
-        """检查括号外是否有关键词出现超过一次"""
-        # 标记括号内的位置范围
-        inside_positions = set()
-        for m in re.finditer(r'[(（][^)）]*[)）]', remark):
-            for i in range(m.start(), m.end()):
-                inside_positions.add(i)
-
-        for kw, kw_alt in KEYWORD_PAIRS:
-            # 统一处理：中英文括号形式都视为同一个关键词
-            count = 0
-            for search_kw in [kw, kw_alt] if kw_alt else [kw]:
-                start = 0
-                while True:
-                    pos = remark.find(search_kw, start)
-                    if pos == -1:
+        # 宝玉石结论 = 翡翠
+        if has_amark:
+            cui_bracket = re.search(r'翡翠[（(][Aa]货[）)]', remark)
+            if not cui_bracket:
+                return '多备注' if any(w in remark for w in NEGATIVE_WORDS) else '正确'
+            cui_start = cui_bracket.start()
+            cui_end = cui_start + len(cui_bracket.group(0))
+            # 负面词是否在翡翠(A货)之外的括号内
+            other_brackets = re.findall(r'[（(]([^）)]*)[）)]', remark)
+            full_brackets = re.finditer(r'[（(][^）)]*[）)]', remark)
+            neg_in_other = False
+            for fb in full_brackets:
+                if fb.start() != cui_start:
+                    if any(w in fb.group() for w in NEGATIVE_WORDS):
+                        neg_in_other = True
                         break
-                    # 关键词起始位置不在括号内 → 计入
-                    if pos not in inside_positions:
-                        count += 1
-                    start = pos + len(search_kw)
-            if count > 1:
-                return True
-        return False
+            if neg_in_other:
+                return '正确'
+            return '多备注' if any(w in remark for w in NEGATIVE_WORDS) else '正确'
+
+        # 无翡翠(A货)
+        return '漏备注' if _has_neg_in_bracket(remark) else '正确'

@@ -132,7 +132,8 @@ def api_anomalies():
                    r.r7_african_jade, r.r8_cubic_zirconia,
                    r.r9_style_check, r.r10_weight_compare,
                    r.r11_material_conclusion,
-                   o.质检批次号 as batch_code, o.操作人 as operator
+                   o.质检批次号 as batch_code, o.操作人 as operator,
+                   o.批次生成时间 as batch_time
             FROM qc_check_results r
             LEFT JOIN qic_orders o ON r.order_code = o.订单码
             WHERE r.status = 'anomaly'
@@ -159,11 +160,21 @@ def api_anomalies():
             if val and val not in ("正常", "正确", ""):
                 items.append({"rule": label, "value": val})
 
+        # 批次时间戳 → 时分
+        raw_batch_time = row.get("batch_time", "") or ""
+        if str(raw_batch_time).isdigit() and len(str(raw_batch_time)) == 10:
+            batch_time_str = datetime.fromtimestamp(int(raw_batch_time)).strftime("%H:%M")
+        elif str(raw_batch_time).isdigit() and len(str(raw_batch_time)) == 13:
+            batch_time_str = datetime.fromtimestamp(int(raw_batch_time) / 1000).strftime("%H:%M")
+        else:
+            batch_time_str = str(raw_batch_time)
+
         anomalies.append({
             "order_code": row["order_code"],
             "batch_code": row.get("batch_code", "") or "",
             "operator": row.get("operator", "") or "",
             "check_time": row["check_time"],
+            "batch_time": batch_time_str,
             "items": items,
         })
 
@@ -332,63 +343,70 @@ def api_events():
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
-# ==================== 后台定时增量检测 ====================
+# ==================== 后台定时全量刷新 ====================
 
 def background_checker():
     """
-    后台定时任务:
-    1. 增量同步 Loupe API (只拉新增/变化)
-    2. 检测未审查订单
-    3. 异常通知
+    后台定时任务（全量刷新模式）:
+    1. 清空数据库
+    2. 从 Loupe API 拉取当天全部数据
+    3. 对所有订单执行规则自查
+    4. 显示到大屏
     """
-    interval = CONFIG.get("qc", {}).get("check_interval_minutes", 5) * 60
+    interval = CONFIG.get("qc", {}).get("check_interval_minutes", 1) * 60
     if interval <= 0:
         print("[后台] 定时检测已禁用")
         return
-    print(f"[后台] 增量检测已启动，间隔 {interval // 60} 分钟")
+    print(f"[后台] 全量刷新已启动，间隔 {interval // 60} 分钟")
+
+    from datetime import timedelta
 
     while True:
         try:
             bg_status["running"] = True
+            start_time = datetime.now()
+            print(f"\n[后台 {start_time.strftime('%H:%M:%S')}] ===== 开始全量刷新 =====")
 
-            # 1. 增量同步
-            state = load_sync_state()
-            last_sync = state.get("last_sync_time", 0)
-            if last_sync == 0:
-                ts_start = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+            # 1. 设置今天业务日时间范围
+            now = datetime.now()
+            today6 = now.replace(hour=6, minute=0, second=0, microsecond=0)
+            if now >= today6:
+                ts_start = int(today6.timestamp())
+                ts_end = int((today6 + timedelta(days=1)).timestamp())
             else:
-                ts_start = max(0, last_sync - 600)
-            ts_end = int(datetime.now().timestamp())
+                ts_start = int((today6 - timedelta(days=1)).timestamp())
+                ts_end = int(today6.timestamp())
 
             sync_engine.loupe["search_params"]["inspectionBatchStartTime"] = ts_start
             sync_engine.loupe["search_params"]["inspectionBatchEndTime"] = ts_end
 
+            # 2. 清空旧数据
+            with db._conn() as conn:
+                conn.execute("DELETE FROM qc_check_results")
+                conn.execute("DELETE FROM qic_orders")
+                conn.commit()
+
+            # 3. 全量拉取
             try:
                 synced = sync_engine.sync_full()
-                if synced > 0:
-                    print(f"[后台] 增量同步: {synced} 条新订单")
+                print(f"[后台] 拉取: {synced} 条")
             except Exception as e:
-                print(f"[后台] 同步失败: {e}")
+                print(f"[后台] 拉取失败: {e}")
                 time.sleep(interval)
                 continue
 
-            state["last_sync_time"] = ts_end
-            state["last_sync_count"] = synced
-            save_sync_state(state)
-
-            bg_status["last_sync"] = datetime.now().strftime("%H:%M:%S")
+            bg_status["last_sync"] = start_time.strftime("%H:%M:%S")
             bg_status["last_sync_count"] = synced
 
-            # 2. 检测未审查订单（分批）
+            # 4. 全部跑自查
             total_checked = 0
             total_anomalies = 0
-            for _ in range(5):  # 最多 5 批
-                orders = db.get_unchecked_orders(batch_size=200)
+            while True:
+                orders = db.get_unchecked_orders(batch_size=500)
                 if not orders:
                     break
                 results = qc.check_batch(orders)
                 save_list = []
-                batch_anomalies = []
                 for r in results:
                     save_list.append({
                         "order_code": r["order_code"],
@@ -396,21 +414,16 @@ def background_checker():
                         "status": r["status"],
                     })
                     if r["status"] == "anomaly":
-                        batch_anomalies.append(r)
+                        total_anomalies += 1
 
                 db.save_check_results_batch(save_list)
                 total_checked += len(results)
-                total_anomalies += len(batch_anomalies)
-
-                if batch_anomalies:
-                    notifier.send_batch_alert(batch_anomalies)
-                    db.mark_notified([a["order_code"] for a in batch_anomalies])
 
             bg_status["last_check"] = datetime.now().strftime("%H:%M:%S")
             bg_status["last_anomalies"] = total_anomalies
 
-            if total_checked > 0:
-                print(f"[后台] 检测: {total_checked} 条, 异常 {total_anomalies} 条")
+            elapsed = (datetime.now() - start_time).total_seconds()
+            print(f"[后台] 自查: {total_checked} 条, 异常 {total_anomalies} 条, 耗时 {elapsed:.1f}s")
 
         except Exception as e:
             print(f"[后台] 异常: {e}")

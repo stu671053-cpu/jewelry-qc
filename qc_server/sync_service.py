@@ -19,6 +19,7 @@ from pathlib import Path
 from datetime import datetime
 from urllib.parse import urljoin
 
+import re
 import requests
 
 # 导入 QC 引擎（项目根目录）
@@ -251,8 +252,7 @@ class SyncEngine:
                 break
 
             print()
-            # 随机延迟 1.5~3 秒，模拟人工翻页
-            time.sleep(base_delay + random.uniform(0, 1.5))
+            time.sleep(base_delay)
 
         print(f"\n同步完成，共保存 {total_saved} 条订单")
         print(f"其中新增 {len(all_new_orders)} 条")
@@ -335,10 +335,23 @@ class SyncEngine:
         self._api_uses_chinese = False
         self._field_mode_detected = True
 
+    @staticmethod
+    def _extract_sku_weight(item: dict) -> str:
+        """从 SKU 描述中提取克重，标准化为 'Xg' 格式"""
+        product_info = item.get("productInfo", {})
+        sku_list = product_info.get("skuSpecDesc", [])
+        for sk in sku_list:
+            val = str(sk.get("value", ""))
+            # 只提取"约"或"大约"后面的克重，避免误匹配
+            match = re.search(r'(?:约|大约)\s*(\d+(?:\.\d+)?)\s*[g克]', val)
+            if match:
+                return f"{match.group(1)}g"
+        return ""
+
     def _validate_qc_fields(self, data: dict, order_code: str) -> dict:
         """确保 QC 规则所需的字段至少存在（值为空也行）"""
         required_fields = [
-            "商品名称", "商品材质", "商品质量", "重量", "镶嵌材质", "配件材质",
+            "商品名称", "商品材质", "商品质量", "SKU质量", "重量", "镶嵌材质", "配件材质",
             "质检结果", "宝玉石结论", "贵金属结论", "备注", "饰品类型", "状态",
             "订单码",
         ]
@@ -452,6 +465,10 @@ class SyncEngine:
             elif not isinstance(val, str):
                 val = str(val)
             mapped[cn_name] = val
+
+        # 计算字段: SKU质量（从 skuSpecDesc 中提取克重）
+        sku_weight = self._extract_sku_weight(item)
+        mapped["SKU质量"] = sku_weight
 
         # 计算字段: 质检结果（有驳回 → 不通过，否则 → 通过）
         reject_code = mapped.get("驳回原因", "")

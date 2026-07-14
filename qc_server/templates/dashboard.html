@@ -153,11 +153,11 @@ body::before {
 table { width: 100%; border-collapse: collapse; font-size: 1.6vw; }
 thead { position: sticky; top: 0; background: #fafbfd; z-index: 1; }
 th {
-  padding: 1.2vh 1.2vw; text-align: left; font-weight: 600;
+  padding: 1.2vh 1.2vw; text-align: center; font-weight: 600;
   font-size: 1.3vw; color: var(--text-dim);
   border-bottom: 2px solid var(--border); letter-spacing: 1px;
 }
-td { padding: 1.2vh 1.2vw; border-bottom: 1px solid #f2f3f6; }
+td { padding: 1.2vh 1.2vw; border-bottom: 1px solid #f2f3f6; text-align: center; }
 tr:hover { background: #fafbfd; }
 tr.new-row { animation: rowIn 0.5s ease-out; }
 @keyframes rowIn { from { background: var(--ruby-bg) } to { background: transparent } }
@@ -225,12 +225,12 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
     <table>
       <thead>
         <tr>
-          <th style="width:15%">订单码</th>
-          <th style="width:12%">批次码</th>
-          <th style="width:10%">操作人</th>
+          <th style="width:16%">订单码</th>
+          <th style="width:16%">批次码</th>
+          <th style="width:16%">操作人</th>
           <th style="width:16%">对应规则</th>
-          <th>详情</th>
-          <th style="width:12%">时间</th>
+          <th style="width:16%">详情</th>
+          <th style="width:16%">批次时间</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -245,6 +245,7 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 
 <script>
 let lastAnomaly = 0;
+let anomalyRows = [];     // 所有异常行（已排序）
 let anomalySound = null;
 try { anomalySound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/////w=='); } catch(e) {}
 
@@ -258,7 +259,6 @@ async function refresh() {
     const done = dist['503'] || 0;
     const total = Object.values(dist).reduce((a,b) => a+b, 0);
     const anomaly = anom.total;
-    // 已完成的正常订单 = 503总数 - 异常数
     const doneOk = Math.max(0, done - anomaly);
     const progress = total - done;
     document.getElementById('sTotal').textContent = total;
@@ -274,24 +274,43 @@ async function refresh() {
     }
     lastAnomaly = anom.total;
 
-    const tbody = document.getElementById('tbody');
-    if (!anom.anomalies.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
-    } else {
-      tbody.innerHTML = anom.anomalies.map(a => {
-        const rows = a.items.map(it => {
-          const cls = it.value.includes('漏') || it.value.includes('异常') ? 'danger' : 'warn';
-          const time = (a.check_time||'').slice(11,19);
-          return '<tr class="new-row">'
-            + '<td><span class="order-code">'+a.order_code+'</span></td>'
-            + '<td style="color:var(--text-dim)">'+(a.batch_code||'-')+'</td>'
-            + '<td><span class="operator">'+(a.operator||'-')+'</span></td>'
-            + '<td style="font-weight:600">'+it.rule+'</td>'
-            + '<td><span class="anomaly-tag '+cls+'">'+it.value+'</span></td>'
-            + '<td style="color:var(--text-dim)">'+(time||'-')+'</td></tr>';
-        });
-        return rows.join('');
+    // 按订单聚合：每个订单一行，多个规则用 | 合并
+    anomalyRows = anom.anomalies.map(a => {
+      const rules = a.items.map(it => it.rule).join(' | ');
+      const values = a.items.map(it => it.value).join(' | ');
+      const allBad = a.items.every(it => it.value.includes('漏') || it.value.includes('异常'));
+      return {
+        order_code: a.order_code,
+        batch_code: a.batch_code || '-',
+        operator: a.operator || '-',
+        rule: rules,
+        value: values,
+        batch_time: a.batch_time || '-',
+        cls: allBad ? 'danger' : 'warn'
+      };
+    });
+
+    // 排序：克重极低放最后，同类规则放一起
+    anomalyRows.sort((x, y) => {
+      if (x.value === '克重极低' && y.value !== '克重极低') return 1;
+      if (y.value === '克重极低' && x.value !== '克重极低') return -1;
+      return x.rule.localeCompare(y.rule) || x.value.localeCompare(y.value);
+    });
+
+    // 全量渲染（分页功能后续大屏启用）
+    if (anomalyRows.length > 0) {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = anomalyRows.map(r => {
+        return '<tr class="new-row">'
+          + '<td><span class="order-code">'+r.order_code+'</span></td>'
+          + '<td style="color:var(--text-dim)">'+r.batch_code+'</td>'
+          + '<td><span class="operator">'+r.operator+'</span></td>'
+          + '<td style="font-weight:600;white-space:nowrap">'+r.rule+'</td>'
+          + '<td><span class="anomaly-tag '+r.cls+'">'+r.value+'</span></td>'
+          + '<td style="color:var(--text-dim);white-space:nowrap">'+r.batch_time+'</td></tr>';
       }).join('');
+    } else {
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
     }
 
     const n = new Date();
@@ -299,6 +318,43 @@ async function refresh() {
     document.getElementById('fRight').textContent = '检测: ' + (stats.today_checked||0) + ' | 异常: ' + (stats.today_anomaly||0);
   } catch(e) { console.error(e); }
 }
+
+// ===== 分页功能（大屏上线后启用） =====
+/*
+const PAGE_SIZE = 6;
+let currentPage = 0;
+let pageDirection = 1;
+let pageTimer = null;
+
+function renderPage() {
+  const totalPages = Math.ceil(anomalyRows.length / PAGE_SIZE);
+  const start = currentPage * PAGE_SIZE;
+  const page = anomalyRows.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = page.map(r => {
+    return '<tr class="new-row">'
+      + '<td><span class="order-code">'+r.order_code+'</span></td>'
+      + '<td style="color:var(--text-dim)">'+r.batch_code+'</td>'
+      + '<td><span class="operator">'+r.operator+'</span></td>'
+      + '<td style="font-weight:600;white-space:nowrap">'+r.rule+'</td>'
+      + '<td><span class="anomaly-tag '+r.cls+'">'+r.value+'</span></td>'
+      + '<td style="color:var(--text-dim);white-space:nowrap">'+r.batch_time+'</td></tr>';
+  }).join('');
+  document.getElementById('fLeft').textContent = '第 ' + (currentPage+1) + '/' + totalPages + ' 页 | 共 ' + anomalyRows.length + ' 条异常';
+}
+
+function startPageTimer() {
+  if (pageTimer) clearInterval(pageTimer);
+  pageTimer = setInterval(() => {
+    const totalPages = Math.ceil(anomalyRows.length / PAGE_SIZE);
+    if (totalPages <= 1) return;
+    if (currentPage + pageDirection >= totalPages) { pageDirection = -1; }
+    else if (currentPage + pageDirection < 0) { pageDirection = 1; }
+    currentPage += pageDirection;
+    renderPage();
+  }, 10000);
+}
+*/
 
 function updateClock() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
 

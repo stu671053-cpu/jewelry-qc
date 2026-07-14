@@ -1,71 +1,82 @@
 """
-R3 金含量备注检查规则
-
-前置条件: 质检结果 = 空值 或 "通过"
-触发条件(至少一个): 5字段含独立999 / 贵金属结论="足金" / 备注含"金含量≥999‰"
-核验条件(必须全满足): 独立999 + 贵金属结论="足金" + 备注含"金含量≥999‰"
-
-注意: 独立999排除"足银"带来的999
+R3: 金含量备注检查（复刻 qc_web.html ruleR3）
 """
-
 import re
 
 
-# 需要检查999的5个字段
-FIELDS_999 = ["商品名称", "商品材质", "镶嵌材质", "商品质量", "配件材质"]
+def _has_standalone_999(val: str) -> bool:
+    """检查字段中是否有独立的999（前后不是数字）"""
+    if not val:
+        return False
+    # 含"足银"则跳过
+    if '足银' in val and '999' in val:
+        return False
+    return bool(re.search(r'(?<!\d)999(?!\d)', val))
+
+
+def _has_zujin_field(val: str) -> bool:
+    """检查是否含足金关键词"""
+    keywords = ['足金', '足金999', '足金9999', '足金（金含量≥999‰）',
+                '足金（金含量999‰）', '足金（金含量≥999.9‰）', '足金（金含量999.9‰）']
+    return any(k in val for k in keywords)
 
 
 class Rule:
-    """金含量备注检查"""
+    RULE_NAME = "R3_金含量备注检查"
 
     def apply(self, row: dict) -> str:
-        qc_result = str(row.get("质检结果", "")).strip().replace("\t", "")
-        remark = str(row.get("备注", "")).strip().replace("\t", "")
-        precious_metal = str(row.get("贵金属结论", "")).strip().replace("\t", "")
+        if row.get('质检结果', '') == '不通过':
+            return '正确'
 
-        if qc_result in ("nan", "NaN", ""):
-            qc_result = ""
-        if remark in ("nan", "NaN", ""):
-            remark = ""
-        if precious_metal in ("nan", "NaN", ""):
-            precious_metal = ""
+        name = str(row.get('商品名称', '')).strip()
+        material = str(row.get('商品材质', '')).strip()
+        inlay = str(row.get('镶嵌材质', '')).strip()
+        fitting = str(row.get('配件材质', '')).strip()
+        precious = str(row.get('贵金属结论', '')).strip()
+        remark = str(row.get('备注', '')).strip()
+        quality = str(row.get('商品质量', '')).strip()
 
-        # 前置条件: 质检结果=空 或 "通过"
-        if qc_result and qc_result != "通过":
-            return "正常"
+        for v in [name, material, inlay, fitting, precious, remark, quality]:
+            if v.lower() in ('nan', 'none', ''): v = ''
 
-        # 触发条件: 5个字段中有独立的999
-        has_999 = self._has_standalone_999(row)
+        precious_ok = precious == '足金'
+        remark_ok = '金含量≥999‰' in remark
+        has_999 = _has_standalone_999(name) or _has_standalone_999(material) or \
+                  _has_standalone_999(inlay) or _has_standalone_999(quality) or \
+                  _has_standalone_999(fitting)
 
-        if not has_999:
-            return "正常"  # 没有独立999，不触发R3
+        # 路径1：结论字段都为空
+        gstone = str(row.get('宝玉石结论', '')).strip()
+        if not precious and not gstone:
+            return '核实是否为复检' if '金含量≥999‰' in remark else '正确'
 
-        # 核验条件(必须全满足): 贵金属结论="足金" + 备注含"金含量≥999‰"
-        is_zujin = (precious_metal == "足金")
-        has_gold_content = ("金含量≥999‰" in remark)
-
-        missing = []
-        if not is_zujin:
-            missing.append("贵金属结论非足金")
-        if not has_gold_content:
-            missing.append("备注缺金含量≥999‰")
-
-        if missing:
-            return "异常(" + "; ".join(missing) + ")"
-
-        return "正常"
-
-    @staticmethod
-    def _has_standalone_999(row: dict) -> bool:
-        """检查5个字段中是否有独立的999（排除足银）"""
-        for field in FIELDS_999:
-            val = str(row.get(field, "")).strip().replace("\t", "")
-            if val in ("nan", "NaN", ""):
-                continue
-            # 排除足银999
-            if "足银" in val and "999" in val:
-                continue
-            # 独立999: 前后不是数字
-            if re.search(r'(?<!\d)999(?!\d)', val):
-                return True
-        return False
+        # 路径2：有独立999
+        if has_999:
+            has_zujin = _has_zujin_field(name) or _has_zujin_field(material) or \
+                        _has_zujin_field(inlay) or _has_zujin_field(quality) or \
+                        _has_zujin_field(fitting)
+            if has_zujin:
+                if precious_ok:
+                    return '正确' if remark_ok else '漏备注'
+                else:
+                    return '正确'
+            else:
+                if precious_ok:
+                    return '正确'
+                else:
+                    return '多备注' if remark_ok else '正确'
+        else:
+            # 路径3：无独立999
+            has_zujin = _has_zujin_field(name) or _has_zujin_field(material) or \
+                        _has_zujin_field(inlay) or _has_zujin_field(quality) or \
+                        _has_zujin_field(fitting)
+            if has_zujin:
+                if precious_ok:
+                    return '正确'
+                else:
+                    return '需核实结论'
+            else:
+                if precious_ok:
+                    return '需再次核对确认' if remark_ok else '正确'
+                else:
+                    return '多备注' if remark_ok else '正确'

@@ -30,22 +30,10 @@ class QCService:
 
     def check_order(self, order: dict) -> dict:
         """
-        检测单条订单
+        检测单条订单（全状态都过一遍规则）
         order: 数据库行（dict），字段名与规则引擎一致
-        返回: { results: {列名: 判定}, status: 'ok'|'anomaly'|'skipped', anomalies: [...] }
+        返回: { results: {列名: 判定}, status: 'ok'|'anomaly', anomalies: [...] }
         """
-        # 未完成的订单不审查
-        status = str(order.get("状态", "")).strip()
-        if status and status != "503":
-            results = {}
-            for rule in self.engine.rules:
-                results[rule["column"]] = "正确"
-            return {
-                "results": results,
-                "status": "ok",
-                "anomalies": [],
-            }
-
         results = self.engine.apply_row(order)
 
         # 收集异常
@@ -69,36 +57,18 @@ class QCService:
 
     def check_batch(self, orders: list) -> list:
         """
-        批量检测订单（非503订单标记为跳过，避免重复拉取）
+        批量检测全部订单（不分状态）
         返回: [{ order_code, results, status, anomalies }]
         """
         output = []
-        skipped = 0
         for order in orders:
             order_code = order.get("订单码", "")
-
-            # 跳过未完成的订单（标记为skipped，不再重复检查）
-            status = str(order.get("状态", "")).strip()
-            if status and status != "503":
-                skipped += 1
-                output.append({
-                    "order_code": order_code,
-                    "order": order,
-                    "results": {},
-                    "status": "skipped",
-                    "anomalies": [],
-                })
-                continue
-
             result = self.check_order(order)
             output.append({
                 "order_code": order_code,
                 "order": order,
                 **result,
             })
-
-        if skipped:
-            print(f"[QC] 跳过 {skipped} 条未完成订单（状态 != 503）")
         return output
 
     def format_anomaly_message(self, check_result: dict) -> str:
