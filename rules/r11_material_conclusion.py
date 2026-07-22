@@ -50,6 +50,10 @@ MAPPING = {
         "14K金镶嵌": ["14K金"],
         "18K金": ["18K金"],
         "18K金镶嵌": ["18K金"],
+        "22K金": ["22K金"],
+        "22K金镶嵌": ["22K金"],
+        "铂Pt850": ["铂Pt850"],
+        "铂Pt850镶嵌": ["铂Pt850"],
         "足金": ["足金"],
         "足金（金含量≥999‰）": ["足金"],
         "足金（金含量999‰）": ["足金"],
@@ -81,6 +85,8 @@ MAPPING = {
         "猛犸象牙",
         "大漆工艺品",
         "玻璃",
+        "缅甸玉",
+        "库克",
     ],
     "gemstone": {
         "水晶": ["水晶", "紫晶", "黄晶", "烟晶", "绿水晶", "发晶"],
@@ -136,7 +142,7 @@ MAPPING = {
         "彩色蓝宝石": ["蓝宝石"],
         "蜜蜡": ["蜜蜡", "琥珀"],
         "血珀": ["琥珀"],
-        "蓝珀": ["蓝珀", "琥珀"],
+        "蓝珀": ["琥珀（蓝珀）", "琥珀"],
         "琥珀（花珀）": ["琥珀"],
         "琥珀": ["琥珀", "蜜蜡", "蓝珀"],
         "金珀": ["琥珀"],
@@ -184,8 +190,10 @@ MAPPING = {
         "尖晶石": ["尖晶石"],
         "辉石": ["辉石", "透辉石", "顽火辉石", "锂辉石"],
         "橄榄石": ["橄榄石"],
+        "绿柱石": ["绿柱石"],
         "绿柱石（摩根石）": ["绿柱石"],
         "合成碳硅石（莫桑石）": ["合成碳硅石"],
+        "合成碳硅石": ["合成碳硅石"],
         "天然锆石": ["锆石"],
         "合成立方氧化锆": ["合成立方氧化锆"],
         "金绿宝石猫眼": ["猫眼", "变石猫眼"],
@@ -213,11 +221,13 @@ class Rule:
         gemstone_conclusion = str(row.get('宝玉石结论', '')).strip()
         remark = str(row.get('备注', '')).strip()
 
-        # 清洗NaN值
-        for name in ('material', 'inlay', 'fitting', 'metal_conclusion', 'gemstone_conclusion', 'remark'):
-            val = locals().get(name, '')
-            if isinstance(val, str) and val.lower() in ('nan', 'none', ''):
-                val = ''
+        # NaN 清洗（引擎层已做统一清洗，此处保留作为兜底）
+        if str(material).lower() in ('nan', 'none'): material = ''
+        if str(inlay).lower() in ('nan', 'none'): inlay = ''
+        if str(fitting).lower() in ('nan', 'none'): fitting = ''
+        if str(metal_conclusion).lower() in ('nan', 'none'): metal_conclusion = ''
+        if str(gemstone_conclusion).lower() in ('nan', 'none'): gemstone_conclusion = ''
+        if str(remark).lower() in ('nan', 'none'): remark = ''
 
         material = material.strip()
         inlay = inlay.strip()
