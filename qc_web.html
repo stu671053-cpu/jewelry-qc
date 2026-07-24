@@ -2487,25 +2487,26 @@ function ruleR7(row) {
   }
 }
 
-// R8: 合成立方氧化锆备注检查
+// R8: 合成立方氧化锆备注检查（与 rules/r8_cubic_zirconia.py 同步）
 function ruleR8(row) {
   if (isQCFailed(row)) return '正确';
+  const material = cleanVal(row['商品材质']);
   const accessory = cleanVal(row['配件材质']);
   const gemstone = cleanVal(row['宝玉石结论']);
   const remark = cleanVal(row['备注']);
 
-  const a = accessory.includes('合成立方氧化锆');
-  const b = gemstone.includes('合成立方氧化锆');
-  const c = remark.includes('合成立方氧化锆');
-  const d = /[配为伴].*合成立方氧化锆/.test(remark);
+  const CUBIC = '合成立方氧化锆';
+  const hasCubicField = material.includes(CUBIC) || accessory.includes(CUBIC);
+  const hasCubicGem = gemstone.includes(CUBIC);
+  const remarkHas = remark.includes(CUBIC);
 
-  if (a) {
-    if (b) return '正确';
-    return c ? '正确' : '漏备注';
-  } else {
-    if (c) return d ? '正确' : '多备注';
-    return '正确';
+  if (hasCubicField || hasCubicGem) {
+    return remarkHas ? '正确' : '漏备注';
   }
+  if (remarkHas) {
+    return (hasCubicField || hasCubicGem) ? '正确' : '漏备注';
+  }
+  return '正确';
 }
 
 // R9: 款式核实 — 按流程图
