@@ -28,6 +28,7 @@ class QCEngine:
         "r9_style_check": {"质检结果", "商品名称", "饰品类型"},
         "r10_weight_compare": {"质检结果", "商品质量", "SKU质量", "重量", "商品材质", "镶嵌材质", "配件材质"},
         "r11_material_conclusion": {"质检结果", "商品材质", "镶嵌材质", "配件材质", "贵金属结论", "宝玉石结论", "备注"},
+        "r12_stone_check": {"质检结果", "备注"},
     }
 
     def __init__(self, config_path: str = None):

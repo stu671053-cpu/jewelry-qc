@@ -67,3 +67,9 @@ rules:
     column: 材质结论对应
     enabled: true
     priority: 11
+
+  - id: r12_stone_check
+    name: 配石检查
+    column: 配石检查
+    enabled: true
+    priority: 12

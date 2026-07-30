@@ -1909,6 +1909,15 @@ th.has-filter { cursor: default; }
         </div>
         <div class="rule-toggle active" data-rule="r11" onclick="toggleRule(this)"></div>
       </div>
+      <div class="rule-card" id="rule-r12">
+        <div class="rule-indicator"></div>
+        <div class="rule-content">
+          <div class="rule-name">R12 · 配石检查</div>
+          <div class="rule-desc">检查备注中配石前是否有修饰词</div>
+        </div>
+        <div class="rule-toggle active" data-rule="r12" onclick="toggleRule(this)"></div>
+      </div>
+      </div>
     </div>
   </section>
 
@@ -1978,6 +1987,7 @@ th.has-filter { cursor: default; }
                 <label><input type="checkbox" value="r9" onchange="updatePendingRules(this)"> R9 款式核实</label>
                 <label><input type="checkbox" value="r10" onchange="updatePendingRules(this)"> R10 重量比对</label>
                 <label><input type="checkbox" value="r11" onchange="updatePendingRules(this)"> R11 材质结论对应</label>
+                <label><input type="checkbox" value="r12" onchange="updatePendingRules(this)"> R12 配石检查</label>
               </div>
             </div>
             <div class="filter-actions">
@@ -2010,6 +2020,7 @@ th.has-filter { cursor: default; }
             <th>R9 款式核实</th>
             <th>R10 重量比对</th>
             <th>R11 材质结论对应</th>
+            <th>R12 配石检查</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -2056,10 +2067,10 @@ let pendingStatus = 'all';
 let pendingRules = [];
 
 // Rule toggle state (which rules to run)
-const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true, r9: true, r10: true, r11: true };
+const ruleState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true, r9: true, r10: true, r11: true, r12: true };
 
 // Column filter state (which rule columns to show)
-const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true, r9: true, r10: true, r11: true };
+const columnFilterState = { r1: true, r2: true, r3: true, r4: true, r5: true, r6: true, r7: true, r8: true, r9: true, r10: true, r11: true, r12: true };
 const ruleMeta = [
   { id: 'r1', name: 'R1 克重及单位', short: 'R1 克重及单位' },
   { id: 'r2', name: 'R2 翡翠备注', short: 'R2 翡翠备注' },
@@ -2087,6 +2098,7 @@ const ruleSourceFields = {
   r9: ['商品名称', '饰品类型'],
   r10: ['商品质量', '重量', '商品材质', '镶嵌材质', '配件材质'],
   r11: ['商品材质', '镶嵌材质', '配件材质', '贵金属结论', '宝玉石结论', '备注'],
+  r12: ['质检结果', '备注'],
 };
 
 // ==================== Drag & Drop ====================
@@ -2684,6 +2696,23 @@ function ruleR11(row) {
   return '正确';
 }
 
+// R12: 配石检查 — 当备注出现"配石未"时，配石前必须有修饰词
+function ruleR12(row) {
+  if (isQCFailed(row)) return '正确';
+  const remark = cleanVal(row['备注']);
+  if (!remark || !remark.includes('配石未')) return '正确';
+
+  const segments = remark.split(/[,，;；。、\s]+/);
+  for (const seg of segments) {
+    if (!seg) continue;
+    const idx = seg.indexOf('配石');
+    if (idx >= 0 && seg.includes('未', idx)) {
+      if (!seg.substring(0, idx).trim()) return '漏备注';
+    }
+  }
+  return '正确';
+}
+
 
 
 // ==================== Column Filter ====================
@@ -2913,8 +2942,9 @@ function processAndRender() {
       const r9 = ruleState.r9 ? ruleR9(row) : '';
       const r10 = ruleState.r10 ? ruleR10(row) : '';
       const r11 = ruleState.r11 ? ruleR11(row) : '';
+      const r12 = ruleState.r12 ? ruleR12(row) : '';
 
-      const results = [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11];
+      const results = [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12];
       const hasError = results.some(r => r && r !== '正常' && r !== '正确');
       const allEmpty = results.every(r => r === '');
       const allOk = !hasError && !allEmpty;
@@ -2922,7 +2952,7 @@ function processAndRender() {
       return {
         _idx: idx + 1,
         _row: row,
-        r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
+        r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12,
         _status: allEmpty ? 'empty' : (hasError ? 'error' : 'ok')
       };
     });
@@ -2991,6 +3021,7 @@ function renderChart() {
     { id: 'r9', name: 'R9 款式核实', color: 'var(--green-400)' },
     { id: 'r10', name: 'R10 重量比对', color: 'var(--amber-400)' },
     { id: 'r11', name: 'R11 材质结论对应', color: 'var(--gold-400)' },
+    { id: 'r12', name: 'R12 配石检查', color: 'var(--gold-400)' },
   ];
   const ruleNames = ruleNamesFull.filter(r => columnFilterState[r.id]);
 
