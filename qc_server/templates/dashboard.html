@@ -323,7 +323,7 @@ async function refresh() {
     if (anomalyRows.length > 0) {
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = anomalyRows.map(r => {
-        return '<tr class="new-row">'
+        var rowCls="new-row";if(r.cls==="danger")rowCls+=" danger-row";else if(r.cls==="overtime")rowCls+=" overtime-row";return '<tr class="'+rowCls+'">'
           + '<td><span class="order-code copy-cell" onclick="copyText(this)">'+r.order_code+'</span></td>'
           + '<td><span class="copy-cell" onclick="copyText(this)">'+r.cert_code+'</span></td>'
           + '<td><span class="copy-cell" onclick="copyText(this)" style="color:var(--text-dim)">'+r.batch_code+'</span></td>'
@@ -355,7 +355,7 @@ function renderPage() {
   const page = anomalyRows.slice(start, start + PAGE_SIZE);
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = page.map(r => {
-    return '<tr class="new-row">'
+    var rowCls="new-row";if(r.cls==="danger")rowCls+=" danger-row";else if(r.cls==="overtime")rowCls+=" overtime-row";return '<tr class="'+rowCls+'">'
       + '<td><span class="order-code">'+r.order_code+'</span></td>'
       + '<td style="color:var(--text-dim)">'+r.batch_code+'</td>'
       + '<td><span class="operator">'+r.operator+'</span></td>'
