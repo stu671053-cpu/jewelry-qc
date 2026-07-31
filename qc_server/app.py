@@ -23,7 +23,7 @@ from qc_service import QCService
 from notifier import Notifier
 from sync_service import SyncEngine
 from utils import business_day_ts, business_day_range
-from overtime_mock import mock_sync
+from overtime_mock import mock_sync, mock_batch_sync
 
 # ---------- 日志系统 ----------
 class RingBufferHandler(logging.Handler):
@@ -348,6 +348,28 @@ def api_anomalies():
             "items": items,
         })
 
+        # 中金：超时预警按批次合并、置顶
+        if TENANT == "中金":
+            # 1. 分离超时批次
+            overtime_batches = {}
+            normal = []
+            for a in anomalies:
+                if a["_overtime"]:
+                    bc = a["batch_code"] or a["order_code"]
+                    if bc not in overtime_batches:
+                        overtime_batches[bc] = {**a, "order_code": bc, "_batch_display": True}
+                else:
+                    normal.append(a)
+            # 2. 合并超时批次与其他异常
+            merged = []
+            for bc, ot in overtime_batches.items():
+                other = [a for a in normal if (a["batch_code"] or a["order_code"]) == bc]
+                if other:
+                    ot["items"] = other[0]["items"] + ot["items"]
+                    for o in other: normal.remove(o)
+                merged.append(ot)
+            # 3. 超时置顶
+            anomalies = merged + normal
     return jsonify({
         "today": biz_start[:10],
         "total": len(anomalies),
@@ -779,7 +801,7 @@ if __name__ == "__main__":
     def _overtime_mock_loop():
         import time as _t
         while True:
-            try: mock_sync(db.db_path); logger.info("[Mock超时] 已更新")
+            try: mock_batch_sync(db.db_path) if TENANT == "中金" else mock_sync(db.db_path); logger.info("[Mock超时] 已更新")
             except Exception as e: logger.warning(f"[Mock超时] 失败: {e}")
             _t.sleep(120)
     _th.Thread(target=_overtime_mock_loop, daemon=True).start()
