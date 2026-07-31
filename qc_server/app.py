@@ -23,7 +23,6 @@ from qc_service import QCService
 from notifier import Notifier
 from sync_service import SyncEngine
 from utils import business_day_ts, business_day_range
-from overtime_mock import mock_sync, mock_batch_sync
 
 # ---------- 日志系统 ----------
 class RingBufferHandler(logging.Handler):
@@ -300,6 +299,17 @@ def api_anomalies():
     }
 
     anomalies = []
+
+    def _calc_batch_overtime(batch_time_val):
+        try:
+            ts = int(str(batch_time_val).lstrip("-"))
+            if ts <= 0: return False
+            if len(str(ts)) == 13: ts = ts // 1000
+            elapsed = int(time.time()) - ts
+            remaining = 14400 - elapsed
+            return remaining > 0 and remaining <= 2700
+        except: return False
+
     for row in rows:
         row = dict(row)
         items = []
@@ -344,7 +354,7 @@ def api_anomalies():
             "order_status": order_status,
             "check_time": row["check_time"],
             "batch_time": batch_time_str,
-            "_overtime": row.get("overtime_risk","") not in ("","正常","正确"),
+            "_overtime": _calc_batch_overtime(raw_batch_time),
             "items": items,
         })
 
@@ -370,6 +380,16 @@ def api_anomalies():
                 merged.append(ot)
             # 3. 超时置顶
             anomalies = merged + normal
+
+    def _calc_batch_overtime(batch_time_val):
+        try:
+            ts = int(str(batch_time_val).lstrip("-"))
+            if ts <= 0: return False
+            if len(str(ts)) == 13: ts = ts // 1000
+            elapsed = int(time.time()) - ts
+            remaining = 14400 - elapsed
+            return remaining > 0 and remaining <= 2700
+        except: return False
     return jsonify({
         "today": biz_start[:10],
         "total": len(anomalies),
@@ -796,15 +816,6 @@ if __name__ == "__main__":
         logger.info(f"[配置] Cookie来源: 环境变量 ({len(loupe_cookie)}字符)")
 
     notifier.start()
-    # 超时预警 Mock（本地测试用，正式环境删除此行）
-    import threading as _th
-    def _overtime_mock_loop():
-        import time as _t
-        while True:
-            try: mock_batch_sync(db.db_path) if TENANT == "中金" else mock_sync(db.db_path); logger.info("[Mock超时] 已更新")
-            except Exception as e: logger.warning(f"[Mock超时] 失败: {e}")
-            _t.sleep(120)
-    _th.Thread(target=_overtime_mock_loop, daemon=True).start()
 
     checker_thread = threading.Thread(target=background_checker, daemon=True)
     checker_thread.start()
