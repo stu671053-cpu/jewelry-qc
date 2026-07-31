@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from contextlib import contextmanager
 from datetime import datetime
+from utils import business_day_range
 
 
 class Database:
@@ -30,7 +31,15 @@ class Database:
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
         self.db_path = db_path
+        # 启用 WAL 模式（提升并发性能）
+        try:
+            conn = sqlite3.connect(db_path, check_same_thread=False)
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.close()
+        except Exception:
+            pass
         self._ensure_check_table()
+        self._ensure_whitelist_table()
 
     @contextmanager
     def _conn(self):
@@ -63,6 +72,7 @@ class Database:
                     r9_style_check TEXT,
                     r10_weight_compare TEXT,
                     r11_material_conclusion TEXT,
+                    overtime_risk TEXT DEFAULT '',
                     raw_data TEXT,
                     notified INTEGER DEFAULT 0
                 )
@@ -71,10 +81,77 @@ class Database:
                 conn.execute("ALTER TABLE qc_check_results ADD COLUMN r11_material_conclusion TEXT")
             except sqlite3.OperationalError:
                 pass
+            try:
+                conn.execute("ALTER TABLE qc_check_results ADD COLUMN overtime_risk TEXT DEFAULT ''")
+            except sqlite3.OperationalError:
+                pass
             # 唯一索引：每个订单最多一条检测结果
             conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_qc_results_unique ON qc_check_results(order_code)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_qc_results_time ON qc_check_results(check_time)")
             conn.commit()
+
+    def _ensure_whitelist_table(self):
+        """确保白名单表存在"""
+        with self._conn() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS whitelist (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    order_code TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+                    whitelist_date TEXT NOT NULL
+                )
+            """)
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_whitelist_date_order ON whitelist(whitelist_date, order_code)")
+            conn.commit()
+
+    def add_whitelist(self, order_code: str, whitelist_date: str = None) -> bool:
+        """添加白名单，当天不再提示此订单异常"""
+        if whitelist_date is None:
+            whitelist_date = datetime.now().strftime("%Y-%m-%d")
+        with self._conn() as conn:
+            try:
+                conn.execute(
+                    "INSERT OR IGNORE INTO whitelist (order_code, whitelist_date) VALUES (?, ?)",
+                    (order_code, whitelist_date)
+                )
+                conn.commit()
+                return conn.total_changes > 0
+            except sqlite3.OperationalError:
+                return False
+
+    def remove_whitelist(self, order_code: str, whitelist_date: str = None) -> bool:
+        """移除白名单"""
+        if whitelist_date is None:
+            whitelist_date = datetime.now().strftime("%Y-%m-%d")
+        with self._conn() as conn:
+            conn.execute(
+                "DELETE FROM whitelist WHERE order_code = ? AND whitelist_date = ?",
+                (order_code, whitelist_date)
+            )
+            conn.commit()
+            return conn.total_changes > 0
+
+    def get_whitelist(self, whitelist_date: str = None) -> list:
+        """获取当天白名单订单码列表"""
+        if whitelist_date is None:
+            whitelist_date = datetime.now().strftime("%Y-%m-%d")
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT order_code, created_at FROM whitelist WHERE whitelist_date = ? ORDER BY created_at DESC",
+                (whitelist_date,)
+            ).fetchall()
+            return [{"order_code": r["order_code"], "created_at": r["created_at"]} for r in rows]
+
+    def get_whitelist_codes(self, whitelist_date: str = None) -> set:
+        """获取当天白名单订单码集合（用于快速过滤）"""
+        if whitelist_date is None:
+            whitelist_date = datetime.now().strftime("%Y-%m-%d")
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT order_code FROM whitelist WHERE whitelist_date = ?",
+                (whitelist_date,)
+            ).fetchall()
+            return {r["order_code"] for r in rows}
 
     def get_unchecked_orders(self, batch_size: int = 200) -> list:
         """获取未检测的订单"""
@@ -220,15 +297,7 @@ class Database:
         with self._conn() as conn:
             try:
                 # 业务日范围
-                from datetime import timedelta
-                now = datetime.now()
-                today6 = now.replace(hour=6, minute=0, second=0, microsecond=0)
-                if now >= today6:
-                    biz_start = today6.strftime("%Y-%m-%d %H:%M:%S")
-                    biz_end = (today6 + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-                else:
-                    biz_start = (today6 - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-                    biz_end = today6.strftime("%Y-%m-%d %H:%M:%S")
+                biz_start, biz_end = business_day_range()
 
                 total = conn.execute(
                     "SELECT COUNT(*) FROM qc_check_results"
@@ -250,11 +319,16 @@ class Database:
                     (biz_start, biz_end)
                 ).fetchone()[0]
 
-                # 订单状态分布（原始 Loupe 状态）
+                # 订单状态分布（仅统计今日已检测的订单）
                 status_dist = {}
                 try:
                     rows = conn.execute(
-                        "SELECT CAST(状态 AS TEXT), COUNT(*) FROM qic_orders GROUP BY CAST(状态 AS TEXT)"
+                        """SELECT CAST(o.状态 AS TEXT), COUNT(DISTINCT o.订单码)
+                           FROM qic_orders o
+                           INNER JOIN qc_check_results r ON o.订单码 = r.order_code
+                           WHERE r.check_time >= ? AND r.check_time < ?
+                           GROUP BY CAST(o.状态 AS TEXT)""",
+                        (biz_start, biz_end)
                     ).fetchall()
                     status_dist = {r[0]: r[1] for r in rows}
                 except:
@@ -264,7 +338,7 @@ class Database:
                          "r4_net_weight", "r5_nanhong", "r6_agate_coating",
                          "r7_african_jade", "r8_cubic_zirconia",
                          "r9_style_check", "r10_weight_compare",
-                         "r11_material_conclusion"]
+                         "r11_material_conclusion", "overtime_risk"]
                 rule_stats = {}
                 for r in rules:
                     total_r = conn.execute(

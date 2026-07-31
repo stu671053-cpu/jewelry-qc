@@ -174,6 +174,8 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 .anomaly-tag.danger { background: var(--ruby-bg); color: var(--ruby); border: 1px solid rgba(214,48,69,0.2); }
 .anomaly-tag.warn { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(212,136,15,0.2); }
 
+
+
 .empty { text-align: center; padding: 10vh; }
 .empty .icon { font-size: 6vw; }
 .empty .txt { font-size: 3vw; margin-top: 2vh; }
@@ -183,6 +185,21 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
   display: flex; justify-content: space-between; align-items: center;
   font-size: 1.1vw; color: var(--text-dim);
 }
+.copy-cell {
+  cursor: pointer; user-select: all;
+  transition: all 0.15s; padding: 2px 4px; border-radius: 3px;
+}
+.copy-cell:hover { background: rgba(59,130,232,0.08); color: #2563eb; }
+.copy-cell.copied { background: rgba(31,157,99,0.12); color: var(--emerald); }
+
+#copy-toast {
+  position: fixed; bottom: 80px; right: 24px; z-index: 999999;
+  padding: 8px 16px; background: #1f2937; color: #fff; border-radius: 6px;
+  font-size: 13px; font-family: "SF Pro Display",-apple-system,"PingFang SC",sans-serif;
+  opacity: 0; transform: translateY(10px); transition: all 0.3s;
+  pointer-events: none;
+}
+#copy-toast.show { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
@@ -225,12 +242,13 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
     <table>
       <thead>
         <tr>
-          <th style="width:16%">订单码</th>
-          <th style="width:16%">批次码</th>
-          <th style="width:16%">操作人</th>
-          <th style="width:16%">对应规则</th>
-          <th style="width:16%">详情</th>
-          <th style="width:16%">批次时间</th>
+          <th style="width:12%">订单码</th>
+          <th style="width:14%">证书编号</th>
+          <th style="width:12%">批次号</th>
+          <th style="width:10%">状态</th>
+          <th style="width:14%">对应规则</th>
+          <th style="width:14%">详情</th>
+          <th style="width:14%">批次完成时间</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -244,6 +262,8 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 </div>
 
 <script>
+const QC_TOKEN = "{{ qc_token }}";
+function qcFetch(url, opts){ opts = opts || {}; opts.headers = Object.assign({'Authorization': 'Bearer ' + QC_TOKEN}, opts.headers || {}); return fetch(url, opts); }
 let lastAnomaly = 0;
 let anomalyRows = [];     // 所有异常行（已排序）
 let anomalySound = null;
@@ -251,7 +271,7 @@ try { anomalySound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA
 
 async function refresh() {
   try {
-    const [anomR, statsR] = await Promise.all([fetch('/api/anomalies'), fetch('/api/stats')]);
+    const [anomR, statsR] = await Promise.all([qcFetch('/api/anomalies'), qcFetch('/api/stats')]);
     const anom = await anomR.json();
     const stats = await statsR.json();
     const dist = stats.status_distribution || {};
@@ -278,15 +298,17 @@ async function refresh() {
     anomalyRows = anom.anomalies.map(a => {
       const rules = a.items.map(it => it.rule).join(' | ');
       const values = a.items.map(it => it.value).join(' | ');
+      const overtime = a._overtime;
       const allBad = a.items.every(it => it.value.includes('漏') || it.value.includes('异常'));
       return {
         order_code: a.order_code,
+        cert_code: a.cert_code || '-',
         batch_code: a.batch_code || '-',
-        operator: a.operator || '-',
+        order_status: a.order_status || '-',
         rule: rules,
         value: values,
         batch_time: a.batch_time || '-',
-        cls: allBad ? 'danger' : 'warn'
+        cls: allBad ? "danger" : (a._overtime ? "overtime" : "warn"),
       };
     });
 
@@ -302,15 +324,16 @@ async function refresh() {
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = anomalyRows.map(r => {
         return '<tr class="new-row">'
-          + '<td><span class="order-code">'+r.order_code+'</span></td>'
-          + '<td style="color:var(--text-dim)">'+r.batch_code+'</td>'
-          + '<td><span class="operator">'+r.operator+'</span></td>'
+          + '<td><span class="order-code copy-cell" onclick="copyText(this)">'+r.order_code+'</span></td>'
+          + '<td><span class="copy-cell" onclick="copyText(this)">'+r.cert_code+'</span></td>'
+          + '<td><span class="copy-cell" onclick="copyText(this)" style="color:var(--text-dim)">'+r.batch_code+'</span></td>'
+          + '<td style="color:var(--text-dim)">'+r.order_status+'</td>'
           + '<td style="font-weight:600;white-space:nowrap">'+r.rule+'</td>'
           + '<td><span class="anomaly-tag '+r.cls+'">'+r.value+'</span></td>'
           + '<td style="color:var(--text-dim);white-space:nowrap">'+r.batch_time+'</td></tr>';
       }).join('');
     } else {
-      document.getElementById('tbody').innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
     }
 
     const n = new Date();
@@ -356,6 +379,35 @@ function startPageTimer() {
 }
 */
 
+var toastTimer = null;
+function copyText(el) {
+  const text = el.textContent.trim();
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(function() {
+    el.classList.add('copied');
+    setTimeout(function() { el.classList.remove('copied'); }, 800);
+    showToast('已复制: ' + text);
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制: ' + text);
+  });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('copy-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, 1500);
+}
+
 function updateClock() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
 
 refresh();
@@ -363,5 +415,6 @@ updateClock();
 setInterval(updateClock, 1000);
 setInterval(refresh, 30000);
 </script>
+<div id="copy-toast"></div>
 </body>
 </html>
