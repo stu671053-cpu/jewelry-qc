@@ -7,6 +7,11 @@ class Rule:
     RULE_NAME = "R7_非洲翠备注检查"
 
     def apply(self, row: dict) -> str:
+        # 质检未完成时跳过此规则
+        finish_time = str(row.get('质检完成时间', '') or '').strip()
+        if not finish_time or finish_time == '-62135596800':
+            return '正确'
+
         if row.get('质检结果', '') == '不通过':
             return '正确'
 
@@ -14,8 +19,6 @@ class Rule:
         material = str(row.get('商品材质', '')).strip()
         fitting = str(row.get('配件材质', '')).strip()
         remark = str(row.get('备注', '')).strip()
-        for v in [name, material, fitting, remark]:
-            if v.lower() in ('nan', 'none', ''): v = ''
 
         has_african = '非洲翠' in name or '非洲翠' in material or '非洲翠' in fitting
         remark_has = '非洲翠' in remark
