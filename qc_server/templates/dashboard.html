@@ -191,6 +191,7 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 }
 .copy-cell:hover { background: rgba(59,130,232,0.08); color: #2563eb; }
 .copy-cell.copied { background: rgba(31,157,99,0.12); color: var(--emerald); }
+.batch-cell { color: var(--text-dim); }
 
 #copy-toast {
   position: fixed; bottom: 80px; right: 24px; z-index: 999999;
@@ -328,9 +329,9 @@ async function refresh() {
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = anomalyRows.map(r => {
         var rowCls="new-row";if(r.cls==="danger")rowCls+=" danger-row";else if(r.cls==="overtime")rowCls+=" overtime-row";return '<tr class="'+rowCls+'">'
-          + '<td><span class="order-code copy-cell" onclick="copyText(this)">'+r.order_code+'</span></td>'
-          + '<td><span class="copy-cell" onclick="copyText(this)">'+r.cert_code+'</span></td>'
-          + '<td><span class="copy-cell" onclick="copyText(this)" style="color:var(--text-dim)">'+r.batch_code+'</span></td>'
+          + '<td><span class="order-code copy-cell">'+r.order_code+'</span></td>'
+          + '<td><span class="copy-cell">'+r.cert_code+'</span></td>'
+          + '<td><span class="copy-cell batch-cell">'+r.batch_code+'</span></td>'
           + '<td style="color:var(--text-dim)">'+r.order_status+'</td>'
           + '<td style="font-weight:600;white-space:nowrap">'+r.rule+'</td>'
           + '<td><span class="anomaly-tag '+r.cls+'">'+r.value+'</span></td>'
@@ -384,23 +385,37 @@ function startPageTimer() {
 */
 
 var toastTimer = null;
-function copyText(el) {
-  const text = el.textContent.trim();
+
+// 事件委托：点击复制
+document.getElementById('tbody').addEventListener('click', function(e) {
+  var cell = e.target.closest('.copy-cell');
+  if (!cell) return;
+  var text = cell.textContent.trim();
   if (!text) return;
-  navigator.clipboard.writeText(text).then(function() {
-    el.classList.add('copied');
-    setTimeout(function() { el.classList.remove('copied'); }, 800);
+
+  var copied = function() {
+    cell.classList.add('copied');
+    setTimeout(function() { cell.classList.remove('copied'); }, 800);
     showToast('已复制: ' + text);
-  }).catch(function() {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('已复制: ' + text);
-  });
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(copied).catch(function() {
+      fallbackCopy(text); copied();
+    });
+  } else {
+    fallbackCopy(text); copied();
+  }
+});
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;left:-9999px';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
 }
 
 function showToast(msg) {
