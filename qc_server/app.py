@@ -245,12 +245,10 @@ bg_status = {
 #   3. 连续成功一次即清零 consecutive_failures
 #   4. 所有错误写入 logger + bg_status，管理端和 /api/health 可实时查看
 _bg_errors = []
-# 错误通知防抖：5分钟内不重复发送企微告警
-_last_error_alert_time = 0
 
 def _record_error(msg: str, source: str = "background", level: str = "recoverable"):
     """记录错误到 bg_status 和 logger，不中断业务流程"""
-    global _bg_errors, _last_error_alert_time
+    global _bg_errors
     now_str = datetime.now().strftime("%H:%M:%S")
     bg_status["last_error"] = msg
     bg_status["last_error_time"] = now_str
@@ -266,22 +264,6 @@ def _record_error(msg: str, source: str = "background", level: str = "recoverabl
         logger.warning(f"[{source}] {msg}")
     else:
         logger.info(f"[{source}] {msg}")
-
-    # 连续失败 >= 3 次时推送企微告警（5分钟防抖）
-    if bg_status["consecutive_failures"] >= 3:
-        now_ts = time.time()
-        if now_ts - _last_error_alert_time > 300:
-            _last_error_alert_time = now_ts
-            try:
-                notifier.send_anomaly_alert(
-                    f"系统异常告警\n"
-                    f"连续失败: {bg_status['consecutive_failures']} 次\n"
-                    f"最近错误: {msg}\n"
-                    f"时间: {now_str}\n"
-                    f"来源: {source}"
-                )
-            except Exception:
-                pass  # 通知失败不影响主流程
 
 def _clear_error():
     """一次成功即清零失败计数"""
