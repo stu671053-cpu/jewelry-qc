@@ -72,6 +72,7 @@ class Database:
                     r9_style_check TEXT,
                     r10_weight_compare TEXT,
                     r11_material_conclusion TEXT,
+                    r12_stone_check TEXT,
                     overtime_risk TEXT DEFAULT '',
                     raw_data TEXT,
                     notified INTEGER DEFAULT 0
@@ -79,6 +80,10 @@ class Database:
             """)
             try:
                 conn.execute("ALTER TABLE qc_check_results ADD COLUMN r11_material_conclusion TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE qc_check_results ADD COLUMN r12_stone_check TEXT")
             except sqlite3.OperationalError:
                 pass
             try:
@@ -269,12 +274,12 @@ class Database:
                      r1_weight, r2_gemstone, r3_gold_content, r4_net_weight,
                      r5_nanhong, r6_agate_coating, r7_african_jade, r8_cubic_zirconia,
                      r9_style_check, r10_weight_compare, r11_material_conclusion,
-                     raw_data)
+                     r12_stone_check, raw_data)
                     VALUES (?, ?, ?,
                             ?, ?, ?, ?,
                             ?, ?, ?, ?,
                             ?, ?, ?,
-                            ?)
+                            ?, ?)
                 """, (
                     order_code, now, status,
                     results.get("重量判定", ""),
@@ -288,6 +293,7 @@ class Database:
                     results.get("款式核实", ""),
                     results.get("重量比对", ""),
                     results.get("材质结论对应", ""),
+                    results.get("配石检查", ""),
                     json.dumps(results, ensure_ascii=False),
                 ))
             conn.commit()
@@ -338,7 +344,7 @@ class Database:
                          "r4_net_weight", "r5_nanhong", "r6_agate_coating",
                          "r7_african_jade", "r8_cubic_zirconia",
                          "r9_style_check", "r10_weight_compare",
-                         "r11_material_conclusion", "overtime_risk"]
+                         "r11_material_conclusion", "r12_stone_check", "overtime_risk"]
                 rule_stats = {}
                 for r in rules:
                     total_r = conn.execute(
