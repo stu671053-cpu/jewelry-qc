@@ -140,7 +140,8 @@ body {
   <div class="card" id="logCard">
     <h2 style="display:flex;justify-content:space-between;align-items:center">
       运行日志
-      <div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sapphire" onclick="copyLogs()" style="font-size:11px;padding:4px 10px">复制</button>
         <button class="btn btn-sapphire" onclick="loadLogs()" style="font-size:11px;padding:4px 10px">刷新</button>
       </div>
     </h2>
@@ -291,6 +292,7 @@ document.getElementById('orderInput').addEventListener('keydown', function(e) {
 
 // ===== 运行日志 =====
 var LOG_LEVELS = { 'INFO': '#22c55e', 'WARNING': '#eab308', 'ERROR': '#ef4444' };
+var _logText = '';
 
 async function loadLogs() {
   try {
@@ -299,8 +301,12 @@ async function loadLogs() {
     var panel = document.getElementById('logPanel');
     if (!d.logs || d.logs.length === 0) {
       panel.textContent = '(暂无日志)';
+      _logText = '';
       return;
     }
+    _logText = d.logs.map(function(l) {
+      return l.time + ' [' + l.level + '] ' + l.msg;
+    }).join('\n');
     panel.innerHTML = d.logs.map(function(l) {
       var c = LOG_LEVELS[l.level] || '#94a3b8';
       return '<span style="color:#64748b">' + l.time + '</span> '
@@ -311,7 +317,27 @@ async function loadLogs() {
   } catch(e) { document.getElementById('logPanel').textContent = '(加载失败)'; }
 }
 
+async function copyLogs() {
+  if (!_logText) { await loadLogs(); }
+  try {
+    await navigator.clipboard.writeText(_logText);
+    var btn = document.querySelector('#logCard button');
+    var orig = btn.textContent;
+    btn.textContent = '已复制!';
+    btn.style.background = '#22c55e';
+    setTimeout(function() { btn.textContent = orig; btn.style.background = ''; }, 1500);
+  } catch(e) {
+    // 降级：用 textarea
+    var ta = document.createElement('textarea');
+    ta.value = _logText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('已复制到剪贴板');
+  }
+}
+
 document.getElementById('logPanel').textContent = '(加载中...)';
+loadLogs();
 
 loadSettings();
 loadWhitelist();
