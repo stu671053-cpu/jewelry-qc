@@ -157,15 +157,16 @@ th {
   font-size: 1.3vw; color: var(--text-dim);
   border-bottom: 2px solid var(--border); letter-spacing: 1px;
 }
-td { padding: 1.2vh 1.2vw; border-bottom: 1px solid #f2f3f6; text-align: center; }
+td { padding: 1.2vh 0.8vw; border-bottom: 1px solid #f2f3f6; text-align: center; color: var(--text); }
 tr:hover { background: #fafbfd; }
 tr.new-row { animation: rowIn 0.5s ease-out; }
 @keyframes rowIn { from { background: var(--ruby-bg) } to { background: transparent } }
 
 .order-code {
-  font-family: "SF Mono", monospace; font-size: 1.7vw; font-weight: 700; color: var(--ruby);
+  font-size: 1.5vw; font-weight: 600; color: var(--ruby);
 }
-.operator { color: var(--sapphire); font-weight: 600; }
+.cert-code, .batch-code, .status, .batch-time { color: var(--text-dim); }
+.rule-col { font-weight: 600; white-space: nowrap; }
 .anomaly-tags { display: flex; flex-wrap: wrap; gap: 0.5vw; }
 .anomaly-tag {
   display: inline-block; padding: 0.4vh 0.8vw; border-radius: 0.3vw;
@@ -225,12 +226,13 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
     <table>
       <thead>
         <tr>
-          <th style="width:16%">订单码</th>
-          <th style="width:16%">批次码</th>
-          <th style="width:16%">操作人</th>
-          <th style="width:16%">对应规则</th>
-          <th style="width:16%">详情</th>
-          <th style="width:16%">批次时间</th>
+          <th style="width:13%">订单码</th>
+          <th style="width:17%">证书编号</th>
+          <th style="width:14%">批次号</th>
+          <th style="width:8%">状态</th>
+          <th style="width:17%">对应规则</th>
+          <th style="width:15%">详情</th>
+          <th style="width:10%">完成时间</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -249,9 +251,10 @@ let anomalyRows = [];     // 所有异常行（已排序）
 let anomalySound = null;
 try { anomalySound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/////w=='); } catch(e) {}
 
+const QC_TOKEN = "{{ qc_token }}";
 async function refresh() {
   try {
-    const [anomR, statsR] = await Promise.all([fetch('/api/anomalies'), fetch('/api/stats')]);
+    const [anomR, statsR] = await Promise.all([fetch('/api/anomalies?token='+QC_TOKEN), fetch('/api/stats?token='+QC_TOKEN)]);
     const anom = await anomR.json();
     const stats = await statsR.json();
     const dist = stats.status_distribution || {};
@@ -281,8 +284,9 @@ async function refresh() {
       const allBad = a.items.every(it => it.value.includes('漏') || it.value.includes('异常'));
       return {
         order_code: a.order_code,
+        cert_code: a.cert_code || '-',
         batch_code: a.batch_code || '-',
-        operator: a.operator || '-',
+        order_status: a.order_status || '-',
         rule: rules,
         value: values,
         batch_time: a.batch_time || '-',
@@ -303,14 +307,15 @@ async function refresh() {
       tbody.innerHTML = anomalyRows.map(r => {
         return '<tr class="new-row">'
           + '<td><span class="order-code">'+r.order_code+'</span></td>'
-          + '<td style="color:var(--text-dim)">'+r.batch_code+'</td>'
-          + '<td><span class="operator">'+r.operator+'</span></td>'
-          + '<td style="font-weight:600;white-space:nowrap">'+r.rule+'</td>'
+          + '<td class="cert-code">'+r.cert_code+'</td>'
+          + '<td class="batch-code">'+r.batch_code+'</td>'
+          + '<td class="status">'+r.order_status+'</td>'
+          + '<td class="rule-col">'+r.rule+'</td>'
           + '<td><span class="anomaly-tag '+r.cls+'">'+r.value+'</span></td>'
-          + '<td style="color:var(--text-dim);white-space:nowrap">'+r.batch_time+'</td></tr>';
+          + '<td class="batch-time">'+r.batch_time+'</td></tr>';
       }).join('');
     } else {
-      document.getElementById('tbody').innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
     }
 
     const n = new Date();

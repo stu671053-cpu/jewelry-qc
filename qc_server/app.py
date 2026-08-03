@@ -9,6 +9,8 @@ QC Server - Flask 主入口
 """
 
 import json
+import logging
+import collections
 import threading
 import time
 from pathlib import Path
@@ -41,9 +43,50 @@ CONFIG["database"]["path"] = tenant_db
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 
+# ---------- 日志系统 ----------
+class RingBufferHandler(logging.Handler):
+    def __init__(self, capacity=300):
+        super().__init__()
+        self.buffer = collections.deque(maxlen=capacity)
+    def emit(self, record):
+        self.buffer.append({
+            'time': datetime.fromtimestamp(record.created).strftime('%H:%M:%S'),
+            'level': record.levelname,
+            'msg': self.format(record)
+        })
+    def get_logs(self, count=100):
+        items = list(self.buffer)
+        return items[-count:] if count < len(items) else items
+
+log_handler = RingBufferHandler()
+log_handler.setFormatter(logging.Formatter('%(message)s'))
+logger = logging.getLogger('qc_server')
+logger.setLevel(logging.INFO)
+logger.addHandler(log_handler)
+console = logging.StreamHandler()
+console.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S'))
+logger.addHandler(console)
+
+# ---------- 访问控制 ----------
+import hmac
+import secrets
+ACCESS_TOKEN = os.environ.get("QC_ACCESS_TOKEN", "") or secrets.token_hex(16)
+
+@app.before_request
+def _require_api_token():
+    if not request.path.startswith("/api/"):
+        return
+    auth = request.headers.get("Authorization", "")
+    token = auth[7:] if auth.startswith("Bearer ") else request.args.get("token", "")
+    if not token or not hmac.compare_digest(token, ACCESS_TOKEN):
+        return jsonify({"error": "unauthorized"}), 401
+
 db = Database(db_path=tenant_db)
 # 确保 qic_orders 表存在（sync_service._ensure_tables）
-sync_engine = SyncEngine(enable_qc=False)
+if TENANT == "国关":
+    sync_engine = SyncEngine(config_path="config_sync_国关.json", enable_qc=False)
+else:
+    sync_engine = SyncEngine(enable_qc=False)
 sync_engine.db_path = str(BASE_DIR / tenant_db)
 sync_engine._ensure_tables()
 loupe_cookie = os.environ.get("LOUPE_COOKIE", "")
@@ -55,6 +98,27 @@ notifier = Notifier(CONFIG)
 
 # 同步状态文件
 SYNC_STATE_PATH = BASE_DIR / "sync_state.json"
+
+# 系统设置
+SETTINGS_PATH = BASE_DIR / "settings.json"
+
+def load_settings():
+    defaults = {"work_start": "08:00", "work_end": "23:00", "interval_seconds": 60, "sync_enabled": True}
+    if SETTINGS_PATH.exists():
+        with open(SETTINGS_PATH, "r") as f:
+            defaults.update(json.load(f))
+    return defaults
+
+def save_settings(s):
+    with open(SETTINGS_PATH, "w") as f:
+        json.dump(s, f, indent=2, ensure_ascii=False)
+
+runtime_settings = load_settings()
+
+# 创建白名单表
+with db._conn() as _c:
+    _c.execute("CREATE TABLE IF NOT EXISTS whitelist (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT NOT NULL, whitelist_date TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(order_code, whitelist_date))")
+    _c.commit()
 
 
 def business_day_range():
@@ -100,14 +164,16 @@ bg_status = {
 def dashboard():
     return render_template("dashboard.html",
                            tenant=TENANT,
-                           tenant_color=TENANT_COLOR)
+                           tenant_color=TENANT_COLOR,
+                           qc_token=ACCESS_TOKEN)
 
 
 @app.route("/tv")
 def tv_dashboard():
     return render_template("dashboard.html",
                            tenant=TENANT,
-                           tenant_color=TENANT_COLOR)
+                           tenant_color=TENANT_COLOR,
+                           qc_token=ACCESS_TOKEN)
 
 
 # ==================== API 接口 ====================
@@ -132,8 +198,8 @@ def api_anomalies():
                    r.r7_african_jade, r.r8_cubic_zirconia,
                    r.r9_style_check, r.r10_weight_compare,
                    r.r11_material_conclusion,
-                   o.质检批次号 as batch_code, o.操作人 as operator,
-                   o.批次生成时间 as batch_time
+                   o.证书编码 as cert_code, o.入库批次号 as batch_code,
+                   o.状态 as order_status, o.质检完成时间 as batch_time
             FROM qc_check_results r
             LEFT JOIN qic_orders o ON r.order_code = o.订单码
             WHERE r.status = 'anomaly'
@@ -151,6 +217,9 @@ def api_anomalies():
         "r11_material_conclusion": "R11 材质结论对应",
     }
 
+    status_map = {"100": "待处理", "200": "处理中", "301": "已完成",
+                  "400": "待制证", "401": "已驳回", "500": "质检中", "502": "异常", "503": "已完成"}
+
     anomalies = []
     for row in rows:
         row = dict(row)
@@ -160,19 +229,28 @@ def api_anomalies():
             if val and val not in ("正常", "正确", ""):
                 items.append({"rule": label, "value": val})
 
-        # 批次时间戳 → 时分
-        raw_batch_time = row.get("batch_time", "") or ""
-        if str(raw_batch_time).isdigit() and len(str(raw_batch_time)) == 10:
-            batch_time_str = datetime.fromtimestamp(int(raw_batch_time)).strftime("%H:%M")
-        elif str(raw_batch_time).isdigit() and len(str(raw_batch_time)) == 13:
-            batch_time_str = datetime.fromtimestamp(int(raw_batch_time) / 1000).strftime("%H:%M")
+        # 质检完成时间 → 时分
+        raw_batch_time = row.get("batch_time", "")
+        if raw_batch_time and str(raw_batch_time).lstrip("-").isdigit():
+            ts = int(raw_batch_time)
+            if ts <= 0:
+                batch_time_str = "-"
+            else:
+                s = str(ts)
+                if len(s) == 10:
+                    batch_time_str = datetime.fromtimestamp(ts).strftime("%H:%M")
+                elif len(s) == 13:
+                    batch_time_str = datetime.fromtimestamp(ts / 1000).strftime("%H:%M")
+                else:
+                    batch_time_str = "-"
         else:
-            batch_time_str = str(raw_batch_time)
+            batch_time_str = "-"
 
         anomalies.append({
             "order_code": row["order_code"],
+            "cert_code": row.get("cert_code", "") or "",
             "batch_code": row.get("batch_code", "") or "",
-            "operator": row.get("operator", "") or "",
+            "order_status": status_map.get(str(row.get("order_status", "") or ""), str(row.get("order_status", "") or "")),
             "check_time": row["check_time"],
             "batch_time": batch_time_str,
             "items": items,
@@ -434,6 +512,91 @@ def background_checker():
 
 
 # ==================== 启动 ====================
+
+# ==================== 设置 API ====================
+@app.route("/api/settings", methods=["GET"])
+def api_get_settings():
+    return jsonify(runtime_settings)
+
+@app.route("/api/settings", methods=["POST"])
+def api_update_settings():
+    global runtime_settings
+    data = request.get_json() or {}
+    for k in ["work_start", "work_end", "interval_seconds", "sync_enabled"]:
+        if k in data:
+            runtime_settings[k] = data[k]
+    save_settings(runtime_settings)
+    return jsonify({"success": True, "settings": runtime_settings})
+
+# ==================== 白名单 API ====================
+@app.route("/api/whitelist", methods=["GET"])
+def api_whitelist_list():
+    date = request.args.get("date", datetime.now().strftime("%Y-%m-%d"))
+    items = db.get_whitelist(date)
+    return jsonify({"date": date, "total": len(items), "items": items})
+
+@app.route("/api/whitelist", methods=["POST"])
+def api_whitelist_add():
+    data = request.get_json() or {}
+    order_code = data.get("order_code", "").strip()
+    whitelist_date = data.get("date", datetime.now().strftime("%Y-%m-%d"))
+    if not order_code:
+        return jsonify({"success": False, "message": "订单码不能为空"}), 400
+    ok = db.add_whitelist(order_code, whitelist_date)
+    return jsonify({"success": ok, "message": "已添加" if ok else "已存在或添加失败"})
+
+@app.route("/api/whitelist/<order_code>", methods=["DELETE"])
+def api_whitelist_remove(order_code):
+    whitelist_date = request.args.get("date", datetime.now().strftime("%Y-%m-%d"))
+    ok = db.remove_whitelist(order_code, whitelist_date)
+    return jsonify({"success": ok, "message": "已移除" if ok else "移除失败"})
+
+@app.route("/api/whitelist/detect", methods=["POST"])
+def api_whitelist_detect():
+    data = request.get_json() or {}
+    code = data.get("code", "").strip()
+    if not code:
+        return jsonify({"success": False, "message": "输入不能为空"}), 400
+    whitelist_date = data.get("date", datetime.now().strftime("%Y-%m-%d"))
+    ok = db.add_whitelist(code, whitelist_date)
+    return jsonify({"success": ok, "message": f"{code} {'已加入' if ok else '已存在'}白名单"})
+
+# ==================== 手动同步 API ====================
+@app.route("/api/sync", methods=["POST"])
+def api_manual_sync():
+    try:
+        biz_start, biz_end = business_day_range()
+        ts_start = int(datetime.strptime(biz_start, "%Y-%m-%d %H:%M:%S").timestamp())
+        ts_end = int(datetime.strptime(biz_end, "%Y-%m-%d %H:%M:%S").timestamp())
+        sync_engine.loupe["search_params"]["inspectionBatchStartTime"] = ts_start
+        sync_engine.loupe["search_params"]["inspectionBatchEndTime"] = ts_end
+        synced = sync_engine.sync_full()
+        total_checked = 0
+        while True:
+            orders = db.get_unchecked_orders(batch_size=500)
+            if not orders:
+                break
+            results = qc.check_batch(orders)
+            save_list = [{"order_code": r["order_code"], "results": r["results"], "status": r["status"]} for r in results]
+            db.save_check_results_batch(save_list)
+            total_checked += len(results)
+        return jsonify({"success": True, "synced": synced, "checked": total_checked})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ==================== 日志 / 管理页面 ====================
+@app.route("/api/logs")
+def api_logs():
+    lines = request.args.get("lines", 100, type=int)
+    lines = min(lines, 300)
+    return jsonify({"logs": log_handler.get_logs(lines)})
+
+@app.route("/admin")
+def admin_page():
+    return render_template("admin.html",
+                           tenant=TENANT,
+                           tenant_color=TENANT_COLOR,
+                           qc_token=ACCESS_TOKEN)
 
 if __name__ == "__main__":
     print(f"[配置] 租户: {TENANT} | 数据库: {tenant_db}")

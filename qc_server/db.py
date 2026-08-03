@@ -301,3 +301,36 @@ class Database:
                     (code,)
                 )
             conn.commit()
+
+    # ==================== 白名单 ====================
+    def get_whitelist(self, date):
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT order_code, whitelist_date, created_at FROM whitelist WHERE whitelist_date = ? ORDER BY created_at DESC",
+                (date,)
+            ).fetchall()
+            return [{"order_code": r[0], "date": r[1], "created_at": r[2]} for r in rows]
+
+    def add_whitelist(self, order_code, date):
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    "INSERT OR IGNORE INTO whitelist (order_code, whitelist_date) VALUES (?, ?)",
+                    (order_code, date)
+                )
+                conn.commit()
+            return True
+        except Exception:
+            return False
+
+    def remove_whitelist(self, order_code, date):
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    "DELETE FROM whitelist WHERE order_code = ? AND whitelist_date = ?",
+                    (order_code, date)
+                )
+                conn.commit()
+            return True
+        except Exception:
+            return False

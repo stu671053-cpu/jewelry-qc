@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ tenant }} · 系统管理</title>
+<style>
+:root {
+  --bg: #f5f6f8;
+  --surface: rgba(255,255,255,0.92);
+  --text: #1a1f2e;
+  --text-dim: #7b8ba3;
+  --gold: #b8960f;
+  --emerald: #1f9d63;
+  --ruby: #d63045;
+  --sapphire: #3b82e8;
+  --border: rgba(0,0,0,0.07);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "SF Pro Display", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; padding-bottom: 16px; border-bottom:1px solid var(--border);
+}
+.header h1 { font-size: 22px; font-weight: 600; }
+.header h1 span { color: var(--gold); }
+.back-link { color: var(--text-dim); text-decoration: none; font-size: 14px; }
+.back-link:hover { color: var(--text); }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; margin-bottom: 16px;
+}
+.card h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.form-row input, .form-row select {
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 14px; outline: none;
+}
+.form-row input:focus { border-color: var(--gold); }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top:8px; }
+.settings-grid label { font-size: 12px; color: var(--text-dim); }
+.settings-grid input { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 14px; outline: none; }
+.settings-grid input:focus { border-color: var(--gold); }
+
+.btn {
+  padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-primary { background: var(--gold); color: #fff; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-danger { background: transparent; color: var(--ruby); border: 1px solid var(--ruby); }
+.btn-danger:hover { background: var(--ruby); color: #fff; }
+.btn-success { background: var(--emerald); color: #fff; }
+.btn-success:hover { opacity: 0.85; }
+.btn-sapphire { background: var(--sapphire); color: #fff; }
+.btn-sapphire:hover { opacity: 0.85; }
+
+.msg { margin-top: 8px; font-size: 12px; padding: 6px 10px; border-radius: 4px; display: none; }
+.msg.success { background: rgba(31,157,99,0.08); color: var(--emerald); display: block; }
+.msg.error { background: rgba(214,48,69,0.08); color: var(--ruby); display: block; }
+.msg.info { background: rgba(59,130,232,0.08); color: var(--sapphire); display: block; }
+
+.item { display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border); }
+.item:last-child { border-bottom: none; }
+.item-code { font-family: "SF Mono","Menlo",monospace; font-size: 13px; font-weight: 500; }
+.item-time { font-size: 11px; color: var(--text-dim); }
+.empty-state { text-align: center; padding: 28px; color: var(--text-dim); font-size: 13px; }
+.info { font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.6; }
+
+.status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; }
+.status-on { background: rgba(31,157,99,0.1); color: var(--emerald); }
+.status-off { background: rgba(214,48,69,0.1); color: var(--ruby); }
+.status-sleep { background: rgba(212,136,15,0.1); color: #d4880f; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>{{ tenant }} · <span>系统管理</span></h1>
+    <a href="/" class="back-link">← 返回大屏</a>
+  </div>
+
+  <!-- 系统控制 -->
+  <div class="card">
+    <h2>
+      系统状态
+      <span id="syncStatus" class="status-badge status-on" style="margin-left:8px">运行中</span>
+    </h2>
+    <div class="form-row">
+      <button class="btn btn-danger" id="btnToggle" onclick="toggleSync()">⏸ 暂停同步</button>
+      <button class="btn btn-sapphire" onclick="manualSync()">🔄 立即同步</button>
+    </div>
+    <div id="ctrlMsg" class="msg"></div>
+    <div class="info" id="statusInfo"></div>
+  </div>
+
+  <!-- 工作时间设置 -->
+  <div class="card">
+    <h2>工作时间设置</h2>
+    <div class="settings-grid">
+      <div><label>开始时间</label><input type="text" id="workStart" placeholder="08:00" maxlength="5"></div>
+      <div><label>结束时间</label><input type="text" id="workEnd" placeholder="23:00" maxlength="5"></div>
+      <div><label>刷新间隔（秒）</label><input type="number" id="intervalSec" min="10" max="3600" value="60"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" onclick="saveSettings()" style="width:100%">保存设置</button></div>
+    </div>
+    <div id="setMsg" class="msg"></div>
+    <div class="info">时间格式 HH:MM（如 08:30）。到达结束时间后，如所有订单已完成（连续3次确认），自动休眠至次日开始时间。若有进行中订单则继续执行。</div>
+  </div>
+
+  <!-- 白名单 -->
+  <div class="card">
+    <h2>添加白名单</h2>
+    <div class="form-row">
+      <input type="text" id="orderInput" placeholder="订单码 / 证书编号 / 批次号" autofocus style="flex:1">
+      <button class="btn btn-primary" onclick="addWhitelist()">添加</button>
+    </div>
+    <div id="addMsg" class="msg"></div>
+    <div class="info">
+      自动识别：订单码（10位）/ 证书编号（ZJ/3126开头）/ 质检批次号（12位）/ 入库批次号（A开头）<br>
+      白名单仅当天有效，次日自动清除。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>今日白名单 (<span id="wlCount">0</span>)</h2>
+    <div id="wlList"><div class="empty-state">加载中...</div></div>
+  </div>
+
+  <!-- 运行日志 -->
+  <div class="card" id="logCard">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      运行日志
+      <div>
+        <button class="btn btn-sapphire" onclick="loadLogs()" style="font-size:11px;padding:4px 10px">刷新</button>
+      </div>
+    </h2>
+    <div id="logPanel" style="background:#0f172a;color:#e2e8f0;border-radius:8px;padding:12px;font-family:'SF Mono',Menlo,monospace;font-size:11px;line-height:1.7;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;"></div>
+  </div>
+</div>
+
+<script>
+const QC_TOKEN = "{{ qc_token }}";
+function qcFetch(url, opts){ opts = opts || {}; opts.headers = Object.assign({'Authorization': 'Bearer ' + QC_TOKEN}, opts.headers || {}); return fetch(url, opts); }
+const WAPI = '/api/whitelist';
+const SAPI = '/api/settings';
+
+function showMsg(id, text, cls) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.className = 'msg ' + cls;
+  setTimeout(() => { el.className = 'msg'; }, 3000);
+}
+
+// ===== 设置 =====
+async function loadSettings() {
+  const r = await qcFetch(SAPI); const d = await r.json();
+  document.getElementById('workStart').value = d.work_start || '08:00';
+  document.getElementById('workEnd').value = d.work_end || '23:00';
+  document.getElementById('intervalSec').value = d.interval_seconds || 60;
+  updateSyncUI(d.sync_enabled);
+}
+
+function updateSyncUI(enabled) {
+  const badge = document.getElementById('syncStatus');
+  const btn = document.getElementById('btnToggle');
+  if (enabled) {
+    badge.textContent = '运行中'; badge.className = 'status-badge status-on';
+    btn.textContent = '⏸ 暂停同步'; btn.className = 'btn btn-danger';
+  } else {
+    badge.textContent = '已暂停'; badge.className = 'status-badge status-off';
+    btn.textContent = '▶ 启动同步'; btn.className = 'btn btn-success';
+  }
+}
+
+async function saveSettings() {
+  var ws = document.getElementById('workStart').value.trim();
+  var we = document.getElementById('workEnd').value.trim();
+  // 验证格式
+  if (!/^\d{1,2}:\d{2}$/.test(ws)) { showMsg('setMsg','开始时间格式错误（如 08:00）','error'); return; }
+  if (!/^\d{1,2}:\d{2}$/.test(we)) { showMsg('setMsg','结束时间格式错误（如 23:00）','error'); return; }
+  const body = {
+    work_start: ws,
+    work_end: we,
+    interval_seconds: parseInt(document.getElementById('intervalSec').value)
+  };
+  const r = await qcFetch(SAPI, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body) });
+  const d = await r.json();
+  if (d.success) {
+    showMsg('setMsg', '设置已保存（下次刷新生效）', 'success');
+  }
+}
+
+async function toggleSync() {
+  const badge = document.getElementById('syncStatus');
+  const isOn = badge.textContent === '运行中';
+  const r = await qcFetch(SAPI, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sync_enabled: !isOn }) });
+  const d = await r.json();
+  if (d.success) {
+    updateSyncUI(!isOn);
+    showMsg('ctrlMsg', isOn ? '数据同步已暂停' : '数据同步已启动', isOn ? 'info' : 'success');
+  }
+}
+
+async function manualSync() {
+  const r = await qcFetch('/api/sync', { method: 'POST' });
+  const d = await r.json();
+  if (d.success) {
+    showMsg('ctrlMsg', `同步完成：拉取 ${d.synced} 条，检测 ${d.checked} 条`, 'success');
+  } else {
+    showMsg('ctrlMsg', '同步失败: ' + (d.error || '未知'), 'error');
+  }
+}
+
+// 定时刷新状态
+async function refreshStatus() {
+  try {
+    const [sr, wr] = await Promise.all([qcFetch(SAPI), qcFetch('/api/stats')]);
+    const set = await sr.json();
+    const st = await wr.json();
+    if (!set.sync_enabled) {
+      document.getElementById('statusInfo').textContent = '状态：已暂停 | 今日检测 ' + (st.today_checked||0) + ' | 异常 ' + (st.today_anomaly||0);
+    } else if (st.bg_status && st.bg_status.sleeping) {
+      document.getElementById('statusInfo').textContent = '状态：休眠中（' + (st.bg_status.sleep_reason||'') + '）';
+    } else {
+      document.getElementById('statusInfo').textContent = '状态：运行中 | 今日检测 ' + (st.today_checked||0) + ' | 异常 ' + (st.today_anomaly||0);
+    }
+  } catch(e) {}
+}
+
+// ===== 白名单 =====
+async function loadWhitelist() {
+  const resp = await qcFetch(WAPI); const data = await resp.json();
+  document.getElementById('wlCount').textContent = data.total;
+  const list = document.getElementById('wlList');
+  if (data.items.length === 0) {
+    list.innerHTML = '<div class="empty-state">暂无白名单</div>'; return;
+  }
+  list.innerHTML = data.items.map(item =>
+    '<div class="item"><div><span class="item-code">'+item.order_code+'</span>'
+    +'<div class="item-time">'+item.created_at+'</div></div>'
+    +'<button class="btn btn-danger" onclick="removeWhitelist(\''+item.order_code+'\')">移除</button></div>'
+  ).join('');
+}
+
+async function addWhitelist() {
+  const input = document.getElementById('orderInput');
+  const code = input.value.trim();
+  if (!code) { showMsg('addMsg','请输入','error'); return; }
+  const resp = await qcFetch(WAPI+'/detect', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({code})
+  });
+  const data = await resp.json();
+  if (data.success) {
+    showMsg('addMsg', data.message, 'success');
+    input.value = ''; loadWhitelist();
+  } else { showMsg('addMsg', data.message, 'error'); }
+}
+
+async function removeWhitelist(code) {
+  if (!confirm('确认移除「' + code + '」？')) return;
+  await qcFetch(WAPI + '/' + encodeURIComponent(code), { method: 'DELETE' });
+  loadWhitelist();
+}
+
+document.getElementById('orderInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addWhitelist();
+});
+
+// ===== 运行日志 =====
+var LOG_LEVELS = { 'INFO': '#22c55e', 'WARNING': '#eab308', 'ERROR': '#ef4444' };
+
+async function loadLogs() {
+  try {
+    var r = await qcFetch('/api/logs?lines=200');
+    var d = await r.json();
+    var panel = document.getElementById('logPanel');
+    if (!d.logs || d.logs.length === 0) {
+      panel.textContent = '(暂无日志)';
+      return;
+    }
+    panel.innerHTML = d.logs.map(function(l) {
+      var c = LOG_LEVELS[l.level] || '#94a3b8';
+      return '<span style="color:#64748b">' + l.time + '</span> '
+        + '<span style="color:' + c + '">[' + l.level + ']</span> '
+        + l.msg;
+    }).join('\n');
+    panel.scrollTop = panel.scrollHeight;
+  } catch(e) { document.getElementById('logPanel').textContent = '(加载失败)'; }
+}
+
+document.getElementById('logPanel').textContent = '(加载中...)';
+
+loadSettings();
+loadWhitelist();
+setInterval(refreshStatus, 5000);
+setInterval(loadLogs, 8000);
+refreshStatus();
+loadLogs();
+</script>
+</body>
+</html>
