@@ -231,6 +231,9 @@ bg_status = {
     "sleep_reason": "",
 }
 
+# 异常数据缓存（后台刷新时返回上一周期数据，避免页面显示为0）
+_anomalies_cache = None
+
 
 # ==================== Dashboard 页面 ====================
 
@@ -263,6 +266,13 @@ def api_stats():
 @app.route("/api/anomalies")
 def api_anomalies():
     """获取本业务日异常订单（6AM~次日6AM），排除白名单"""
+    global _anomalies_cache
+    # 后台刷新中，返回上一周期缓存数据，避免页面显示为0
+    if bg_status["running"] and _anomalies_cache is not None:
+        result = jsonify(_anomalies_cache)
+        result.headers["X-Data-Cached"] = "1"
+        return result
+
     biz_start, biz_end = business_day_range()
     today_str = datetime.now().strftime("%Y-%m-%d")
     with db._conn() as conn:
@@ -392,11 +402,15 @@ def api_anomalies():
             remaining = 14400 - elapsed
             return remaining > 0 and remaining <= 2700
         except: return False
-    return jsonify({
+    result_obj = {
         "today": biz_start[:10],
         "total": len(anomalies),
         "anomalies": anomalies,
-    })
+    }
+    # 缓存本次结果（用于后台刷新时返回上一周期数据）
+    if not bg_status["running"]:
+        _anomalies_cache = result_obj
+    return jsonify(result_obj)
 
 
 # ==================== 白名单管理 API ====================
