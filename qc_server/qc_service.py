@@ -58,17 +58,28 @@ class QCService:
     def check_batch(self, orders: list) -> list:
         """
         批量检测全部订单（不分状态）
-        返回: [{ order_code, results, status, anomalies }]
+        单条失败不影响其他订单，返回: [{ order_code, results, status, anomalies }]
         """
         output = []
         for order in orders:
-            order_code = order.get("订单码", "")
-            result = self.check_order(order)
-            output.append({
-                "order_code": order_code,
-                "order": order,
-                **result,
-            })
+            try:
+                order_code = order.get("订单码", "")
+                result = self.check_order(order)
+                output.append({
+                    "order_code": order_code,
+                    "order": order,
+                    **result,
+                })
+            except Exception as e:
+                # 单条失败不中断整个批次，返回 error 状态
+                order_code = order.get("订单码", "unknown")
+                output.append({
+                    "order_code": order_code,
+                    "order": order,
+                    "results": {"错误": str(e)[:200]},
+                    "status": "error",
+                    "anomalies": [],
+                })
         return output
 
     def format_anomaly_message(self, check_result: dict) -> str:

@@ -11,8 +11,11 @@ Loupe QIC 数据同步服务
 """
 
 import json
+import logging
 import sqlite3
 import time
+
+logger = logging.getLogger("qc_server.sync")
 import sys
 import random
 from pathlib import Path

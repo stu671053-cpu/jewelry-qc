@@ -98,8 +98,10 @@ if not ACCESS_TOKEN:
 
 @app.before_request
 def _require_api_token():
-    """所有 /api/* 接口必须携带有效访问令牌（Bearer 或 ?token=）"""
+    """所有 /api/* 接口必须携带有效访问令牌（Bearer 或 ?token=），/api/health 除外"""
     if not request.path.startswith("/api/"):
+        return
+    if request.path == "/api/health":
         return
     auth = request.headers.get("Authorization", "")
     token = auth[7:] if auth.startswith("Bearer ") else request.args.get("token", "")
@@ -229,7 +231,30 @@ bg_status = {
     "total_synced_today": 0,
     "sleeping": False,
     "sleep_reason": "",
+    # 错误追踪
+    "last_error": None,
+    "last_error_time": None,
+    "consecutive_failures": 0,
+    "api_status": "ok",
+    "db_status": "ok",
 }
+# 记录后台错误（最多保留最近5条）
+_bg_errors = []
+
+def _record_error(msg: str, source: str = "background"):
+    global _bg_errors
+    bg_status["last_error"] = msg
+    bg_status["last_error_time"] = datetime.now().strftime("%H:%M:%S")
+    bg_status["consecutive_failures"] += 1
+    _bg_errors.append({"time": bg_status["last_error_time"], "source": source, "msg": msg})
+    if len(_bg_errors) > 5:
+        _bg_errors.pop(0)
+    logger.error(f"[{source}] {msg}")
+
+def _clear_error():
+    bg_status["consecutive_failures"] = 0
+    bg_status["last_error"] = None
+    bg_status["last_error_time"] = None
 
 # 异常数据缓存（后台刷新时返回上一周期数据，避免页面显示为0）
 _anomalies_cache = None
@@ -492,6 +517,35 @@ def api_manual_sync():
 
 
 # ==================== 管理员页面 ====================
+
+# ==================== 健康检查 ====================
+@app.route("/api/health")
+def api_health():
+    """综合健康检查：API状态 + DB状态 + 错误追踪"""
+    # 数据库连通性
+    db_ok = True
+    try:
+        with db._conn() as c:
+            c.execute("SELECT 1").fetchone()
+    except Exception:
+        db_ok = False
+        bg_status["db_status"] = "error"
+    else:
+        bg_status["db_status"] = "ok"
+
+    return jsonify({
+        "status": "ok" if db_ok and bg_status["api_status"] == "ok" else "degraded",
+        "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "api_status": bg_status["api_status"],
+        "db_status": bg_status["db_status"],
+        "bg_running": bg_status["running"],
+        "bg_sleeping": bg_status["sleeping"],
+        "last_sync": bg_status["last_sync"],
+        "last_error": bg_status["last_error"],
+        "last_error_time": bg_status["last_error_time"],
+        "consecutive_failures": bg_status["consecutive_failures"],
+        "recent_errors": _bg_errors,
+    })
 
 @app.route("/api/logs")
 def api_logs():
@@ -781,8 +835,11 @@ def background_checker():
             try:
                 synced = sync_engine.sync_full()
                 logger.info(f"[后台] 拉取: {synced} 条（增量）")
+                bg_status["api_status"] = "ok"
             except Exception as e:
-                logger.info(f"[后台] 拉取失败: {e}")
+                _record_error(f"拉取失败: {e}", "sync")
+                bg_status["api_status"] = "error"
+                bg_status["running"] = False
                 time.sleep(interval)
                 continue
 
@@ -792,37 +849,62 @@ def background_checker():
             # 3. 跑未审查/已变化的订单
             total_checked = 0
             total_anomalies = 0
-            while True:
-                orders = db.get_unchecked_orders(batch_size=500)
-                if not orders:
-                    break
-                results = qc.check_batch(orders)
-                save_list = []
-                for r in results:
-                    save_list.append({
-                        "order_code": r["order_code"],
-                        "results": r["results"],
-                        "status": r["status"],
-                    })
-                    if r["status"] == "anomaly":
-                        total_anomalies += 1
-
-                db.save_check_results_batch(save_list)
-                total_checked += len(results)
+            try:
+                while True:
+                    orders = db.get_unchecked_orders(batch_size=500)
+                    if not orders:
+                        break
+                    try:
+                        results = qc.check_batch(orders)
+                    except Exception as e:
+                        _record_error(f"批量检测失败: {e}", "qc")
+                        continue  # 跳过当前批次
+                    save_list = []
+                    for r in results:
+                        save_list.append({
+                            "order_code": r["order_code"],
+                            "results": r["results"],
+                            "status": r["status"],
+                        })
+                        if r["status"] == "anomaly":
+                            total_anomalies += 1
+                    try:
+                        db.save_check_results_batch(save_list)
+                    except Exception as e:
+                        _record_error(f"保存检测结果失败: {e}", "db")
+                    total_checked += len(results)
+            except Exception as e:
+                _record_error(f"检测循环异常: {e}", "qc")
 
             bg_status["last_check"] = datetime.now().strftime("%H:%M:%S")
             bg_status["last_anomalies"] = total_anomalies
 
             elapsed = (datetime.now() - start_time).total_seconds()
             logger.info(f"[后台] 自查: {total_checked} 条, 异常 {total_anomalies} 条, 耗时 {elapsed:.1f}s")
+            _clear_error()
 
         except Exception as e:
-            logger.info(f"[后台] 异常: {e}")
+            _record_error(f"后台任务异常: {e}", "background")
         finally:
             bg_status["running"] = False
 
         time.sleep(settings.get("interval_seconds", 60))
 
+
+# ==================== API 统一错误处理 ====================
+@app.errorhandler(404)
+def _not_found(e):
+    return jsonify({"error": "not_found", "msg": "接口不存在"}), 404
+
+@app.errorhandler(500)
+def _server_error(e):
+    _record_error(str(e), "api")
+    return jsonify({"error": "internal_error", "msg": "服务器内部错误，已自动记录"}), 500
+
+@app.errorhandler(Exception)
+def _unhandled(e):
+    _record_error(str(e), "api")
+    return jsonify({"error": "unhandled", "msg": str(e)[:200]}), 500
 
 # ==================== 启动 ====================
 
