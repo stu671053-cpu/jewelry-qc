@@ -238,20 +238,35 @@ bg_status = {
     "api_status": "ok",
     "db_status": "ok",
 }
-# 记录后台错误（最多保留最近5条）
+# ==================== 错误追踪系统 ====================
+# 设计原则：
+#   1. 错误不中断正常业务流程（数据拉取、规则检测、页面展示各自独立容错）
+#   2. 错误分级：critical（系统级） / recoverable（可恢复） / info（提示）
+#   3. 连续成功一次即清零 consecutive_failures
+#   4. 所有错误写入 logger + bg_status，管理端和 /api/health 可实时查看
 _bg_errors = []
 
-def _record_error(msg: str, source: str = "background"):
+def _record_error(msg: str, source: str = "background", level: str = "recoverable"):
+    """记录错误到 bg_status 和 logger，不中断业务流程"""
     global _bg_errors
+    now_str = datetime.now().strftime("%H:%M:%S")
     bg_status["last_error"] = msg
-    bg_status["last_error_time"] = datetime.now().strftime("%H:%M:%S")
+    bg_status["last_error_time"] = now_str
     bg_status["consecutive_failures"] += 1
-    _bg_errors.append({"time": bg_status["last_error_time"], "source": source, "msg": msg})
-    if len(_bg_errors) > 5:
+    _bg_errors.append({
+        "time": now_str, "source": source, "level": level, "msg": msg
+    })
+    if len(_bg_errors) > 20:
         _bg_errors.pop(0)
-    logger.error(f"[{source}] {msg}")
+    if level == "critical":
+        logger.error(f"[{source}] [严重] {msg}")
+    elif level == "recoverable":
+        logger.warning(f"[{source}] {msg}")
+    else:
+        logger.info(f"[{source}] {msg}")
 
 def _clear_error():
+    """一次成功即清零失败计数"""
     bg_status["consecutive_failures"] = 0
     bg_status["last_error"] = None
     bg_status["last_error_time"] = None
@@ -521,8 +536,7 @@ def api_manual_sync():
 # ==================== 健康检查 ====================
 @app.route("/api/health")
 def api_health():
-    """综合健康检查：API状态 + DB状态 + 错误追踪"""
-    # 数据库连通性
+    """综合健康检查：API状态 + DB状态 + 错误追踪（免token，运维友好）"""
     db_ok = True
     try:
         with db._conn() as c:
@@ -533,14 +547,26 @@ def api_health():
     else:
         bg_status["db_status"] = "ok"
 
+    # 综合判断：db、api、后台线程三者都正常才算 ok
+    if not db_ok:
+        overall = "critical"
+    elif bg_status["api_status"] == "error":
+        overall = "degraded"
+    elif bg_status["consecutive_failures"] >= 3:
+        overall = "degraded"
+    else:
+        overall = "ok"
+
     return jsonify({
-        "status": "ok" if db_ok and bg_status["api_status"] == "ok" else "degraded",
+        "status": overall,
         "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "api_status": bg_status["api_status"],
-        "db_status": bg_status["db_status"],
-        "bg_running": bg_status["running"],
-        "bg_sleeping": bg_status["sleeping"],
-        "last_sync": bg_status["last_sync"],
+        # 各子系统状态
+        "subsystems": {
+            "database": {"status": "ok" if db_ok else "error", "msg": "正常" if db_ok else "数据库无法连接"},
+            "api": {"status": bg_status["api_status"], "msg": "Loupe API 正常" if bg_status["api_status"] == "ok" else "Loupe API 连接异常"},
+            "background": {"status": "running" if bg_status["running"] else "idle", "sleeping": bg_status["sleeping"], "sleep_reason": bg_status["sleep_reason"]},
+        },
+        # 错误追踪
         "last_error": bg_status["last_error"],
         "last_error_time": bg_status["last_error_time"],
         "consecutive_failures": bg_status["consecutive_failures"],
@@ -892,19 +918,20 @@ def background_checker():
 
 
 # ==================== API 统一错误处理 ====================
+# 原则：不暴露内部细节给前端，但完整记录到日志供运维排查
 @app.errorhandler(404)
 def _not_found(e):
-    return jsonify({"error": "not_found", "msg": "接口不存在"}), 404
+    return jsonify({"error": "not_found", "msg": "请求的接口不存在，请检查地址是否正确"}), 404
 
 @app.errorhandler(500)
 def _server_error(e):
-    _record_error(str(e), "api")
-    return jsonify({"error": "internal_error", "msg": "服务器内部错误，已自动记录"}), 500
+    _record_error(f"服务器内部错误: {e}", "api", "critical")
+    return jsonify({"error": "internal_error", "msg": "服务器内部错误，已自动记录，请联系管理员"}), 500
 
 @app.errorhandler(Exception)
 def _unhandled(e):
-    _record_error(str(e), "api")
-    return jsonify({"error": "unhandled", "msg": str(e)[:200]}), 500
+    _record_error(f"未处理异常: {e}", "api", "recoverable")
+    return jsonify({"error": "unhandled", "msg": "请求处理异常，已自动记录"}), 500
 
 # ==================== 启动 ====================
 
