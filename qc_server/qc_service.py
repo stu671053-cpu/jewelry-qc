@@ -5,7 +5,9 @@ QC 规则执行服务
 - 返回结构化检测结果
 """
 
+import os
 import sys
+import time
 from pathlib import Path
 
 # 将项目根目录加入 sys.path，以便导入 engine 和 rules
@@ -14,6 +16,9 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from engine import QCEngine
+
+TENANT = os.environ.get("TENANT", "")
+OVERTIME_THRESHOLD = 3.5 * 3600  # 3.5小时 = 12600秒
 
 
 class QCService:
@@ -27,6 +32,41 @@ class QCService:
         self.rule_names = [r["name"] for r in self.engine.rules]
         self.rule_columns = [r["column"] for r in self.engine.rules]
         print(f"[QC] 引擎已加载 {len(self.rule_names)} 条规则: {self.rule_names}")
+
+    def _check_overtime(self, order: dict) -> str:
+        """
+        超时预警判断（仅中金租户）
+        批次生成时间距今 > 3.5小时 且状态未完成 → 预警
+        返回: 空字符串（无需预警）或 预警消息文本
+        """
+        if TENANT != "中金":
+            return ""
+
+        batch_time_raw = order.get("批次生成时间", "")
+        order_status = str(order.get("状态", "") or "")
+
+        # 已完成 → 不预警
+        if order_status == "503":
+            return ""
+
+        # 解析批次生成时间（支持10位秒/13位毫秒）
+        try:
+            ts = int(str(batch_time_raw).lstrip("-"))
+            if ts <= 0:
+                return ""
+            if len(str(ts)) == 13:
+                ts = ts // 1000
+        except (ValueError, TypeError):
+            return ""
+
+        elapsed = int(time.time()) - ts
+        if elapsed <= OVERTIME_THRESHOLD:
+            return ""
+
+        hours = elapsed // 3600
+        minutes = (elapsed % 3600) // 60
+        batch_id = str(order.get("质检批次号", "") or "")
+        return f"批次{batch_id}已超3.5小时未完结（已{hours}小时{minutes}分）"
 
     def check_order(self, order: dict) -> dict:
         """
@@ -48,6 +88,17 @@ class QCService:
                     "column": col,
                     "value": val,
                 })
+
+        # 中金专属：超时预警（服务层伪规则）
+        overtime_msg = self._check_overtime(order)
+        results["超时预警"] = overtime_msg or "正常"
+        if overtime_msg:
+            anomalies.append({
+                "rule_id": "overtime",
+                "rule_name": "超时预警",
+                "column": "overtime_risk",
+                "value": overtime_msg,
+            })
 
         return {
             "results": results,

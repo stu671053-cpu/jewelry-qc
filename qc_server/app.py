@@ -352,16 +352,6 @@ def api_anomalies():
 
     anomalies = []
 
-    def _calc_batch_overtime(batch_time_val):
-        try:
-            ts = int(str(batch_time_val).lstrip("-"))
-            if ts <= 0: return False
-            if len(str(ts)) == 13: ts = ts // 1000
-            elapsed = int(time.time()) - ts
-            remaining = 14400 - elapsed
-            return remaining > 0 and remaining <= 2700
-        except: return False
-
     for row in rows:
         row = dict(row)
         items = []
@@ -406,42 +396,15 @@ def api_anomalies():
             "order_status": order_status,
             "check_time": row["check_time"],
             "batch_time": batch_time_str,
-            "_overtime": _calc_batch_overtime(raw_batch_time),
+            "_overtime": any(i["rule"] == "超时预警" for i in items),
             "items": items,
         })
 
-        # 中金：超时预警按批次合并、置顶
-        if TENANT == "中金":
-            # 1. 分离超时批次
-            overtime_batches = {}
-            normal = []
-            for a in anomalies:
-                if a["_overtime"]:
-                    bc = a["batch_code"] or a["order_code"]
-                    if bc not in overtime_batches:
-                        overtime_batches[bc] = {**a, "order_code": bc, "_batch_display": True}
-                else:
-                    normal.append(a)
-            # 2. 合并超时批次与其他异常
-            merged = []
-            for bc, ot in overtime_batches.items():
-                other = [a for a in normal if (a["batch_code"] or a["order_code"]) == bc]
-                if other:
-                    ot["items"] = other[0]["items"] + ot["items"]
-                    for o in other: normal.remove(o)
-                merged.append(ot)
-            # 3. 超时置顶
-            anomalies = merged + normal
+    # 超时预警条目置顶（稳定排序，SQL ORDER BY 的相对顺序不变）
+    overtime_items = [a for a in anomalies if any(i["rule"] == "超时预警" for i in a["items"])]
+    normal_items = [a for a in anomalies if a not in overtime_items]
+    anomalies = overtime_items + normal_items
 
-    def _calc_batch_overtime(batch_time_val):
-        try:
-            ts = int(str(batch_time_val).lstrip("-"))
-            if ts <= 0: return False
-            if len(str(ts)) == 13: ts = ts // 1000
-            elapsed = int(time.time()) - ts
-            remaining = 14400 - elapsed
-            return remaining > 0 and remaining <= 2700
-        except: return False
     result_obj = {
         "today": biz_start[:10],
         "total": len(anomalies),

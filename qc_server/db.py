@@ -274,12 +274,12 @@ class Database:
                      r1_weight, r2_gemstone, r3_gold_content, r4_net_weight,
                      r5_nanhong, r6_agate_coating, r7_african_jade, r8_cubic_zirconia,
                      r9_style_check, r10_weight_compare, r11_material_conclusion,
-                     r12_stone_check, raw_data)
+                     r12_stone_check, overtime_risk, raw_data)
                     VALUES (?, ?, ?,
                             ?, ?, ?, ?,
                             ?, ?, ?, ?,
                             ?, ?, ?,
-                            ?, ?)
+                            ?, ?, ?)
                 """, (
                     order_code, now, status,
                     results.get("重量判定", ""),
@@ -294,6 +294,7 @@ class Database:
                     results.get("重量比对", ""),
                     results.get("材质结论对应", ""),
                     results.get("配石检查", ""),
+                    results.get("超时预警", ""),
                     json.dumps(results, ensure_ascii=False),
                 ))
             conn.commit()
