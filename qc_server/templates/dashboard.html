@@ -125,6 +125,9 @@ body::before {
   50% { opacity: 0.2; transform: scale(1.6); }
 }
 .alert-text { font-size: 1.7vw; font-weight: 600; color: var(--ruby); }
+.alert-bar.alert-error { background: #fff5f5; border-color: rgba(214,48,69,0.4); }
+.alert-bar.alert-error .alert-text { color: #b91c1c; }
+.alert-bar.alert-error::before { background: #dc2626; }
 
 /* ── 统计卡片 ── */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5vw; }
@@ -295,6 +298,13 @@ async function refresh() {
       document.getElementById('alert').className = 'alert-bar show';
       setTimeout(() => document.getElementById('alert').className = 'alert-bar', 10000);
       if (anomalySound) anomalySound.play().catch(() => {});
+    }
+    // 系统错误告警
+    const bg = stats.bg_status || {};
+    if (bg.consecutive_failures >= 3) {
+      document.getElementById('alertText').textContent = '🔴 系统异常: ' + (bg.last_error || '未知错误') + ' (连续失败' + bg.consecutive_failures + '次)';
+      document.getElementById('alert').className = 'alert-bar show alert-error';
+      setTimeout(() => document.getElementById('alert').className = 'alert-bar', 15000);
     }
     lastAnomaly = anom.total;
 

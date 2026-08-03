@@ -228,13 +228,24 @@ async function refreshStatus() {
     const [sr, wr] = await Promise.all([qcFetch(SAPI), qcFetch('/api/stats')]);
     const set = await sr.json();
     const st = await wr.json();
-    if (!set.sync_enabled) {
-      document.getElementById('statusInfo').textContent = '状态：已暂停 | 今日检测 ' + (st.today_checked||0) + ' | 异常 ' + (st.today_anomaly||0);
-    } else if (st.bg_status && st.bg_status.sleeping) {
-      document.getElementById('statusInfo').textContent = '状态：休眠中（' + (st.bg_status.sleep_reason||'') + '）';
+    const bg = st.bg_status || {};
+    let statusText = '';
+
+    // 系统错误优先显示
+    if (bg.consecutive_failures >= 3) {
+      statusText = '🔴 系统异常！连续失败 ' + bg.consecutive_failures + ' 次：' + (bg.last_error || '未知');
+    } else if (!set.sync_enabled) {
+      statusText = '状态：已暂停 | 今日检测 ' + (st.today_checked||0) + ' | 异常 ' + (st.today_anomaly||0);
+    } else if (bg.sleeping) {
+      statusText = '状态：休眠中（' + (bg.sleep_reason||'') + '）';
     } else {
-      document.getElementById('statusInfo').textContent = '状态：运行中 | 今日检测 ' + (st.today_checked||0) + ' | 异常 ' + (st.today_anomaly||0);
+      statusText = '状态：运行中 | 今日检测 ' + (st.today_checked||0) + ' | 异常 ' + (st.today_anomaly||0);
     }
+    // 有错误时追加提示
+    if (bg.last_error && bg.consecutive_failures < 3) {
+      statusText += ' | ⚠ ' + bg.last_error;
+    }
+    document.getElementById('statusInfo').textContent = statusText;
   } catch(e) {}
 }
 
