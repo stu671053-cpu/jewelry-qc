@@ -63,10 +63,7 @@ class QCService:
         if elapsed <= OVERTIME_THRESHOLD:
             return ""
 
-        hours = elapsed // 3600
-        minutes = (elapsed % 3600) // 60
-        batch_id = str(order.get("质检批次号", "") or "")
-        return f"批次{batch_id}已超3.5小时未完结（已{hours}小时{minutes}分）"
+        return "异常"
 
     def check_order(self, order: dict) -> dict:
         """
