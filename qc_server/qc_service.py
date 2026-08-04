@@ -50,10 +50,10 @@ class QCService:
         if order_status == "503":
             return ""
 
-        # 质检已完成（质检完成时间有效）→ 不预警
+        # 质检已完成（质检完成时间 ≤ 当前时间）→ 不预警
         try:
             finish_ts = int(finish_time_raw.lstrip("-"))
-            if finish_ts > 0:
+            if finish_ts > 0 and finish_ts <= int(time.time()):
                 return ""
         except (ValueError, TypeError):
             pass
