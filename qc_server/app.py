@@ -407,10 +407,51 @@ def api_anomalies():
             "items": items,
         })
 
-    # 超时预警条目置顶（稳定排序，SQL ORDER BY 的相对顺序不变）
+    # 超时预警：按批次合并，一条批次一行（只显示批次号）
     overtime_items = [a for a in anomalies if any(i["rule"] == "超时预警" for i in a["items"])]
     normal_items = [a for a in anomalies if a not in overtime_items]
-    anomalies = overtime_items + normal_items
+
+    if overtime_items:
+        # 按入库批次号分组
+        batch_groups = {}
+        for a in overtime_items:
+            bc = a["batch_code"] or a["order_code"]
+            if bc not in batch_groups:
+                batch_groups[bc] = []
+            batch_groups[bc].append(a)
+
+        merged_overtime = []
+        for bc, items_list in batch_groups.items():
+            # 合并所有规则项（去重 + 超时预警放前面）
+            all_items = []
+            seen = set()
+            ot_item = None
+            for a in items_list:
+                for item in a["items"]:
+                    if item["rule"] == "超时预警":
+                        ot_item = item
+                    else:
+                        key = item["rule"] + item["value"]
+                        if key not in seen:
+                            all_items.append(item)
+                            seen.add(key)
+            # 超时预警排最前
+            merged_items = [ot_item] + all_items if ot_item else all_items
+
+            merged_overtime.append({
+                "order_code": bc,       # 显示批次号
+                "cert_code": "",         # 不显示证书编号
+                "batch_code": bc,
+                "order_status": items_list[0]["order_status"],
+                "check_time": items_list[0]["check_time"],
+                "batch_time": items_list[0]["batch_time"],
+                "_overtime": True,
+                "items": merged_items,
+            })
+
+        anomalies = merged_overtime + normal_items
+    else:
+        anomalies = normal_items
 
     result_obj = {
         "today": biz_start[:10],
