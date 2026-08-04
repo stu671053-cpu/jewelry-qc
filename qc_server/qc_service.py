@@ -35,13 +35,10 @@ class QCService:
 
     def _check_overtime(self, order: dict) -> str:
         """
-        超时预警判断（仅中金租户）
+        超时预警判断（所有租户）
         批次生成时间距今 > 3.5小时 且状态未完成 → 预警
-        返回: 空字符串（无需预警）或 预警消息文本
+        返回: 空字符串（无需预警）或 "异常"
         """
-        if TENANT != "中金":
-            return ""
-
         batch_time_raw = order.get("批次生成时间", "")
         order_status = str(order.get("状态", "") or "")
         finish_time_raw = str(order.get("质检完成时间", "") or "")
