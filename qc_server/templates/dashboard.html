@@ -266,6 +266,7 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 const QC_TOKEN = "{{ qc_token }}";
 function qcFetch(url, opts){ opts = opts || {}; opts.headers = Object.assign({'Authorization': 'Bearer ' + QC_TOKEN}, opts.headers || {}); return fetch(url, opts); }
 let lastAnomaly = 0;
+let lastCycleSeen = 0;  // 上次看到的后台周期时间戳，变化后10s内快刷
 let anomalyRows = [];     // 所有异常行（已排序）
 let anomalySound = null;
 try { anomalySound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/////w=='); } catch(e) {}
@@ -276,6 +277,15 @@ async function refresh() {
     const anom = await anomR.json();
     const stats = await statsR.json();
     const dist = stats.status_distribution || {};
+
+    // 检测后台是否完成新一轮刷新，是则10s内快刷
+    const cycleTs = (stats.bg_status || {}).last_cycle_at || 0;
+    if (cycleTs > lastCycleSeen) {
+      lastCycleSeen = cycleTs;
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(refresh, 10000);
+      setTimeout(() => { clearInterval(refreshTimer); refreshTimer = setInterval(refresh, 30000); }, 120000);
+    }
 
     const total = Object.values(dist).reduce((a,b) => a+b, 0);
     const anomaly = Number(anom.total) || 0;
@@ -428,7 +438,7 @@ function updateClock() { document.getElementById('clock').textContent = new Date
 refresh();
 updateClock();
 setInterval(updateClock, 1000);
-setInterval(refresh, 30000);
+var refreshTimer = setInterval(refresh, 30000);
 </script>
 <div id="copy-toast"></div>
 </body>

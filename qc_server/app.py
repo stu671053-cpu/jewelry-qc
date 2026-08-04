@@ -231,6 +231,7 @@ bg_status = {
     "total_synced_today": 0,
     "sleeping": False,
     "sleep_reason": "",
+    "last_cycle_at": None,  # 后台最近一轮完成的时刻（前端10s内刷新）
     # 错误追踪
     "last_error": None,
     "last_error_time": None,
@@ -867,6 +868,7 @@ def background_checker():
 
             bg_status["last_check"] = datetime.now().strftime("%H:%M:%S")
             bg_status["last_anomalies"] = total_anomalies
+            bg_status["last_cycle_at"] = int(time.time())  # 秒级时间戳，前端据此自动刷新
 
             elapsed = (datetime.now() - start_time).total_seconds()
             logger.info(f"[后台] 自查: {total_checked} 条, 异常 {total_anomalies} 条, 耗时 {elapsed:.1f}s")
