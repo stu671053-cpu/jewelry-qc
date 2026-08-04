@@ -50,11 +50,7 @@ qc_server/sync_state.json
 *.log
 logs/
 
-# Sensitive config (your Cookie!)
-qc_server/config_sync.json
-
 # Exported files
 API字段映射_导出表.xlsx
 API接口文档.md
-qc_server/config_sync_国关.json
 qc_server/settings.json

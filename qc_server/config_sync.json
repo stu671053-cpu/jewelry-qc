@@ -1,0 +1,27 @@
+{
+  "loupe": {
+    "base_url": "https://qms.bytedance.com",
+    "auth": {
+      "cookie": "s_v_web_id=verify_mr2xgau2_LcDdxHXw_zUEC_4PDB_9BUF_zh6chf5tqsd3; passport_csrf_token=5bbd76221c82c4304bff1b5ed64fbff5; passport_csrf_token_default=5bbd76221c82c4304bff1b5ed64fbff5; passport_mfa_token=CjcZD1MiSBTsEcfDWu%2FiuwWBOFNbPz9f%2FQL3Kh%2BCnahk65EDlx4NxXSkolqep7RwMOoWeMKt5b1yGkoKPAAAAAAAAAAAAABQm%2B7tMlqUEM1KHoKvglyCTNNT6uC9hfbgerywsAMZwUSnlKaYAeTWTgVpKgAaL8UxdRDx2ZUOGPax0WwgAiIBA9LweZw%3D; d_ticket_loupe=97fd87f7e5fdd14bf0bec7ea7fa2e8f4d52c3; odin_tt=5181d362b3e33f1c6452515ad43f557c4ee4b55ac577b83ec5faa4494fdceebd043374c87cbea7cd84df1ef104cb28cfa199e5f7613a17d0e780611ed707b324; n_mh_loupe=FVP8px0xJRxL7uJ4keMk_8M6qFK1Qf81PX6EsCvjUnw; sid_guard_loupe=f850e2c7325430d43ac222947f48699b%7C1782962026%7C5184000%7CMon%2C+31-Aug-2026+03%3A13%3A46+GMT; uid_tt_loupe=da2881cfbccdcca3f1a6f9c59cd2eeb1; uid_tt_ss_loupe=da2881cfbccdcca3f1a6f9c59cd2eeb1; sid_tt_loupe=f850e2c7325430d43ac222947f48699b; sessionid_loupe=f850e2c7325430d43ac222947f48699b; sessionid_ss_loupe=f850e2c7325430d43ac222947f48699b; session_tlb_tag_loupe=sttt%7C20%7C-FDixzJUMNQ6wiKUf0hpm__________SQOgA8bimCGU6jhPs8Q1ou-Zj70Ff8xaoiO4lGFuNyyY%3D; is_staff_user_loupe=false; has_biz_token_loupe=false; sid_ucp_v1_loupe=1.0.0-KDkwNmE5NDllZGMxZTJiMGNjODNhNWJlNTk0MzhmMzIxZWZmOTc0YmEKHwiXnvC18K1IEOqul9IGGOzNFiAMMNHWwccGOAJA8QcaAmxxIiBmODUwZTJjNzMyNTQzMGQ0M2FjMjIyOTQ3ZjQ4Njk5Yg; ssid_ucp_v1_loupe=1.0.0-KDkwNmE5NDllZGMxZTJiMGNjODNhNWJlNTk0MzhmMzIxZWZmOTc0YmEKHwiXnvC18K1IEOqul9IGGOzNFiAMMNHWwccGOAJA8QcaAmxxIiBmODUwZTJjNzMyNTQzMGQ0M2FjMjIyOTQ3ZjQ4Njk5Yg; ttwid=1%7CE8I5X8xGsJEA-T-rVlKUQx3UlXtdbQpJ-F748LHJS8g%7C1784013359%7Ca7234adcf386b1a8de552f5500c887755b963aa08987cc5cb91ccecb4a1c84b7; qic_operation_session_v2=MTc4NTc0MDA1OXxOd3dBTkVkVlRVdEdTVVZPVGpjMldsUkhOa2cwTjBwVVZUVTJTVXhJVVRKUlIxVlhOVEpaVFZWWVYxUkVSVk5YUmxwUldqTlVORkU9fDCpQuPEhavYGE3WWCYGAeoKfMMN3AZGOZdy0IkVmLmq; msToken=E66A6UdGwstFX4BJcPHHIugta5Ji_uaiPPqq-Z0tGCrQBMajfXOXoaRnsKl2ltNF0MYztKmQTQUzTE02R01tEpDUkL6mdOLYsCfTAg6sPaZe0Hnz7ayMQ0wWade-u0nH"
+    },
+    "apis": {
+      "order_search": {
+        "method": "POST",
+        "path": "/api/quality/loupe/inspection/order/list"
+      }
+    },
+    "search_params": {
+      "checkType": 1,
+      "inspectionBatchStartTime": 0,
+      "inspectionBatchEndTime": 0
+    },
+    "pagination": {
+      "type": "offset",
+      "page_size": 1000,
+      "delay_ms": 200
+    }
+  },
+  "database": {
+    "path": "../data/qic_quality.db"
+  }
+}

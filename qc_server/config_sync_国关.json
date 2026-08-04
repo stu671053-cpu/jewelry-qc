@@ -1,0 +1,27 @@
+{
+  "loupe": {
+    "base_url": "https://qms.bytedance.com",
+    "auth": {
+      "cookie": "passport_csrf_token=5bbd76221c82c4304bff1b5ed64fbff5; passport_csrf_token_default=5bbd76221c82c4304bff1b5ed64fbff5; is_staff_user_loupe=false; has_biz_token_loupe=false; ttwid=1%7CE8I5X8xGsJEA-T-rVlKUQx3UlXtdbQpJ-F748LHJS8g%7C1784013359%7Ca7234adcf386b1a8de552f5500c887755b963aa08987cc5cb91ccecb4a1c84b7; s_v_web_id=verify_mroqpuvi_NqJncBRl_MkYz_4XK6_9E0w_uzYcVoztKG5f; passport_mfa_token=CjidKqSHebS77mKApflxtxxdq8S6hOvsVjMKnQs8VfFGpM8uVzLzBwSWYlhY0qCADywnyOOSFvxIZxpKCjwAAAAAAAAAAAAAUKurgLIG34PEjMX%2BPM9YljpjOdFzLxl5TtWoyPCyzQiF%2B78Z9z9jA63wP%2FEztIYkMlQQjYaXDhj2sdFsIAIiAQOn%2FiY%2F; d_ticket_loupe=a59b427f252377ee401f5f278739407bd52c3; odin_tt=bf0ded79c330f7d0d144e8c6a4cf3eb6d547c20093c73706d5b84ef08a3c7e5730952314050173038ddda13017b52879324aab8cd630551568103d0a678db5f0; n_mh_loupe=0iRitPeT5g4nwjh2E57fC-GIqFsRj8DN0dQBR-b5tf8; passport_auth_status_loupe=03bf944d91e7cc5d71cc13b73e577a19%2C06d9407f859f8d48db2e4737ad4dc607; passport_auth_status_ss_loupe=03bf944d91e7cc5d71cc13b73e577a19%2C06d9407f859f8d48db2e4737ad4dc607; sid_guard_loupe=3932dc32aff9b99a0660bf09e00d4086%7C1784280909%7C5183999%7CTue%2C+15-Sep-2026+09%3A35%3A08+GMT; uid_tt_loupe=000c6f43b561b66e3b9736ef7ba9721a; uid_tt_ss_loupe=000c6f43b561b66e3b9736ef7ba9721a; sid_tt_loupe=3932dc32aff9b99a0660bf09e00d4086; sessionid_loupe=3932dc32aff9b99a0660bf09e00d4086; sessionid_ss_loupe=3932dc32aff9b99a0660bf09e00d4086; session_tlb_tag_loupe=sttt%7C17%7COTLcMq_5uZoGYL8J4A1Ahv________-wdCHCGOxLfcCjlDO05kIop1AMYtHyM4HW1rSTTwxbiTQ%3D; sid_ucp_v1_loupe=1.0.0-KDE4ZGFkNzM2MDYyZjNhYjIwNTRjZWNlNDViNTMzMmJiY2Y1NzA3NjcKIAjQ1MDipMzuAxDN7ufSBhjszRYgDDCQjJOpBjgCQPEHGgJsZiIgMzkzMmRjMzJhZmY5Yjk5YTA2NjBiZjA5ZTAwZDQwODY; ssid_ucp_v1_loupe=1.0.0-KDE4ZGFkNzM2MDYyZjNhYjIwNTRjZWNlNDViNTMzMmJiY2Y1NzA3NjcKIAjQ1MDipMzuAxDN7ufSBhjszRYgDDCQjJOpBjgCQPEHGgJsZiIgMzkzMmRjMzJhZmY5Yjk5YTA2NjBiZjA5ZTAwZDQwODY; qic_operation_session_v2=MTc4NDI4MDkxMHxOd3dBTkV3M01sZzBVRkEyVWt4WldrZEhSVUZWUjA5UVNFNUVWMDFXTlVGSlRFaFZORWRPTlZKS1Z6UlNVakpXU0VwUlUwRlBRVkU9fBgZU8JuSgoqHTr_zWEmyOw0BUdR7jOiGq1Rcal5GUnp; msToken=eem3aCYZ04rFbxNFTvFftuZyWDvHNYR1NY-YmkGO3fzL9vqCAoMjS1UOc0-lzhGTTaFhNMdpkEbTL3k18F7m0vuCgO-io2WvOpfBFMMLPauLR-EZlB4K6_8qSGXORBc3"
+    },
+    "apis": {
+      "order_search": {
+        "method": "POST",
+        "path": "/api/quality/loupe/inspection/order/list"
+      }
+    },
+    "search_params": {
+      "checkType": 1,
+      "inspectionBatchStartTime": 0,
+      "inspectionBatchEndTime": 0
+    },
+    "pagination": {
+      "type": "offset",
+      "page_size": 1000,
+      "delay_ms": 200
+    }
+  },
+  "database": {
+    "path": "../data/国关_qic_quality.db"
+  }
+}
