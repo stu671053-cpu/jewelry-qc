@@ -439,8 +439,8 @@ def api_anomalies():
             merged_items = [ot_item] + all_items if ot_item else all_items
 
             merged_overtime.append({
-                "order_code": bc,       # 显示批次号
-                "cert_code": "",         # 不显示证书编号
+                "order_code": "",           # 超时条目不显示订单码
+                "cert_code": "",             # 不显示证书编号
                 "batch_code": bc,
                 "order_status": items_list[0]["order_status"],
                 "check_time": items_list[0]["check_time"],
