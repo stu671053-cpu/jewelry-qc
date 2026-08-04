@@ -111,6 +111,7 @@ body {
       <div><label>开始时间</label><input type="text" id="workStart" placeholder="08:00" maxlength="5"></div>
       <div><label>结束时间</label><input type="text" id="workEnd" placeholder="23:00" maxlength="5"></div>
       <div><label>刷新间隔（秒）</label><input type="number" id="intervalSec" min="10" max="3600" value="60"></div>
+      <div><label>超时预警（分钟）</label><input type="number" id="overtimeMin" min="10" max="720" value="30"></div>
       <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" onclick="saveSettings()" style="width:100%">保存设置</button></div>
     </div>
     <div id="setMsg" class="msg"></div>
@@ -167,6 +168,7 @@ async function loadSettings() {
   document.getElementById('workStart').value = d.work_start || '08:00';
   document.getElementById('workEnd').value = d.work_end || '23:00';
   document.getElementById('intervalSec').value = d.interval_seconds || 60;
+  document.getElementById('overtimeMin').value = d.overtime_minutes || 30;
   updateSyncUI(d.sync_enabled);
 }
 
@@ -191,7 +193,8 @@ async function saveSettings() {
   const body = {
     work_start: ws,
     work_end: we,
-    interval_seconds: parseInt(document.getElementById('intervalSec').value)
+    interval_seconds: parseInt(document.getElementById('intervalSec').value),
+    overtime_minutes: parseInt(document.getElementById('overtimeMin').value)
   };
   const r = await qcFetch(SAPI, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body) });

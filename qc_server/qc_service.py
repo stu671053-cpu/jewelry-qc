@@ -18,7 +18,7 @@ if str(project_root) not in sys.path:
 from engine import QCEngine
 
 TENANT = os.environ.get("TENANT", "")
-OVERTIME_THRESHOLD = 3.5 * 3600  # 3.5小时 = 12600秒
+OVERTIME_SECONDS = 3.5 * 3600  # 默认3.5h，可被外部覆盖
 
 
 class QCService:
@@ -27,10 +27,13 @@ class QCService:
     # 判定结果中的"正常"、"正确"关键词
     NORMAL_KEYWORDS = {"正常", "正确", "质检通过", "备注无误", ""}
 
-    def __init__(self):
+    def __init__(self, overtime_seconds: int = None):
         self.engine = QCEngine()
         self.rule_names = [r["name"] for r in self.engine.rules]
         self.rule_columns = [r["column"] for r in self.engine.rules]
+        if overtime_seconds is not None:
+            global OVERTIME_SECONDS
+            OVERTIME_SECONDS = overtime_seconds
         print(f"[QC] 引擎已加载 {len(self.rule_names)} 条规则: {self.rule_names}")
 
     def _check_overtime(self, order: dict) -> str:
@@ -66,7 +69,7 @@ class QCService:
             return ""
 
         elapsed = int(time.time()) - ts
-        if elapsed <= OVERTIME_THRESHOLD:
+        if elapsed <= OVERTIME_SECONDS:
             return ""
 
         return "异常"

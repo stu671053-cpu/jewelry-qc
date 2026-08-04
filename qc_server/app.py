@@ -132,7 +132,7 @@ loupe_cookie = os.environ.get(_TENANT_COOKIE_ENV.get(TENANT, ""), "") or os.envi
 if loupe_cookie:
     sync_engine.loupe["auth"]["cookie"] = loupe_cookie
     sync_engine.session.headers["Cookie"] = loupe_cookie  # 同步更新 HTTP Session
-qc = QCService()
+qc = QCService(overtime_seconds=runtime_settings.get("overtime_minutes", 30) * 60)
 notifier = Notifier(CONFIG)
 
 # 同步状态文件
@@ -149,6 +149,7 @@ def load_settings():
         "work_end": "23:00",
         "interval_seconds": 60,
         "sync_enabled": True,
+        "overtime_minutes": 30 if TENANT == "中金" else 60,  # 中金30分钟，国关60分钟
     }
     if SETTINGS_PATH.exists():
         with open(SETTINGS_PATH, "r") as f:
@@ -177,7 +178,7 @@ def api_get_settings():
 def api_update_settings():
     global runtime_settings
     data = request.get_json() or {}
-    allowed = ["work_start", "work_end", "interval_seconds", "sync_enabled"]
+    allowed = ["work_start", "work_end", "interval_seconds", "sync_enabled", "overtime_minutes"]
     for k in allowed:
         if k in data:
             runtime_settings[k] = data[k]
@@ -188,6 +189,11 @@ def api_update_settings():
         runtime_settings["work_end"] = f'{int(data["work_end_hour"]):02d}:00'
     if "interval_minutes" in data:
         runtime_settings["interval_seconds"] = int(data["interval_minutes"]) * 60
+    # 超时阈值更新时同步到 QCService
+    if "overtime_minutes" in data:
+        from qc_service import QCService
+        import qc_service
+        qc_service.OVERTIME_SECONDS = int(data["overtime_minutes"]) * 60
     save_settings(runtime_settings)
     return jsonify({"success": True, "settings": runtime_settings})
 
