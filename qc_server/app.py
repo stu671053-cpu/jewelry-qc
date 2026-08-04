@@ -132,7 +132,6 @@ loupe_cookie = os.environ.get(_TENANT_COOKIE_ENV.get(TENANT, ""), "") or os.envi
 if loupe_cookie:
     sync_engine.loupe["auth"]["cookie"] = loupe_cookie
     sync_engine.session.headers["Cookie"] = loupe_cookie  # 同步更新 HTTP Session
-qc = QCService(overtime_seconds=runtime_settings.get("overtime_minutes", 30) * 60)
 notifier = Notifier(CONFIG)
 
 # 同步状态文件
@@ -165,6 +164,7 @@ def save_settings(s):
 
 # 全局运行时设置
 runtime_settings = load_settings()
+qc = QCService(overtime_seconds=runtime_settings.get("overtime_minutes", 30) * 60)
 
 # ==================== 设置 API ====================
 
