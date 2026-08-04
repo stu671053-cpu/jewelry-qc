@@ -331,10 +331,10 @@ def api_anomalies():
             LEFT JOIN qic_orders o ON r.order_code = o.订单码
             WHERE r.status = 'anomaly'
               AND r.check_time >= ? AND r.check_time < ?
-              AND r.order_code NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ?)
-              AND o.质检批次号 NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ?)
-              AND o.入库批次号 NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ?)
-              AND o.证书编码 NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ?)
+              AND r.order_code NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ? AND length(order_code) = 10 AND order_code GLOB '[0-9]*')
+              AND o.证书编码 NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ? AND (order_code LIKE 'ZJ%' OR order_code LIKE '3126%' OR length(order_code) >= 10))
+              AND o.入库批次号 NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ? AND order_code LIKE 'A%')
+              AND o.质检批次号 NOT IN (SELECT order_code FROM whitelist WHERE whitelist_date = ? AND length(order_code) = 12)
             ORDER BY r.check_time DESC
             LIMIT 200
         """, (biz_start, biz_end, today_str, today_str, today_str, today_str)).fetchall()

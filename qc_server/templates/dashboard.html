@@ -282,10 +282,10 @@ async function refresh() {
     if (total === 0 && anomalyRows.length > 0) return;
     if (anom.total === 0 && anomalyRows.length > 0) return;
 
-    const done = dist['503'] || 0;
-    const anomaly = anom.total;
+    const done = Number(dist['503']) || 0;
+    const anomaly = Number(anom.total) || 0;
     const doneOk = Math.max(0, done - anomaly);
-    const progress = total - done;
+    const progress = Math.max(0, total - done);
     document.getElementById('sTotal').textContent = total;
     document.getElementById('sDone').textContent = doneOk;
     document.getElementById('sProgress').textContent = progress;
