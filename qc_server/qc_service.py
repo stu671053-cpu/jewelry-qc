@@ -18,7 +18,8 @@ if str(project_root) not in sys.path:
 from engine import QCEngine
 
 TENANT = os.environ.get("TENANT", "")
-OVERTIME_SECONDS = 3.5 * 3600  # 默认3.5h，可被外部覆盖
+SLA_SECONDS = 4 * 3600  # 批次总时效 4小时 = 14400秒（固定）
+OVERTIME_SECONDS = 3.5 * 3600  # 剩余时间预警阈值（秒），可被外部覆盖
 
 
 class QCService:
@@ -69,7 +70,9 @@ class QCService:
             return ""
 
         elapsed = int(time.time()) - ts
-        if elapsed <= OVERTIME_SECONDS:
+        # 倒计时逻辑：剩余时间 <= 阈值 → 预警
+        remaining = SLA_SECONDS - elapsed
+        if remaining > OVERTIME_SECONDS:
             return ""
 
         return "异常"

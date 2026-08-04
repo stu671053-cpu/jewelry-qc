@@ -148,7 +148,7 @@ def load_settings():
         "work_end": "23:00",
         "interval_seconds": 60,
         "sync_enabled": True,
-        "overtime_minutes": 30 if TENANT == "中金" else 60,  # 中金30分钟，国关60分钟
+        "overtime_minutes": 30 if TENANT == "中金" else 60,  # 剩余时间阈值：中金剩30min预警，国关剩60min预警
     }
     if SETTINGS_PATH.exists():
         with open(SETTINGS_PATH, "r") as f:
