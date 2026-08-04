@@ -44,10 +44,19 @@ class QCService:
 
         batch_time_raw = order.get("批次生成时间", "")
         order_status = str(order.get("状态", "") or "")
+        finish_time_raw = str(order.get("质检完成时间", "") or "")
 
-        # 已完成 → 不预警
+        # 已完成（status=503）→ 不预警
         if order_status == "503":
             return ""
+
+        # 质检已完成（质检完成时间有效）→ 不预警
+        try:
+            finish_ts = int(finish_time_raw.lstrip("-"))
+            if finish_ts > 0:
+                return ""
+        except (ValueError, TypeError):
+            pass
 
         # 解析批次生成时间（支持10位秒/13位毫秒）
         try:
