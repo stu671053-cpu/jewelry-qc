@@ -277,13 +277,9 @@ async function refresh() {
     const stats = await statsR.json();
     const dist = stats.status_distribution || {};
 
-    // 后台刷新中（total=0），保留上一周期数据，避免卡片和表格跳0
     const total = Object.values(dist).reduce((a,b) => a+b, 0);
-    if (total === 0 && anomalyRows.length > 0) return;
-    if (anom.total === 0 && anomalyRows.length > 0) return;
-
-    const done = Number(dist['503']) || 0;
     const anomaly = Number(anom.total) || 0;
+    const done = Number(dist['503']) || 0;
     const doneOk = Math.max(0, done - anomaly);
     const progress = Math.max(0, total - done);
     document.getElementById('sTotal').textContent = total;
