@@ -54,3 +54,4 @@ logs/
 API字段映射_导出表.xlsx
 API接口文档.md
 qc_server/settings.json
+qc_server/users.json

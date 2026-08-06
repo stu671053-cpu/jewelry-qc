@@ -10,19 +10,21 @@ QC Server - Flask 主入口
 
 import json
 import logging
+import secrets
 import threading
 import time
 import collections
 from pathlib import Path
 from datetime import datetime
 
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for
 
 from db import Database
 from qc_service import QCService
 from notifier import Notifier
 from sync_service import SyncEngine
 from utils import business_day_ts, business_day_range
+from auth import verify_login, get_users, add_user, delete_user, change_password
 
 # ---------- 日志系统 ----------
 class RingBufferHandler(logging.Handler):
@@ -84,10 +86,10 @@ else:
 CONFIG["database"]["path"] = tenant_db
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
+app.secret_key = secrets.token_hex(32)  # Flask session 加密密钥
 
 # ==================== 访问控制 (P0-2) ====================
 import hmac
-import secrets
 
 ACCESS_TOKEN = os.environ.get("QC_ACCESS_TOKEN", "")
 if not ACCESS_TOKEN:
@@ -98,11 +100,13 @@ if not ACCESS_TOKEN:
 
 @app.before_request
 def _require_api_token():
-    """所有 /api/* 接口必须携带有效访问令牌（Bearer 或 ?token=），/api/health 除外"""
+    """所有 /api/* 接口必须携带有效访问令牌（Bearer 或 ?token=），/api/health 和 /api/admin/* 除外"""
     if not request.path.startswith("/api/"):
         return
     if request.path == "/api/health":
         return
+    if request.path.startswith("/api/admin/"):
+        return  # admin 接口使用 session 登录验证
     auth = request.headers.get("Authorization", "")
     token = auth[7:] if auth.startswith("Bearer ") else request.args.get("token", "")
     if not token or not hmac.compare_digest(token, ACCESS_TOKEN):
@@ -171,11 +175,15 @@ qc = QCService(overtime_seconds=runtime_settings.get("overtime_minutes", 30) * 6
 
 @app.route("/api/settings", methods=["GET"])
 def api_get_settings():
+    if not session.get("username"):
+        return jsonify(runtime_settings)  # 大屏不需要登录也能读设置
     return jsonify(runtime_settings)
 
 
 @app.route("/api/settings", methods=["POST"])
 def api_update_settings():
+    if not session.get("username"):
+        return jsonify({"success": False, "message": "请先登录"}), 401
     global runtime_settings
     data = request.get_json() or {}
     allowed = ["work_start", "work_end", "interval_seconds", "sync_enabled", "overtime_minutes"]
@@ -592,8 +600,79 @@ def api_logs():
     return jsonify({"logs": log_handler.get_logs(lines)})
 
 
+# ==================== 管理员登录系统 ====================
+@app.route("/login")
+def login_page():
+    return render_template("login.html")
+
+@app.route("/api/admin/login", methods=["POST"])
+def api_login():
+    data = request.get_json() or {}
+    user = verify_login(data.get("username", ""), data.get("password", ""))
+    if user:
+        session["username"] = user["username"]
+        session["role"] = user["role"]
+        session["tenant"] = user.get("tenant", "")
+        return jsonify({"success": True, "username": user["username"], "role": user["role"]})
+    return jsonify({"success": False, "message": "用户名或密码错误"}), 401
+
+@app.route("/api/admin/logout", methods=["POST"])
+def api_logout():
+    session.clear()
+    return jsonify({"success": True})
+
+@app.route("/api/admin/me")
+def api_me():
+    if not session.get("username"):
+        return jsonify({"logged_in": False}), 401
+    return jsonify({"logged_in": True, "username": session["username"], "role": session["role"], "tenant": session["tenant"]})
+
+@app.route("/api/admin/users", methods=["GET"])
+def api_users():
+    if session.get("role") != "super_admin":
+        return jsonify({"success": False, "message": "权限不足"}), 403
+    return jsonify({"success": True, "users": get_users()})
+
+@app.route("/api/admin/users", methods=["POST"])
+def api_add_user():
+    if session.get("role") != "super_admin":
+        return jsonify({"success": False, "message": "权限不足"}), 403
+    data = request.get_json() or {}
+    ok, msg = add_user(data.get("username", ""), data.get("password", ""),
+                       data.get("role", "admin"), data.get("tenant", ""))
+    return jsonify({"success": ok, "message": msg})
+
+@app.route("/api/admin/users/<username>", methods=["DELETE"])
+def api_delete_user(username):
+    if session.get("role") != "super_admin":
+        return jsonify({"success": False, "message": "权限不足"}), 403
+    ok, msg = delete_user(username)
+    return jsonify({"success": ok, "message": msg})
+
+@app.route("/api/admin/change_password", methods=["POST"])
+def api_change_password():
+    if not session.get("username"):
+        return jsonify({"success": False, "message": "未登录"}), 401
+    data = request.get_json() or {}
+    ok, msg = change_password(session["username"],
+                               data.get("old_password", ""),
+                               data.get("new_password", ""))
+    return jsonify({"success": ok, "message": msg})
+
+
+def _require_login():
+    """检查是否已登录，未登录跳转登录页"""
+    if not session.get("username"):
+        if request.path.startswith("/api/"):
+            return jsonify({"success": False, "message": "未登录"}), 401
+        return redirect(url_for("login_page", next=request.path))
+    return None
+
+
 @app.route("/admin")
 def admin_page():
+    check = _require_login()
+    if check: return check
     return render_template("admin.html",
                            tenant=TENANT,
                            tenant_color=TENANT_COLOR,
