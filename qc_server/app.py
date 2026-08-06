@@ -619,7 +619,9 @@ def api_login():
 @app.route("/api/admin/logout", methods=["POST"])
 def api_logout():
     session.clear()
-    return jsonify({"success": True})
+    resp = jsonify({"success": True})
+    resp.delete_cookie("session")
+    return resp
 
 @app.route("/api/admin/me")
 def api_me():
