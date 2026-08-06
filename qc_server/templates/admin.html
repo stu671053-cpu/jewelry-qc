@@ -398,7 +398,7 @@ function loadUserList() {
           '<td style="padding:6px;text-align:center">' + (u.tenant || '-') + '</td>' +
           '<td style="padding:6px;text-align:center"><button class="edit-save btn btn-primary" data-uname="' + u.username + '" style="font-size:11px;padding:3px 8px;margin-right:4px">保存</button><button class="edit-cancel btn btn-sapphire" style="font-size:11px;padding:3px 8px">取消</button></td></tr>';
       }
-      var pwdCell = '<span style="color:var(--text-dim)">****</span>';
+      var pwdCell = '<span style="color:var(--text-dim);font-family:monospace;font-size:11px">' + u.password + '</span>';
       var actions = '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a>';
       if (u.role !== 'super_admin') actions += '<a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>';
       return '<tr><td style="padding:8px">' + u.username + '</td>' +

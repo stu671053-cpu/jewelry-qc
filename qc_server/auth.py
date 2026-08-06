@@ -2,8 +2,8 @@
 管理员账号系统
 - 主管理员（super_admin）：可添加/删除管理员，管理所有租户
 - 管理员（admin）：绑定中金或国关租户
+密码明文存储（内网系统，登录态保护）
 """
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,17 +11,14 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 USERS_FILE = BASE_DIR / "users.json"
 
-# 主管理员初始密码的 SHA256
 DEFAULT_ADMIN = "admin"
-DEFAULT_PASS = hashlib.sha256("admin123".encode()).hexdigest()
+DEFAULT_PASS = "admin123"
 
 
 def _load_users():
-    """加载用户数据"""
     if USERS_FILE.exists():
         with open(USERS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    # 初始化：只有主管理员
     users = {
         DEFAULT_ADMIN: {
             "password": DEFAULT_PASS,
@@ -34,38 +31,28 @@ def _load_users():
     return users
 
 
-def _save_users(users: dict):
+def _save_users(users):
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=2, ensure_ascii=False)
 
 
-def hash_password(pwd: str) -> str:
-    return hashlib.sha256(pwd.encode()).hexdigest()
-
-
-def verify_login(username: str, password: str):
-    # type: (str, str) -> dict or None
-    """验证登录，成功返回用户信息，失败返回 None"""
+def verify_login(username, password):
     users = _load_users()
     user = users.get(username)
-    if not user:
-        return None
-    if user["password"] != hash_password(password):
+    if not user or user["password"] != password:
         return None
     return {**user, "username": username}
 
 
-def get_users() -> list:
-    """获取所有用户列表（不含密码哈希）"""
+def get_users():
     users = _load_users()
     return [
-        {"username": u, "role": d["role"], "tenant": d["tenant"], "created_at": d.get("created_at", "")}
+        {"username": u, "password": d["password"], "role": d["role"], "tenant": d["tenant"], "created_at": d.get("created_at", "")}
         for u, d in users.items()
     ]
 
 
 def add_user(username, password, role, tenant=None):
-    """添加管理员，返回 (success, message)"""
     users = _load_users()
     if username in users:
         return False, "用户名已存在"
@@ -78,7 +65,7 @@ def add_user(username, password, role, tenant=None):
 
     from datetime import datetime
     users[username] = {
-        "password": hash_password(password),
+        "password": password,
         "role": role,
         "tenant": tenant,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -88,7 +75,6 @@ def add_user(username, password, role, tenant=None):
 
 
 def delete_user(username):
-    """删除用户，返回 (success, message)"""
     if username == DEFAULT_ADMIN:
         return False, "不能删除主管理员"
     users = _load_users()
@@ -100,20 +86,18 @@ def delete_user(username):
 
 
 def update_user(username, new_username=None, new_password=None, new_tenant=None):
-    """修改管理员用户名/密码/租户，返回 (success, message)"""
     users = _load_users()
     user = users.get(username)
     if not user:
         return False, "用户不存在"
     if user["role"] == "super_admin":
-        # 主管理员只能修改自己的密码
         if new_password:
-            users[username]["password"] = hash_password(new_password)
+            users[username]["password"] = new_password
             _save_users(users)
             return True, "密码修改成功"
         return False, "主管理员只能修改密码"
     if new_password:
-        users[username]["password"] = hash_password(new_password)
+        users[username]["password"] = new_password
     if new_tenant:
         users[username]["tenant"] = new_tenant
     if new_username and new_username != username:
@@ -122,18 +106,3 @@ def update_user(username, new_username=None, new_password=None, new_tenant=None)
         users[new_username] = users.pop(username)
     _save_users(users)
     return True, "修改成功"
-
-
-def change_password(username, old_pwd, new_pwd):
-    """修改密码，返回 (success, message)"""
-    users = _load_users()
-    user = users.get(username)
-    if not user:
-        return False, "用户不存在"
-    if user["password"] != hash_password(old_pwd):
-        return False, "旧密码错误"
-    if len(new_pwd) < 4:
-        return False, "新密码至少4位"
-    users[username]["password"] = hash_password(new_pwd)
-    _save_users(users)
-    return True, "密码修改成功"

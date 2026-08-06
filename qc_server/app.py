@@ -24,7 +24,7 @@ from qc_service import QCService
 from notifier import Notifier
 from sync_service import SyncEngine
 from utils import business_day_ts, business_day_range
-from auth import verify_login, get_users, add_user, delete_user, change_password
+from auth import verify_login, get_users, add_user, delete_user, update_user
 
 # ---------- 日志系统 ----------
 class RingBufferHandler(logging.Handler):
@@ -657,17 +657,6 @@ def api_update_user(username):
     from auth import update_user
     ok, msg = update_user(username, data.get("new_username", ""),
                           data.get("new_password", ""), data.get("tenant", ""))
-    return jsonify({"success": ok, "message": msg})
-
-
-@app.route("/api/admin/change_password", methods=["POST"])
-def api_change_password():
-    if not session.get("username"):
-        return jsonify({"success": False, "message": "未登录"}), 401
-    data = request.get_json() or {}
-    ok, msg = change_password(session["username"],
-                               data.get("old_password", ""),
-                               data.get("new_password", ""))
     return jsonify({"success": ok, "message": msg})
 
 
