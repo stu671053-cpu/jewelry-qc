@@ -155,7 +155,7 @@ body {
         <button class="btn btn-primary" onclick="addUser()" style="font-size:12px;padding:6px 14px">添加</button>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="background:#f8fafc"><th style="padding:8px;text-align:left">用户名</th><th style="padding:8px">角色</th><th style="padding:8px">租户</th><th style="padding:8px">操作</th></tr></thead>
+        <thead><tr style="background:#f8fafc"><th style="padding:8px;text-align:left">用户名</th><th style="padding:8px">密码</th><th style="padding:8px">角色</th><th style="padding:8px">租户</th><th style="padding:8px">操作</th></tr></thead>
         <tbody id="userTable"></tbody>
       </table>
     </div>
@@ -394,10 +394,16 @@ async function loadUserList() {
   var d = await r.json();
   var tbody = document.getElementById('userTable');
   tbody.innerHTML = d.users.map(function(u) {
+    var actions = '-';
+    if (u.role !== 'super_admin') {
+      actions = '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a>' +
+                '<a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>';
+    }
     return '<tr><td style="padding:8px">' + u.username + '</td>' +
+      '<td style="padding:8px;text-align:center;color:var(--text-dim)">****</td>' +
       '<td style="padding:8px;text-align:center">' + (u.role === 'super_admin' ? '主管理员' : '管理员') + '</td>' +
       '<td style="padding:8px;text-align:center">' + (u.tenant || '-') + '</td>' +
-      '<td style="padding:8px;text-align:center">' + (u.role !== 'super_admin' ? '<a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>' : '-') + '</td></tr>';
+      '<td style="padding:8px;text-align:center">' + actions + '</td></tr>';
   }).join('');
 }
 async function addUser() {
@@ -432,11 +438,30 @@ async function logout() {
 }
 initUser();
 
-// 事件委托：删除管理员按钮
+// 事件委托：删除/修改管理员按钮
 document.getElementById('userTable').addEventListener('click', function(e) {
-  var link = e.target.closest('.del-admin');
-  if (link) { e.preventDefault(); delUser(link.getAttribute('data-uname')); }
+  var del = e.target.closest('.del-admin');
+  if (del) { e.preventDefault(); delUser(del.getAttribute('data-uname')); return; }
+  var edit = e.target.closest('.edit-admin');
+  if (edit) { e.preventDefault(); editUser(edit.getAttribute('data-uname')); }
 });
+
+async function editUser(uname) {
+  var newName = prompt('新用户名（留空不变）:', uname);
+  if (newName === null) return;
+  var newPwd = prompt('新密码（留空不变）:');
+  if (newPwd === null) return;
+  var body = {};
+  if (newName && newName !== uname) body.new_username = newName.trim();
+  if (newPwd) body.new_password = newPwd;
+  if (!body.new_username && !body.new_password) return;
+  var r = await fetch('/api/admin/users/' + uname, {
+    method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+  });
+  var d = await r.json();
+  alert(d.message);
+  if (d.success) loadUserList();
+}
 </script>
 </body>
 </html>

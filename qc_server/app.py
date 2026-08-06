@@ -649,6 +649,17 @@ def api_delete_user(username):
     ok, msg = delete_user(username)
     return jsonify({"success": ok, "message": msg})
 
+@app.route("/api/admin/users/<username>", methods=["PUT"])
+def api_update_user(username):
+    if session.get("role") != "super_admin":
+        return jsonify({"success": False, "message": "权限不足"}), 403
+    data = request.get_json() or {}
+    from auth import update_user
+    ok, msg = update_user(username, data.get("new_username", ""),
+                          data.get("new_password", ""), data.get("tenant", ""))
+    return jsonify({"success": ok, "message": msg})
+
+
 @app.route("/api/admin/change_password", methods=["POST"])
 def api_change_password():
     if not session.get("username"):

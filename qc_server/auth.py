@@ -99,6 +99,26 @@ def delete_user(username):
     return True, "删除成功"
 
 
+def update_user(username, new_username=None, new_password=None, new_tenant=None):
+    """修改管理员用户名/密码/租户，返回 (success, message)"""
+    users = _load_users()
+    user = users.get(username)
+    if not user:
+        return False, "用户不存在"
+    if user["role"] == "super_admin":
+        return False, "不能修改主管理员"
+    if new_password:
+        users[username]["password"] = hash_password(new_password)
+    if new_tenant:
+        users[username]["tenant"] = new_tenant
+    if new_username and new_username != username:
+        if new_username in users:
+            return False, "新用户名已存在"
+        users[new_username] = users.pop(username)
+    _save_users(users)
+    return True, "修改成功"
+
+
 def change_password(username, old_pwd, new_pwd):
     """修改密码，返回 (success, message)"""
     users = _load_users()
