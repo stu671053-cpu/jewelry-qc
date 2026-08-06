@@ -102,11 +102,12 @@ body::before {
   font-size: 2.5vw; font-weight: 200; letter-spacing: 3px;
   font-variant-numeric: tabular-nums; color: var(--text);
 }
-.nav-btn {
-  font-size: 1.8vw; text-decoration: none; opacity: 0.4;
-  transition: opacity 0.2s; margin-right: 1.5vw; color: var(--text-dim);
+.admin-link {
+  display: block; text-align: right; padding: 0.3vh 1vw 0 0;
+  font-size: 1.2vw; color: var(--text-dim); text-decoration: none; opacity: 0.3;
+  transition: opacity 0.2s;
 }
-.nav-btn:hover { opacity: 1; }
+.admin-link:hover { opacity: 0.8; }
 
 /* ── 告警条 ── */
 .alert-bar {
@@ -212,11 +213,11 @@ tr.new-row { animation: rowIn 0.5s ease-out; }
 <div class="scan-line"></div>
 <div class="container">
   <div class="header">
-    <a href="/admin" class="nav-btn" title="管理后台">⚙</a>
     <img src="/static/logo.png" alt="logo" style="height:3.5vw;width:auto;">
     <div class="header-title">{{ tenant }} · 珠宝检测AI自查大屏</div>
     <div class="clock" id="clock">--:--:--</div>
   </div>
+  <a href="/admin" class="admin-link">管理后台</a>
 
   <div class="alert-bar" id="alert">
     <span class="alert-text" id="alertText"></span>
