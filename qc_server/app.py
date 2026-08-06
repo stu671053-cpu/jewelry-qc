@@ -669,6 +669,16 @@ def _require_login():
     return None
 
 
+@app.after_request
+def _no_cache(response):
+    """禁止浏览器缓存所有页面，退出登录后必须重新验证"""
+    if request.path.startswith("/api/"):
+        return response
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 @app.route("/admin")
 def admin_page():
     check = _require_login()
