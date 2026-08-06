@@ -137,6 +137,35 @@ body {
     <div id="wlList"><div class="empty-state">加载中...</div></div>
   </div>
 
+  <!-- 管理员管理 -->
+  <div class="card" id="userCard" style="display:none">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      管理员管理
+      <button class="btn btn-sapphire" onclick="logout()" style="font-size:11px;padding:4px 10px">退出登录</button>
+    </h2>
+    <div id="userInfo" style="margin-bottom:16px;color:var(--text-dim);font-size:13px">加载中...</div>
+    <div id="superAdminPanel" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input type="text" id="newUsername" placeholder="用户名" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px">
+        <input type="password" id="newPassword" placeholder="密码" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px">
+        <select id="newTenant" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px">
+          <option value="中金">中金</option>
+          <option value="国关">国关</option>
+        </select>
+        <button class="btn btn-primary" onclick="addUser()" style="font-size:12px;padding:6px 14px">添加</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f8fafc"><th style="padding:8px;text-align:left">用户名</th><th style="padding:8px">角色</th><th style="padding:8px">租户</th><th style="padding:8px">操作</th></tr></thead>
+        <tbody id="userTable"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <input type="password" id="oldPwd" placeholder="旧密码" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px">
+      <input type="password" id="newPwd" placeholder="新密码" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px">
+      <button class="btn btn-sapphire" onclick="changePwd()" style="font-size:12px;padding:6px 14px">修改密码</button>
+    </div>
+  </div>
+
   <!-- 运行日志 -->
   <div class="card" id="logCard">
     <h2 style="display:flex;justify-content:space-between;align-items:center">
@@ -348,6 +377,60 @@ setInterval(refreshStatus, 5000);
 setInterval(loadLogs, 8000);
 refreshStatus();
 loadLogs();
+
+// ===== 管理员系统 =====
+async function initUser() {
+  try {
+    var r = await fetch('/api/admin/me');
+    if (!r.ok) { window.location.href = '/login'; return; }
+    var d = await r.json();
+    document.getElementById('userCard').style.display = 'block';
+    document.getElementById('userInfo').textContent = '当前: ' + d.username + ' (' + (d.role === 'super_admin' ? '主管理员' : '站点管理员') + ')';
+    if (d.role === 'super_admin') { document.getElementById('superAdminPanel').style.display = 'block'; loadUserList(); }
+  } catch(e) { window.location.href = '/login'; }
+}
+async function loadUserList() {
+  var r = await fetch('/api/admin/users');
+  var d = await r.json();
+  var tbody = document.getElementById('userTable');
+  tbody.innerHTML = d.users.map(function(u) {
+    return '<tr><td style="padding:8px">' + u.username + '</td>' +
+      '<td style="padding:8px;text-align:center">' + (u.role === 'super_admin' ? '主管理员' : '管理员') + '</td>' +
+      '<td style="padding:8px;text-align:center">' + (u.tenant || '-') + '</td>' +
+      '<td style="padding:8px;text-align:center">' + (u.role !== 'super_admin' ? '<a href=\"#\" onclick=\"delUser(\\'' + u.username + '\\')\" style=\"color:#ef4444\">删除</a>' : '-') + '</td></tr>';
+  }).join('');
+}
+async function addUser() {
+  var u = document.getElementById('newUsername').value.trim();
+  var p = document.getElementById('newPassword').value;
+  var t = document.getElementById('newTenant').value;
+  if (!u || !p) { alert('请填写用户名和密码'); return; }
+  var r = await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p, tenant: t, role: 'admin'}) });
+  var d = await r.json();
+  alert(d.message);
+  if (d.success) { document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = ''; loadUserList(); }
+}
+async function delUser(uname) {
+  if (!confirm('确定删除管理员 ' + uname + ' ？')) return;
+  var r = await fetch('/api/admin/users/' + uname, {method: 'DELETE'});
+  var d = await r.json();
+  alert(d.message);
+  if (d.success) loadUserList();
+}
+async function changePwd() {
+  var old = document.getElementById('oldPwd').value;
+  var pwd = document.getElementById('newPwd').value;
+  if (!old || !pwd) { alert('请填写新旧密码'); return; }
+  var r = await fetch('/api/admin/change_password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({old_password: old, new_password: pwd}) });
+  var d = await r.json();
+  alert(d.message);
+  if (d.success) { document.getElementById('oldPwd').value = ''; document.getElementById('newPwd').value = ''; }
+}
+async function logout() {
+  await fetch('/api/admin/logout', {method: 'POST'});
+  window.location.href = '/login';
+}
+initUser();
 </script>
 </body>
 </html>
