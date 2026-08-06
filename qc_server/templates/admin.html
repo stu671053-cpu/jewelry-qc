@@ -154,7 +154,7 @@ body {
         </select>
         <button class="btn btn-primary" onclick="addUser()" style="font-size:12px;padding:6px 14px">添加</button>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px" id="userManageTable">
         <thead><tr style="background:#f8fafc"><th style="padding:8px;text-align:left">用户名</th><th style="padding:8px">密码</th><th style="padding:8px">角色</th><th style="padding:8px">租户</th><th style="padding:8px">操作</th></tr></thead>
         <tbody id="userTable"></tbody>
       </table>
@@ -379,6 +379,8 @@ refreshStatus();
 loadLogs();
 
 // ===== 管理员系统 =====
+var _editingUser = null;
+
 async function initUser() {
   try {
     var r = await fetch('/api/admin/me');
@@ -389,79 +391,102 @@ async function initUser() {
     if (d.role === 'super_admin') { document.getElementById('superAdminPanel').style.display = 'block'; loadUserList(); }
   } catch(e) { window.location.href = '/login'; }
 }
-async function loadUserList() {
-  var r = await fetch('/api/admin/users');
-  var d = await r.json();
-  var tbody = document.getElementById('userTable');
-  tbody.innerHTML = d.users.map(function(u) {
-    var actions = '-';
-    if (u.role !== 'super_admin') {
-      actions = '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a>' +
-                '<a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>';
-    }
-    return '<tr><td style="padding:8px">' + u.username + '</td>' +
-      '<td style="padding:8px;text-align:center;color:var(--text-dim)">****</td>' +
-      '<td style="padding:8px;text-align:center">' + (u.role === 'super_admin' ? '主管理员' : '管理员') + '</td>' +
-      '<td style="padding:8px;text-align:center">' + (u.tenant || '-') + '</td>' +
-      '<td style="padding:8px;text-align:center">' + actions + '</td></tr>';
-  }).join('');
+
+function loadUserList() {
+  fetch('/api/admin/users').then(function(r) { return r.json(); }).then(function(d) {
+    var tbody = document.getElementById('userTable');
+    tbody.innerHTML = d.users.map(function(u) {
+      if (_editingUser === u.username) {
+        return '<tr style="background:#fefce8"><td style="padding:6px"><input id="editName" value="' + u.username + '" style="width:90%;padding:4px 6px;border:1px solid #fbbf24;border-radius:3px;font-size:12px"></td>' +
+          '<td style="padding:6px"><input id="editPwd" type="password" placeholder="新密码" style="width:90%;padding:4px 6px;border:1px solid #fbbf24;border-radius:3px;font-size:12px"></td>' +
+          '<td style="padding:6px;text-align:center">管理员</td>' +
+          '<td style="padding:6px;text-align:center">' + (u.tenant || '-') + '</td>' +
+          '<td style="padding:6px;text-align:center"><button class="edit-save btn btn-primary" data-uname="' + u.username + '" style="font-size:11px;padding:3px 8px;margin-right:4px">保存</button><button class="edit-cancel btn btn-sapphire" style="font-size:11px;padding:3px 8px">取消</button></td></tr>';
+      }
+      var pwdCell = '<span id="pwd_' + u.username + '">****</span> <a href="#" class="show-pwd" data-uname="' + u.username + '" style="font-size:10px;color:#94a3b8">显示</a>';
+      var actions = u.role !== 'super_admin' ? '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a><a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>' : '-';
+      return '<tr><td style="padding:8px">' + u.username + '</td>' +
+        '<td style="padding:8px;text-align:center;font-size:12px">' + pwdCell + '</td>' +
+        '<td style="padding:8px;text-align:center">' + (u.role === 'super_admin' ? '主管理员' : '管理员') + '</td>' +
+        '<td style="padding:8px;text-align:center">' + (u.tenant || '-') + '</td>' +
+        '<td style="padding:8px;text-align:center">' + actions + '</td></tr>';
+    }).join('');
+  });
 }
-async function addUser() {
+
+function addUser() {
   var u = document.getElementById('newUsername').value.trim();
   var p = document.getElementById('newPassword').value;
   var t = document.getElementById('newTenant').value;
   if (!u || !p) { alert('请填写用户名和密码'); return; }
-  var r = await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p, tenant: t, role: 'admin'}) });
-  var d = await r.json();
-  alert(d.message);
-  if (d.success) { document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = ''; loadUserList(); }
+  fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p, tenant: t, role: 'admin'}) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      alert(d.message);
+      if (d.success) { document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = ''; loadUserList(); }
+    });
 }
-async function delUser(uname) {
+
+function delUser(uname) {
   if (!confirm('确定删除管理员 ' + uname + ' ？')) return;
-  var r = await fetch('/api/admin/users/' + uname, {method: 'DELETE'});
-  var d = await r.json();
-  alert(d.message);
-  if (d.success) loadUserList();
+  fetch('/api/admin/users/' + uname, {method: 'DELETE'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert(d.message); if (d.success) loadUserList(); });
 }
-async function changePwd() {
+
+function saveEdit(uname) {
+  var newName = document.getElementById('editName').value.trim();
+  var newPwd = document.getElementById('editPwd').value;
+  var body = {};
+  if (newName && newName !== uname) body.new_username = newName;
+  if (newPwd) body.new_password = newPwd;
+  _editingUser = null;
+  if (!body.new_username && !body.new_password) { loadUserList(); return; }
+  fetch('/api/admin/users/' + uname, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert(d.message); loadUserList(); })
+    .catch(function() { _editingUser = null; loadUserList(); });
+}
+
+function cancelEdit() { _editingUser = null; loadUserList(); }
+
+function changePwd() {
   var old = document.getElementById('oldPwd').value;
   var pwd = document.getElementById('newPwd').value;
   if (!old || !pwd) { alert('请填写新旧密码'); return; }
-  var r = await fetch('/api/admin/change_password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({old_password: old, new_password: pwd}) });
-  var d = await r.json();
-  alert(d.message);
-  if (d.success) { document.getElementById('oldPwd').value = ''; document.getElementById('newPwd').value = ''; }
+  fetch('/api/admin/change_password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({old_password: old, new_password: pwd}) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert(d.message); if (d.success) { document.getElementById('oldPwd').value = ''; document.getElementById('newPwd').value = ''; } });
 }
-async function logout() {
-  await fetch('/api/admin/logout', {method: 'POST'});
-  window.location.href = '/login';
+
+function logout() {
+  fetch('/api/admin/logout', {method: 'POST'}).then(function() { window.location.href = '/login'; });
 }
+
 initUser();
 
-// 事件委托：删除/修改管理员按钮
-document.getElementById('userTable').addEventListener('click', function(e) {
-  var del = e.target.closest('.del-admin');
-  if (del) { e.preventDefault(); delUser(del.getAttribute('data-uname')); return; }
-  var edit = e.target.closest('.edit-admin');
-  if (edit) { e.preventDefault(); editUser(edit.getAttribute('data-uname')); }
+// 事件委托：删除/修改/保存/取消/显示密码
+document.getElementById('userManageTable').addEventListener('click', function(e) {
+  e.preventDefault();
+  var t = e.target;
+  if (t.closest('.del-admin')) { delUser(t.closest('.del-admin').getAttribute('data-uname')); return; }
+  if (t.closest('.edit-admin')) { _editingUser = t.closest('.edit-admin').getAttribute('data-uname'); loadUserList(); return; }
+  if (t.closest('.edit-save')) { saveEdit(t.closest('.edit-save').getAttribute('data-uname')); return; }
+  if (t.closest('.edit-cancel')) { cancelEdit(); return; }
+  if (t.closest('.show-pwd')) {
+    var uname = t.closest('.show-pwd').getAttribute('data-uname');
+    var span = document.getElementById('pwd_' + uname);
+    if (span.textContent === '****') {
+      fetch('/api/admin/users').then(function(r) { return r.json(); }).then(function(d) {
+        var user = (d.users || []).find(function(x) { return x.username === uname; });
+        if (user) { span.textContent = '不能直接显示密码，请通过修改功能重置'; span.style.color = '#f59e0b'; }
+      });
+    } else {
+      span.textContent = '****'; span.style.color = '';
+    }
+    return;
+  }
 });
-
-async function editUser(uname) {
-  var newName = prompt('新用户名（留空不变）:', uname);
-  if (newName === null) return;
-  var newPwd = prompt('新密码（留空不变）:');
-  if (newPwd === null) return;
-  var body = {};
-  if (newName && newName !== uname) body.new_username = newName.trim();
-  if (newPwd) body.new_password = newPwd;
-  if (!body.new_username && !body.new_password) return;
-  var r = await fetch('/api/admin/users/' + uname, {
-    method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
-  });
-  var d = await r.json();
-  alert(d.message);
-  if (d.success) loadUserList();
-}
 </script>
 </body>
 </html>
