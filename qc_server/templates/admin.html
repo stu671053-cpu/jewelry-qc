@@ -375,6 +375,17 @@ loadLogs();
 
 // ===== 管理员系统 =====
 var _editingUser = null;
+var _deletingUser = null;
+var _msgTimer = null;
+
+function showMsg(text, color) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  div.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:' + (color || '#22c55e') + ';color:#fff;padding:8px 20px;border-radius:6px;font-size:14px;z-index:9999;white-space:nowrap';
+  document.body.appendChild(div);
+  if (_msgTimer) clearTimeout(_msgTimer);
+  _msgTimer = setTimeout(function() { div.remove(); }, 2000);
+}
 
 async function initUser() {
   try {
@@ -393,10 +404,15 @@ function loadUserList() {
     tbody.innerHTML = d.users.map(function(u) {
       if (_editingUser === u.username) {
         return '<tr style="background:#fefce8"><td style="padding:6px"><input id="editName" value="' + u.username + '" style="width:90%;padding:4px 6px;border:1px solid #fbbf24;border-radius:3px;font-size:12px"></td>' +
-          '<td style="padding:6px"><input id="editPwd" type="password" placeholder="新密码" style="width:90%;padding:4px 6px;border:1px solid #fbbf24;border-radius:3px;font-size:12px"></td>' +
+          '<td style="padding:6px"><input id="editPwd" type="text" placeholder="新密码" style="width:90%;padding:4px 6px;border:1px solid #fbbf24;border-radius:3px;font-size:12px"></td>' +
           '<td style="padding:6px;text-align:center">管理员</td>' +
           '<td style="padding:6px;text-align:center">' + (u.tenant || '-') + '</td>' +
           '<td style="padding:6px;text-align:center"><button class="edit-save btn btn-primary" data-uname="' + u.username + '" style="font-size:11px;padding:3px 8px;margin-right:4px">保存</button><button class="edit-cancel btn btn-sapphire" style="font-size:11px;padding:3px 8px">取消</button></td></tr>';
+      }
+      if (_deletingUser === u.username) {
+        return '<tr style="background:#fef2f2"><td colspan="5" style="padding:10px;text-align:center">⚠ 确定删除管理员 <b>' + u.username + '</b>？' +
+          '<button class="del-confirm btn btn-primary" data-uname="' + u.username + '" style="font-size:12px;padding:4px 12px;margin-left:12px;background:#ef4444">确认删除</button>' +
+          '<button class="del-cancel btn btn-sapphire" style="font-size:12px;padding:4px 12px;margin-left:8px">取消</button></td></tr>';
       }
       var pwdCell = '<span style="color:var(--text-dim);font-family:monospace;font-size:11px">' + u.password + '</span>';
       var actions = '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a>';
@@ -414,21 +430,32 @@ function addUser() {
   var u = document.getElementById('newUsername').value.trim();
   var p = document.getElementById('newPassword').value;
   var t = document.getElementById('newTenant').value;
-  if (!u || !p) { alert('请填写用户名和密码'); return; }
+  if (!u || !p) { showMsg('请填写用户名和密码', '#f59e0b'); return; }
   fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p, tenant: t, role: 'admin'}) })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-      alert(d.message);
+      showMsg(d.message, d.success ? '#22c55e' : '#ef4444');
       if (d.success) { document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = ''; loadUserList(); }
     });
 }
 
 function delUser(uname) {
-  if (!confirm('确定删除管理员 ' + uname + ' ？')) return;
+  _editingUser = null;
+  _deletingUser = uname;
+  loadUserList();
+}
+
+function confirmDelete(uname) {
   fetch('/api/admin/users/' + uname, {method: 'DELETE'})
     .then(function(r) { return r.json(); })
-    .then(function(d) { alert(d.message); if (d.success) loadUserList(); });
+    .then(function(d) {
+      showMsg(d.message, d.success ? '#22c55e' : '#ef4444');
+      _deletingUser = null;
+      if (d.success) loadUserList();
+    });
 }
+
+function cancelDelete() { _deletingUser = null; loadUserList(); }
 
 function saveEdit(uname) {
   var newName = document.getElementById('editName').value.trim();
@@ -440,7 +467,7 @@ function saveEdit(uname) {
   if (!body.new_username && !body.new_password) { loadUserList(); return; }
   fetch('/api/admin/users/' + uname, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) })
     .then(function(r) { return r.json(); })
-    .then(function(d) { alert(d.message); loadUserList(); })
+    .then(function(d) { showMsg(d.message, d.success ? '#22c55e' : '#ef4444'); loadUserList(); })
     .catch(function() { _editingUser = null; loadUserList(); });
 }
 
@@ -452,11 +479,13 @@ function logout() {
 
 initUser();
 
-// 事件委托：删除/修改/保存/取消（绑定到始终存在的父容器）
+// 事件委托：删除/修改/保存/取消/确认删除
 document.getElementById('userCard').addEventListener('click', function(e) {
   var t = e.target;
   if (t.closest('.del-admin')) { e.preventDefault(); delUser(t.closest('.del-admin').getAttribute('data-uname')); return; }
-  if (t.closest('.edit-admin')) { e.preventDefault(); _editingUser = t.closest('.edit-admin').getAttribute('data-uname'); loadUserList(); return; }
+  if (t.closest('.del-confirm')) { e.preventDefault(); confirmDelete(t.closest('.del-confirm').getAttribute('data-uname')); return; }
+  if (t.closest('.del-cancel')) { e.preventDefault(); cancelDelete(); return; }
+  if (t.closest('.edit-admin')) { e.preventDefault(); _editingUser = t.closest('.edit-admin').getAttribute('data-uname'); _deletingUser = null; loadUserList(); return; }
   if (t.closest('.edit-save')) { e.preventDefault(); saveEdit(t.closest('.edit-save').getAttribute('data-uname')); return; }
   if (t.closest('.edit-cancel')) { e.preventDefault(); cancelEdit(); return; }
 });
