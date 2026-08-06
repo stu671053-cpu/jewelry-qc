@@ -385,7 +385,7 @@ async function initUser() {
     if (!r.ok) { window.location.href = '/login'; return; }
     var d = await r.json();
     document.getElementById('userCard').style.display = 'block';
-    document.getElementById('userInfo').textContent = '当前: ' + d.username + ' (' + (d.role === 'super_admin' ? '主管理员' : '站点管理员') + ')';
+    document.getElementById('userInfo').innerHTML = '<span style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:4px 12px;display:inline-block">👤 ' + d.username + ' · ' + (d.role === 'super_admin' ? '主管理员' : '站点管理员') + (d.tenant ? ' · ' + d.tenant : '') + '</span>';
     if (d.role === 'super_admin') { document.getElementById('superAdminPanel').style.display = 'block'; loadUserList(); }
   } catch(e) { window.location.href = '/login'; }
 }
