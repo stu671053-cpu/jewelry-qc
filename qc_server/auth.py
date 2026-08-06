@@ -106,7 +106,12 @@ def update_user(username, new_username=None, new_password=None, new_tenant=None)
     if not user:
         return False, "用户不存在"
     if user["role"] == "super_admin":
-        return False, "不能修改主管理员"
+        # 主管理员只能修改自己的密码
+        if new_password:
+            users[username]["password"] = hash_password(new_password)
+            _save_users(users)
+            return True, "密码修改成功"
+        return False, "主管理员只能修改密码"
     if new_password:
         users[username]["password"] = hash_password(new_password)
     if new_tenant:

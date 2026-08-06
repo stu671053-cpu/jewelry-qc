@@ -159,11 +159,6 @@ body {
         <tbody id="userTable"></tbody>
       </table>
     </div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <input type="password" id="oldPwd" placeholder="旧密码" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px">
-      <input type="password" id="newPwd" placeholder="新密码" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px">
-      <button class="btn btn-sapphire" onclick="changePwd()" style="font-size:12px;padding:6px 14px">修改密码</button>
-    </div>
   </div>
 
   <!-- 运行日志 -->
@@ -403,8 +398,9 @@ function loadUserList() {
           '<td style="padding:6px;text-align:center">' + (u.tenant || '-') + '</td>' +
           '<td style="padding:6px;text-align:center"><button class="edit-save btn btn-primary" data-uname="' + u.username + '" style="font-size:11px;padding:3px 8px;margin-right:4px">保存</button><button class="edit-cancel btn btn-sapphire" style="font-size:11px;padding:3px 8px">取消</button></td></tr>';
       }
-      var pwdCell = '<span id="pwd_' + u.username + '">****</span> <a href="#" class="show-pwd" data-uname="' + u.username + '" style="font-size:10px;color:#94a3b8">显示</a>';
-      var actions = u.role !== 'super_admin' ? '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a><a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>' : '-';
+      var pwdCell = '<span style="color:var(--text-dim)">****</span>';
+      var actions = '<a href="#" class="edit-admin" data-uname="' + u.username + '" style="color:#3b82f6;margin-right:8px">修改</a>';
+      if (u.role !== 'super_admin') actions += '<a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>';
       return '<tr><td style="padding:8px">' + u.username + '</td>' +
         '<td style="padding:8px;text-align:center;font-size:12px">' + pwdCell + '</td>' +
         '<td style="padding:8px;text-align:center">' + (u.role === 'super_admin' ? '主管理员' : '管理员') + '</td>' +
@@ -450,42 +446,19 @@ function saveEdit(uname) {
 
 function cancelEdit() { _editingUser = null; loadUserList(); }
 
-function changePwd() {
-  var old = document.getElementById('oldPwd').value;
-  var pwd = document.getElementById('newPwd').value;
-  if (!old || !pwd) { alert('请填写新旧密码'); return; }
-  fetch('/api/admin/change_password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({old_password: old, new_password: pwd}) })
-    .then(function(r) { return r.json(); })
-    .then(function(d) { alert(d.message); if (d.success) { document.getElementById('oldPwd').value = ''; document.getElementById('newPwd').value = ''; } });
-}
-
 function logout() {
   fetch('/api/admin/logout', {method: 'POST'}).then(function() { window.location.href = '/login'; });
 }
 
 initUser();
 
-// 事件委托：删除/修改/保存/取消/显示密码
+// 事件委托：删除/修改/保存/取消
 document.getElementById('userManageTable').addEventListener('click', function(e) {
-  e.preventDefault();
   var t = e.target;
-  if (t.closest('.del-admin')) { delUser(t.closest('.del-admin').getAttribute('data-uname')); return; }
-  if (t.closest('.edit-admin')) { _editingUser = t.closest('.edit-admin').getAttribute('data-uname'); loadUserList(); return; }
-  if (t.closest('.edit-save')) { saveEdit(t.closest('.edit-save').getAttribute('data-uname')); return; }
-  if (t.closest('.edit-cancel')) { cancelEdit(); return; }
-  if (t.closest('.show-pwd')) {
-    var uname = t.closest('.show-pwd').getAttribute('data-uname');
-    var span = document.getElementById('pwd_' + uname);
-    if (span.textContent === '****') {
-      fetch('/api/admin/users').then(function(r) { return r.json(); }).then(function(d) {
-        var user = (d.users || []).find(function(x) { return x.username === uname; });
-        if (user) { span.textContent = '不能直接显示密码，请通过修改功能重置'; span.style.color = '#f59e0b'; }
-      });
-    } else {
-      span.textContent = '****'; span.style.color = '';
-    }
-    return;
-  }
+  if (t.closest('.del-admin')) { e.preventDefault(); delUser(t.closest('.del-admin').getAttribute('data-uname')); return; }
+  if (t.closest('.edit-admin')) { e.preventDefault(); _editingUser = t.closest('.edit-admin').getAttribute('data-uname'); loadUserList(); return; }
+  if (t.closest('.edit-save')) { e.preventDefault(); saveEdit(t.closest('.edit-save').getAttribute('data-uname')); return; }
+  if (t.closest('.edit-cancel')) { e.preventDefault(); cancelEdit(); return; }
 });
 </script>
 </body>
