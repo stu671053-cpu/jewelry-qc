@@ -397,7 +397,7 @@ async function loadUserList() {
     return '<tr><td style="padding:8px">' + u.username + '</td>' +
       '<td style="padding:8px;text-align:center">' + (u.role === 'super_admin' ? '主管理员' : '管理员') + '</td>' +
       '<td style="padding:8px;text-align:center">' + (u.tenant || '-') + '</td>' +
-      '<td style="padding:8px;text-align:center">' + (u.role !== 'super_admin' ? '<a href=\"#\" onclick=\"delUser(\\'' + u.username + '\\')\" style=\"color:#ef4444\">删除</a>' : '-') + '</td></tr>';
+      '<td style="padding:8px;text-align:center">' + (u.role !== 'super_admin' ? '<a href="#" class="del-admin" data-uname="' + u.username + '" style="color:#ef4444">删除</a>' : '-') + '</td></tr>';
   }).join('');
 }
 async function addUser() {
@@ -431,6 +431,12 @@ async function logout() {
   window.location.href = '/login';
 }
 initUser();
+
+// 事件委托：删除管理员按钮
+document.getElementById('userTable').addEventListener('click', function(e) {
+  var link = e.target.closest('.del-admin');
+  if (link) { e.preventDefault(); delUser(link.getAttribute('data-uname')); }
+});
 </script>
 </body>
 </html>
