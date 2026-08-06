@@ -452,8 +452,8 @@ function logout() {
 
 initUser();
 
-// 事件委托：删除/修改/保存/取消
-document.getElementById('userManageTable').addEventListener('click', function(e) {
+// 事件委托：删除/修改/保存/取消（绑定到始终存在的父容器）
+document.getElementById('userCard').addEventListener('click', function(e) {
   var t = e.target;
   if (t.closest('.del-admin')) { e.preventDefault(); delUser(t.closest('.del-admin').getAttribute('data-uname')); return; }
   if (t.closest('.edit-admin')) { e.preventDefault(); _editingUser = t.closest('.edit-admin').getAttribute('data-uname'); loadUserList(); return; }
