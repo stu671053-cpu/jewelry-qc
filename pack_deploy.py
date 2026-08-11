@@ -32,7 +32,6 @@ EXCLUDE_PATTERNS = [
     "qc_server/get_chatid.py",
     "qc_server/har_parser.py",
     "qc_server/jewelry-qc.service",
-    "qc_server/wecom_ws.py",
     "qc_server/.DS_Store",
     "rules/__pycache__",
     "rules/__pycache__/*",
