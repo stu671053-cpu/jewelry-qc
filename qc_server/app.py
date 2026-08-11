@@ -72,7 +72,10 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # 租户环境变量（必须在初始化前读取）
 import os
-TENANT = os.environ.get("TENANT", "域骉控股")
+_raw_tenant = os.environ.get("TENANT", "域骉控股")
+# 租户名映射（支持英文环境变量避免 Windows CMD 中文乱码）
+TENANT_MAP = {"Zhongjin": "中金", "Guoguan": "国关", "中金": "中金", "国关": "国关"}
+TENANT = TENANT_MAP.get(_raw_tenant, _raw_tenant)
 TENANT_COLOR = os.environ.get("TENANT_COLOR", "#1a1a2e")
 
 with open(BASE_DIR / "config.json", "r", encoding="utf-8") as f:

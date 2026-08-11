@@ -1,14 +1,17 @@
 @echo off
-title 国关 - 珠宝检测AI自查大屏 (5091)
-cd /d "%~dp0qc_server"
-set TENANT=国关
+chcp 65001 >nul
+title Jewelry QC - Guoguan (5091)
+
+cd /d C:\jewelry_qc
+
+set TENANT=Guoguan
 set PORT=5091
+
 echo ============================================
-echo   国关 · 珠宝检测AI自查大屏
-echo   地址: http://localhost:5091/
-echo   管理: http://localhost:5091/admin
-echo   健康: http://localhost:5091/api/health
+echo   Jewelry QC - Guoguan (Port 5091)
+echo   http://localhost:5091/
 echo ============================================
-echo.
-python -m waitress --host 0.0.0.0 --port 5091 app:app
+
+python qc_server\app.py
+
 pause
