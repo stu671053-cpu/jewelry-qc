@@ -26,7 +26,6 @@ EXCLUDE_PATTERNS = [
     "qc_server/sync_state.json",
     "qc_server/sync_state.*",
     "qc_server/users.json.bak",
-    "qc_server/config.json",
     "qc_server/config_sync.example.json",
     "qc_server/requirements.txt",
     "qc_server/*mock*",
