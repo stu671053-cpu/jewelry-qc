@@ -39,11 +39,9 @@ https://www.python.org/downloads/
 ## 日常维护
 
 ### 更新代码
-```cmd
-cd C:\jewelry_qc
-git pull
-:: 关闭 CMD 窗口，重新双击 start.bat
-```
+用新的 `jewelry_qc_deploy.zip` **覆盖解压**到 `C:\jewelry_qc`（保留 `data\` 和 `users.json` 不会被覆盖），关闭 CMD 窗口后重新双击 `start.bat`。
+
+> 若启动失败，`start.bat` 会自动打印错误日志的最后 40 行；也可手动查看 `C:\jewelry_qc\zj.log` / `gg.log`。
 
 ### 修改超时预警阈值
 管理端 → 系统设置 → 修改「剩余时间预警（分钟）」→ 保存

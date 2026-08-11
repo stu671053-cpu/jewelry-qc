@@ -26,6 +26,9 @@ from sync_service import SyncEngine
 from utils import business_day_ts, business_day_range
 from auth import verify_login, get_users, add_user, delete_user, update_user
 
+# ---------- 路径常量（必须在日志模块之前定义，否则日志文件处理器初始化会引用未定义变量） ----------
+BASE_DIR = Path(__file__).resolve().parent
+
 # ---------- 日志系统 ----------
 class RingBufferHandler(logging.Handler):
     """环形缓冲区日志处理器，保留最近 N 条日志"""
@@ -68,8 +71,6 @@ except Exception:
     pass  # 文件日志非关键，失败不影响运行
 
 # ---------- 初始化 ----------
-BASE_DIR = Path(__file__).resolve().parent
-
 # 租户环境变量（必须在初始化前读取）
 import os
 _raw_tenant = os.environ.get("TENANT", "域骉控股")
@@ -1046,10 +1047,18 @@ if __name__ == "__main__":
     if loupe_cookie:
         logger.info(f"[配置] Cookie来源: 环境变量 ({len(loupe_cookie)}字符)")
 
-    notifier.start()
+    # 通知模块（失败不影响 web 服务）
+    try:
+        notifier.start()
+    except Exception as e:
+        logger.error(f"[通知] 启动失败(已忽略，不影響 Web 服務): {e}")
 
-    checker_thread = threading.Thread(target=background_checker, daemon=True)
-    checker_thread.start()
+    # 后台检测线程（失败不影响 web 服务）
+    try:
+        checker_thread = threading.Thread(target=background_checker, daemon=True)
+        checker_thread.start()
+    except Exception as e:
+        logger.error(f"[后台] 检测线程启动失败(已忽略): {e}")
 
     host = "0.0.0.0"
     port = int(os.environ.get("PORT", CONFIG.get("server", {}).get("port", 5090)))
@@ -1066,4 +1075,12 @@ if __name__ == "__main__":
 ╚══════════════════════════════════════════════╝
 """)
 
-    app.run(host=host, port=port, debug=CONFIG.get("server", {}).get("debug", False))
+    # 优先使用 waitress（生产级 WSGI，Windows 比 Flask 开发服务器更稳定）
+    # 缺包时回退到 Flask 开发服务器，保证至少能启动
+    try:
+        from waitress import serve as _wserve
+        logger.info(f"[服务] 使用 waitress 生产服务器 (port {port})")
+        _wserve(app, host=host, port=port, threads=8)
+    except ImportError:
+        logger.warning("[服务] 未安装 waitress，回退 Flask 开发服务器")
+        app.run(host=host, port=port, debug=False)
