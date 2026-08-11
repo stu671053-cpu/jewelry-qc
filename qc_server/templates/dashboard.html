@@ -276,6 +276,7 @@ function qcFetch(url, opts){ opts = opts || {}; opts.headers = Object.assign({'A
 let lastAnomaly = 0;
 let lastCycleSeen = 0;  // 上次看到的后台周期时间戳，变化后10s内快刷
 let anomalyRows = [];     // 所有异常行（已排序）
+let prevOrderCodes = new Set(); // 上轮已显示的订单码集合，用于只高亮"本轮新增"的行
 let anomalySound = null;
 try { anomalySound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/f3+Af39/gH9/f4B/////w=='); } catch(e) {}
 
@@ -339,10 +340,12 @@ async function refresh() {
     });
 
     // 全量渲染（分页功能后续大屏启用）
+    // new-row 高亮仅给"本轮新增"的订单（不在上轮集合里），避免整表每轮重播红色闪烁
     if (anomalyRows.length > 0) {
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = anomalyRows.map(r => {
-        var rowCls="new-row";if(r.cls==="danger")rowCls+=" danger-row";else if(r.cls==="overtime")rowCls+=" overtime-row";return '<tr class="'+rowCls+'">'
+        var rowCls = prevOrderCodes.has(r.order_code) ? "" : "new-row";
+        if(r.cls==="danger")rowCls+=" danger-row";else if(r.cls==="overtime")rowCls+=" overtime-row";return '<tr class="'+rowCls+'">'
           + '<td><span class="order-code copy-cell">'+r.order_code+'</span></td>'
           + '<td><span class="copy-cell">'+r.cert_code+'</span></td>'
           + '<td><span class="copy-cell batch-cell">'+r.batch_code+'</span></td>'
@@ -354,6 +357,8 @@ async function refresh() {
     } else {
       document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">✅</div><div class="txt">暂无异常</div><div class="sub">质检数据正常</div></td></tr>';
     }
+    // 更新"已显示订单"集合，供下一轮判断哪些是新增
+    prevOrderCodes = new Set(anomalyRows.map(r => r.order_code));
 
     const n = new Date();
     document.getElementById('fLeft').textContent = '更新: ' + n.toLocaleTimeString('zh-CN');
