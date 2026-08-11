@@ -1,211 +1,121 @@
-# Windows Server 2012 内网部署指南
+# 珠宝检测AI自查系统 - 内网部署指南
 
-## 一、环境准备
+## 快速部署（3 步搞定）
 
-### 1. 安装 Python 3.9+
+### 第 1 步：安装 Python
 
-下载地址：https://www.python.org/downloads/release/python-3913/
-- ✅ 勾选 "Add Python to PATH"
-- 安装完成后验证：`python --version`
+下载 Python 3.9+ 安装包 → 安装时勾选 **"Add Python to PATH"**
 
-### 2. 安装依赖
+安装完成打开 CMD 验证：
+```cmd
+python --version
+```
+应显示 `Python 3.9.x` 或更高。
+
+### 第 2 步：解压并安装依赖
+
+将 `jewelry_qc_deploy.zip` 解压到 `C:\jewelry_qc`，打开 CMD 执行：
 
 ```cmd
 cd C:\jewelry_qc
 pip install -r requirements.txt
 ```
 
-### 3. 创建项目目录
+### 第 3 步：启动服务
+
+双击桌面上的快捷方式（或直接双击 bat 文件）：
+
+| 快捷方式 | 端口 | 说明 |
+|----------|------|------|
+| `start_zhongjin.bat` | 5090 | 中金租户 |
+| `start_guoguan.bat` | 5091 | 国关租户 |
+
+启动后会打开两个 CMD 窗口，**最小化即可**，不要关闭。
+
+内网其他电脑访问：`http://服务器IP:5090/`（中金）或 `http://服务器IP:5091/`（国关）
+
+---
+
+## 目录结构
 
 ```
 C:\jewelry_qc\
-├── qc_server\          # Flask 主程序
-│   ├── app.py
-│   ├── db.py
-│   ├── qc_service.py
-│   ├── sync_service.py
-│   ├── notifier.py
-│   ├── utils.py
-│   ├── templates\      # 前端页面
-│   ├── config.json
-│   ├── config_sync.json          # 中金 Cookie（从服务器复制）
-│   └── config_sync_国关.json     # 国关 Cookie（从服务器复制）
-├── rules\              # 规则引擎
-├── engine.py
-├── config.yaml
-├── data\               # SQLite 数据库
-│   ├── qic_quality.db         # 中金数据库
-│   └── 国关_qic_quality.db    # 国关数据库
-└── requirements.txt
-```
-
-### 4. 配置文件
-
-从服务器复制以下文件到本地：
-
-| 服务器路径 | 说明 |
-|-----------|------|
-| `qc_server/config_sync.json` | 中金 Loupe Cookie |
-| `qc_server/config_sync_国关.json` | 国关 Loupe Cookie |
-| `data/qic_quality.db` | 中金数据库（可选，会从 API 重新拉取）|
-| `data/国关_qic_quality.db` | 国关数据库（可选）|
-
-复制代码（从 GitHub）：
-```cmd
-git clone https://github.com/stu671053-cpu/jewelry-qc.git C:\jewelry_qc
+├── start_zhongjin.bat        ← 双击启动中金 (5090)
+├── start_guoguan.bat         ← 双击启动国关 (5091)
+├── requirements.txt           ← Python 依赖
+├── qc_server\                 ← 主程序
+│   ├── app.py                 ← Flask 入口
+│   ├── db.py                  ← 数据库操作
+│   ├── qc_service.py          ← 质检规则引擎
+│   ├── auth.py                ← 管理员登录验证
+│   ├── utils.py               ← 工具函数
+│   ├── config_sync.json       ← 中金 Cookie 配置
+│   ├── config_sync_国关.json  ← 国关 Cookie 配置
+│   ├── users.json             ← 管理员账号
+│   └── templates\             ← 前端页面
+├── rules\                     ← 质检规则（R1-R12）
+├── engine.py                  ← 规则加载引擎
+└── data\                      ← 数据库文件（自动创建）
 ```
 
 ---
 
-## 二、运行方式
+## 管理员账号
 
-### 方式 A：NSSM 注册为 Windows 服务（推荐）
+管理后台地址：`http://服务器IP:5090/login`
 
-NSSM 下载：http://nssm.cc/download
+| 角色 | 用户名 | 密码 | 权限 |
+|------|--------|------|------|
+| 主管理员 | `admin` | `admin123` | 全部管理 |
+| 中金管理员 | `zhongjin` | `zj1234` | 仅中金 |
+| 国关管理员 | `guoguan` | `gg1234` | 仅国关 |
 
-```cmd
-nssm install JewelryQC-Zhongjin
-# Application Path: C:\Python39\python.exe
-# Startup Directory: C:\jewelry_qc\qc_server
-# Arguments: -m waitress --host 0.0.0.0 --port 5090 app:app
-# 环境变量：TENANT=中金
-
-nssm install JewelryQC-GuoGuan
-# Application Path: C:\Python39\python.exe
-# Startup Directory: C:\jewelry_qc\qc_server
-# Arguments: -m waitress --host 0.0.0.0 --port 5091 app:app
-# 环境变量：TENANT=国关
-```
-
-然后在「服务」中设置两个服务为「自动启动」。
-
-### 方式 B：批处理 + 计划任务（简单）
-
-创建 `start_zhongjin.bat`：
-```bat
-@echo off
-cd /d C:\jewelry_qc\qc_server
-set TENANT=中金
-set PORT=5090
-python -m waitress --host 0.0.0.0 --port 5090 app:app
-```
-
-创建 `start_guoguan.bat`：
-```bat
-@echo off
-cd /d C:\jewelry_qc\qc_server
-set TENANT=国关
-set PORT=5091
-python -m waitress --host 0.0.0.0 --port 5091 app:app
-```
-
-计划任务：创建两个任务，触发条件「系统启动时」，操作运行对应 bat 文件。
-
-### 方式 C：Flask 自带服务器（仅测试）
-
-```bat
-cd /d C:\jewelry_qc\qc_server
-set TENANT=中金
-set PORT=5090
-python app.py
-```
-
-⚠️ 自带服务器不适合生产环境，仅用于临时测试。
+> 主管理员登录后可添加/删除/修改其他管理员账号。
 
 ---
 
-## 三、访问地址
-
-| 租户 | 地址 |
-|------|------|
-| 中金大屏 | `http://{服务器IP}:5090/` |
-| 中金管理端 | `http://{服务器IP}:5090/admin` |
-| 国关大屏 | `http://{服务器IP}:5091/` |
-| 国关管理端 | `http://{服务器IP}:5091/admin` |
-| 中金健康检查 | `http://{服务器IP}:5090/api/health` |
-
----
-
-## 四、维护操作
+## 日常维护
 
 ### 更新代码
-
 ```cmd
 cd C:\jewelry_qc
-git pull origin main
-net stop JewelryQC-Zhongjin
-net stop JewelryQC-GuoGuan
-net start JewelryQC-Zhongjin
-net start JewelryQC-GuoGuan
+git pull
+:: 关闭两个 CMD 窗口，重新双击 bat 文件启动
 ```
 
 ### 更新 Cookie
+用新 Cookie 替换 `qc_server\config_sync.json` 或 `config_sync_国关.json` 中的 `cookie` 字段，重启服务。
 
-在 Loupe 系统重新登录后抓取 Cookie，替换 `config_sync.json` 和 `config_sync_国关.json` 中的 cookie 字段，然后重启服务。
-
-### 查看日志
-
-```cmd
-# 若用 NSSM，日志在服务路径下
-C:\jewelry_qc\qc_server\logs\qc_server.log
-
-# 手动查看实时日志
-python app.py  # 会有控制台输出
-```
+### 修改超时预警阈值
+管理端 → 系统设置 → 修改「剩余时间预警（分钟）」→ 保存
 
 ### 重置数据库
-
 ```cmd
-del C:\jewelry_qc\data\qic_quality.db
-del C:\jewelry_qc\data\国关_qic_quality.db
-net stop JewelryQC-Zhongjin
-net stop JewelryQC-GuoGuan
-net start JewelryQC-Zhongjin
-net start JewelryQC-GuoGuan
-```
-删除后重启服务，系统会从 Loupe API 重新全量拉取。
-
-### 修改超时阈值
-
-管理端 → 工作时间设置 → 剩余时间预警（分钟）
-
----
-
-## 五、防火墙
-
-确保内网防火墙放行 5090 和 5091 端口：
-
-```cmd
-netsh advfirewall firewall add rule name="JewelryQC 5090" dir=in action=allow protocol=TCP localport=5090
-netsh advfirewall firewall add rule name="JewelryQC 5091" dir=in action=allow protocol=TCP localport=5091
+cd C:\jewelry_qc
+del data\*.db
+:: 重启服务即可，系统会自动重建数据库并重新检测
 ```
 
 ---
 
-## 六、目录结构确认
+## 防火墙配置
 
-部署后检查以下文件必须存在：
+如果内网其他电脑无法访问，需要在 Windows 防火墙放行端口：
 
+```cmd
+netsh advfirewall firewall add rule name="jewelry_qc_5090" dir=in action=allow protocol=tcp localport=5090
+netsh advfirewall firewall add rule name="jewelry_qc_5091" dir=in action=allow protocol=tcp localport=5091
 ```
-C:\jewelry_qc\
-├── engine.py              ✅
-├── config.yaml            ✅
-├── requirements.txt       ✅
-├── rules/                 ✅ 14个文件
-├── qc_server/
-│   ├── app.py             ✅
-│   ├── db.py              ✅
-│   ├── qc_service.py      ✅
-│   ├── sync_service.py    ✅
-│   ├── notifier.py        ✅
-│   ├── utils.py           ✅
-│   ├── config.json        ✅
-│   ├── config_sync.json   ⚠️ 需手动复制
-│   ├── config_sync_国关.json  ⚠️ 需手动复制
-│   └── templates/
-│       ├── dashboard.html ✅
-│       └── admin.html     ✅
-└── data/
-    ├── qic_quality.db         自动创建
-    └── 国关_qic_quality.db    自动创建
-```
+
+---
+
+## 常见问题
+
+**Q: 启动后 CMD 一闪而过？**
+A: 在 bat 文件所在目录打开 CMD，手动运行 `python qc_server\app.py` 查看错误信息。
+
+**Q: 提示 `ModuleNotFoundError`？**
+A: `pip install -r requirements.txt` 重新安装依赖。
+
+**Q: 数据不更新？**
+A: 检查 Cookie 是否过期，管理端查看系统状态 → 运行日志。
