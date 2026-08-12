@@ -25,6 +25,7 @@ from notifier import Notifier
 from sync_service import SyncEngine
 from utils import business_day_ts, business_day_range
 from auth import verify_login, get_users, add_user, delete_user, update_user
+from mapping_store import load_mapping, save_mapping
 
 # ---------- 路径常量（必须在日志模块之前定义，否则日志文件处理器初始化会引用未定义变量） ----------
 BASE_DIR = Path(__file__).resolve().parent
@@ -689,10 +690,60 @@ def _no_cache(response):
 def admin_page():
     check = _require_login()
     if check: return check
+    _map = load_mapping()
     return render_template("admin.html",
                            tenant=TENANT,
                            tenant_color=TENANT_COLOR,
-                           qc_token=ACCESS_TOKEN)
+                           qc_token=ACCESS_TOKEN,
+                           skip_count=len(_map.get("skip", [])),
+                           alloy_count=len(_map.get("alloy", [])),
+                           metal_count=len(_map.get("metal", {})),
+                           gemstone_count=len(_map.get("gemstone", {})))
+
+
+@app.route("/api/admin/mapping", methods=["GET"])
+def api_get_mapping():
+    """获取当前材质映射表（管理后台调整用）"""
+    check = _require_login()
+    if check: return check
+    mapping = load_mapping()
+    return jsonify({"success": True, "mapping": mapping})
+
+
+@app.route("/api/admin/mapping", methods=["PUT"])
+def api_put_mapping():
+    """保存材质映射表（管理后台调整用）"""
+    check = _require_login()
+    if check: return check
+    data = request.get_json() or {}
+    mapping = data.get("mapping")
+    ok, msg, saved = save_mapping(mapping)
+    if not ok:
+        return jsonify({"success": False, "message": msg}), 400
+    # 通知规则引擎热更新内存映射
+    try:
+        import rules.r11_material_conclusion as _r11
+        _r11.MAPPING = saved
+    except Exception as e:
+        logger.warning(f"[映射] 规则热更新失败: {e}")
+    return jsonify({"success": True, "message": msg, "mapping": saved})
+
+
+@app.route("/api/admin/mapping/reset", methods=["POST"])
+def api_reset_mapping():
+    """恢复映射表为默认（最新业务表）"""
+    check = _require_login()
+    if check: return check
+    from mapping_store import DEFAULT_MAPPING
+    ok, msg, saved = save_mapping(DEFAULT_MAPPING)
+    if not ok:
+        return jsonify({"success": False, "message": msg}), 400
+    try:
+        import rules.r11_material_conclusion as _r11
+        _r11.MAPPING = saved
+    except Exception as e:
+        logger.warning(f"[映射] 规则热更新失败: {e}")
+    return jsonify({"success": True, "message": msg, "mapping": saved})
 
 
 @app.route("/api/check", methods=["POST"])

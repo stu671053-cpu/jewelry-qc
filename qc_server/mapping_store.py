@@ -1,39 +1,35 @@
 """
-R11: 材质与结论对应关系检查
+材质映射表存储管理（管理后台可调整）
 
-逻辑（与 qc_web.html 中 ruleR11() 保持一致）:
-1. 质检结果=不通过 → 正确（引擎层全局预检）
-2. 提取 商品材质+镶嵌材质+配件材质，拆分多材质并去重
-3. 过滤跳过类材质
-4. 对每个有效材质，按类别匹配：
-   - 合金类：检查贵金属结论/备注中不能含贵金属字段 → 否则"材质漏检"
-   - 贵金属类：检查贵金属结论或备注是否匹配映射表 → 否则"材质漏检"
-   - 宝玉石类：检查宝玉石结论或备注是否匹配映射表 → 否则"材质漏检"
-5. 所有材质都未匹配 → "找不到对应材质"
-6. 全部通过 → "正确"
+映射表结构与规则判断表1.xlsx「商详材质映射表」一致：
+  skip     忽略词（A列）
+  alloy    金属列/合金（B列）
+  metal    贵金属材质→贵金属结论（C→D）
+  gemstone 宝玉石材质→宝玉石结论（E→F）
+
+数据来源：规则判断表1.xlsx（业务提供的最新版），由管理后台读写，
+持久化到 mapping_config.json。首次运行时若文件不存在，自动生成默认表。
 """
 
-import re
+import json
+import threading
+from pathlib import Path
 
-# 尝试从管理后台映射存储加载（mapping_config.json），失败时回退内置默认表
-try:
-    import os
-    import sys
-    _qc_server_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "qc_server")
-    if _qc_server_dir not in sys.path:
-        sys.path.insert(0, _qc_server_dir)
-    from mapping_store import load_mapping as _load_mapping
-    MAPPING = _load_mapping()
-except Exception:
-    # 内置默认表（与规则判断表1.xlsx 商详材质映射表保持一致）
-    MAPPING = {
-    "alloy": [
-        "合金锁扣",
-        "合金延长链",
-        "合金胸针扣",
-        "合金",
-        "钛钢"
+BASE_DIR = Path(__file__).resolve().parent
+CONFIG_PATH = BASE_DIR / "mapping_config.json"
+
+_lock = threading.Lock()
+
+# ==================== 默认映射表（规则判断表1.xlsx 商详材质映射表） ====================
+DEFAULT_MAPPING = {
+    "skip": [
+        "未镶嵌", "素款无配件", "无配饰", "其他材质", "文玩木串", "桃木",
+        "菩提/核桃", "核桃", "菩提", "金刚菩提", "星月菩提", "金丝楠木", "枣木",
+        "小叶紫檀", "维腊木（绿檀）", "檀香紫檀（小叶紫檀）", "檀香木", "降真香",
+        "紫金鼠", "橄榄核", "柏香籽/百香籽", "沉香", "猛犸象牙", "大漆工艺品",
+        "玻璃", "缅甸玉", "库克", "柏木（崖柏）", "黄花梨/降香黄檀", "六道木",
     ],
+    "alloy": ["合金锁扣", "合金延长链", "合金胸针扣", "合金", "钛钢"],
     "metal": {
         "银S800镀金镶嵌": ["银S800", "银800", "银s800"],
         "银S925": ["银S925", "银925", "银s925"],
@@ -76,13 +72,6 @@ except Exception:
         "足金（金含量999‰）": ["足金"],
         "足金镶嵌": ["足金"],
     },
-    "skip": [
-        "未镶嵌", "素款无配件", "无配饰", "其他材质", "文玩木串", "桃木",
-        "菩提/核桃", "核桃", "菩提", "金刚菩提", "星月菩提", "金丝楠木", "枣木",
-        "小叶紫檀", "维腊木（绿檀）", "檀香紫檀（小叶紫檀）", "檀香木", "降真香",
-        "紫金鼠", "橄榄核", "柏香籽/百香籽", "沉香", "猛犸象牙", "大漆工艺品",
-        "玻璃", "缅甸玉", "库克", "柏木（崖柏）", "黄花梨/降香黄檀", "六道木",
-    ],
     "gemstone": {
         "水晶": ["水晶", "紫晶", "黄晶", "烟晶", "绿水晶", "发晶"],
         "紫晶": ["紫晶", "水晶"],
@@ -91,8 +80,8 @@ except Exception:
         "黄晶": ["黄晶", "水晶"],
         "发晶": ["发晶", "水晶"],
         "芙蓉石": ["芙蓉石", "水晶"],
-        "长石": ["长石"],
-        "月光石": ["长石"],
+        "长石": ["长石", "月光石", "天河石", "日光石", "拉长石"],
+        "月光石": ["月光石", "长石"],
         "天河石": ["天河石", "长石"],
         "日光石": ["日光石", "长石"],
         "拉长石": ["拉长石", "长石"],
@@ -100,14 +89,15 @@ except Exception:
         "针钠钙石": ["针钠钙石"],
         "苏纪石（舒俱来）": ["苏纪石"],
         "苏纪石": ["苏纪石"],
-        "东陵石": ["石英质玉"],
+        "东陵石": ["石英质玉", "石英岩玉"],
+        "密玉（石英质玉）": ["石英质玉"],
+        "石英质玉（阿拉善玉）": ["石英质玉"],
         "石英质玉（缅黄）": ["石英质玉"],
         "石英质玉（盐源）": ["石英质玉"],
         "石英质玉（天山翠）": ["石英质玉"],
         "石英质玉（金丝玉）": ["石英质玉"],
         "石英质玉（黄龙玉）": ["石英质玉"],
         "石英质玉（非洲翠）": ["石英质玉"],
-        "石英质玉（阿拉善玉）": ["石英质玉"],
         "石英质玉": ["石英质玉", "木变石", "玛瑙", "石英岩玉"],
         "石英岩玉": ["石英岩玉", "石英质玉"],
         "石榴石（紫牙乌）": ["石榴石"],
@@ -209,113 +199,71 @@ except Exception:
 }
 
 
-class Rule:
-    """材质与结论对应关系检查"""
-    RULE_NAME = "R11_材质结论对应"
+def load_mapping() -> dict:
+    """加载映射表（线程安全）。文件不存在时生成默认表。"""
+    with _lock:
+        if not CONFIG_PATH.exists():
+            _write_locked(CONFIG_PATH, DEFAULT_MAPPING)
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            # 文件损坏时回退默认，且不覆盖原文件
+            return json.loads(json.dumps(DEFAULT_MAPPING))
 
-    def apply(self, row: dict) -> str:
-        # 质检不通过 → 正确
-        if row.get('质检结果', '') == '不通过':
-            return '正确'
 
-        material = str(row.get('商品材质', '')).strip()
-        inlay = str(row.get('镶嵌材质', '')).strip()
-        fitting = str(row.get('配件材质', '')).strip()
-        metal_conclusion = str(row.get('贵金属结论', '')).strip()
-        gemstone_conclusion = str(row.get('宝玉石结论', '')).strip()
-        remark = str(row.get('备注', '')).strip()
+def save_mapping(mapping: dict) -> dict:
+    """保存映射表，规范化结构后写盘。返回 (ok, msg, data)"""
+    mapping = normalize_mapping(mapping)
+    if mapping is None:
+        return False, "结构无效：需包含 skip/alloy/metal/gemstone 四个字段", None
+    with _lock:
+        try:
+            _write_locked(CONFIG_PATH, mapping)
+            return True, "映射表已保存", mapping
+        except Exception as e:
+            return False, f"保存失败: {e}", None
 
-        # NaN 清洗（引擎层已做统一清洗，此处保留作为兜底）
-        if str(material).lower() in ('nan', 'none'): material = ''
-        if str(inlay).lower() in ('nan', 'none'): inlay = ''
-        if str(fitting).lower() in ('nan', 'none'): fitting = ''
-        if str(metal_conclusion).lower() in ('nan', 'none'): metal_conclusion = ''
-        if str(gemstone_conclusion).lower() in ('nan', 'none'): gemstone_conclusion = ''
-        if str(remark).lower() in ('nan', 'none'): remark = ''
 
-        material = material.strip()
-        inlay = inlay.strip()
-        fitting = fitting.strip()
-        metal_conclusion = metal_conclusion.strip()
-        gemstone_conclusion = gemstone_conclusion.strip()
-        remark = remark.strip()
+def _write_locked(path: Path, data: dict):
+    tmp = path.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+    tmp.replace(path)
 
-        # ① 材质字段全空 → 正确
-        if not material and not inlay and not fitting:
-            return '正确'
 
-        # ② 结论字段全空 → 正确
-        if not metal_conclusion and not gemstone_conclusion:
-            return '正确'
-
-        # 拆分多材质（逗号/顿号/分号分隔），去重
-        src_materials = []
-        for s in (material, inlay, fitting):
-            if s:
-                parts = re.split(r'[,，、;；]', s)
-                for p in parts:
-                    p = p.strip()
-                    if p:
-                        src_materials.append(p)
-
-        # 去重（保持顺序）
-        seen = set()
-        unique_materials = []
-        for m in src_materials:
-            if m not in seen:
-                seen.add(m)
-                unique_materials.append(m)
-
-        # Step 1: 过滤跳过类材质
-        skip_set = set(MAPPING["skip"])
-        valid_materials = [m for m in unique_materials if m not in skip_set]
-        if not valid_materials:
-            return '正确'
-
-        # 预计算所有贵金属结论值（用于合金类检查）
-        all_metal_vals = set()
-        for arr in MAPPING["metal"].values():
-            for v in arr:
-                all_metal_vals.add(v)
-
-        any_matched = False
-
-        for mat in valid_materials:
-            # ── 合金类 ──
-            if any(a in mat for a in MAPPING["alloy"]):
-                any_matched = True
-                # 合金类：贵金属结论或备注不能含贵金属字段
-                if metal_conclusion in all_metal_vals:
-                    return '材质漏检'
-                if any(v in remark for v in all_metal_vals):
-                    return '材质漏检'
+def normalize_mapping(mapping: dict) -> dict:
+    """规范化结构：确保字段存在、列表唯一、值为字符串。无效返回 None"""
+    if not isinstance(mapping, dict):
+        return None
+    for key in ("skip", "alloy", "metal", "gemstone"):
+        if key not in mapping:
+            return None
+    out = {"skip": [], "alloy": [], "metal": {}, "gemstone": {}}
+    seen = set()
+    for item in mapping.get("skip", []):
+        s = str(item).strip()
+        if s and s not in seen:
+            seen.add(s)
+            out["skip"].append(s)
+    seen = set()
+    for item in mapping.get("alloy", []):
+        s = str(item).strip()
+        if s and s not in seen:
+            seen.add(s)
+            out["alloy"].append(s)
+    for kind in ("metal", "gemstone"):
+        for mat, concls in mapping.get(kind, {}).items():
+            mat = str(mat).strip()
+            if not mat:
                 continue
-
-            # ── 贵金属类 ──
-            if mat in MAPPING["metal"]:
-                any_matched = True
-                valid_conc = MAPPING["metal"][mat]
-                matched = any(
-                    metal_conclusion == c or c in remark
-                    for c in valid_conc
-                )
-                if not matched:
-                    return '材质漏检'
-                continue
-
-            # ── 宝玉石类 ──
-            if mat in MAPPING["gemstone"]:
-                any_matched = True
-                valid_conc = MAPPING["gemstone"][mat]
-                matched = any(
-                    gemstone_conclusion == c or c in remark
-                    for c in valid_conc
-                )
-                if not matched:
-                    return '材质漏检'
-                continue
-
-        if not any_matched:
-            return '找不到对应材质'
-
-        return '正确'
+            if not isinstance(concls, (list, tuple)):
+                concls = [concls]
+            vals = []
+            for c in concls:
+                s = str(c).strip()
+                if s and s not in vals:
+                    vals.append(s)
+            if vals:
+                out[kind][mat] = vals
+    return out

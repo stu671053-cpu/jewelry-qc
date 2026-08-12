@@ -161,6 +161,68 @@ body {
     </div>
   </div>
 
+  <!-- 材质映射表管理 -->
+  <div class="card" id="mappingCard">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      材质映射表管理
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sapphire" onclick="saveMapping()" style="font-size:11px;padding:4px 10px">保存映射</button>
+        <button class="btn btn-danger" onclick="resetMapping()" style="font-size:11px;padding:4px 10px">恢复默认</button>
+      </div>
+    </h2>
+    <div class="info" style="margin-bottom:12px">映射表决定 R11 材质结论对应检查。修改保存后立即生效于后台检测；<b>恢复默认</b>将还原为最新业务表。如需全量重检历史订单，请在保存后手动触发一次同步/检测。</div>
+    <div id="mappingMsg" class="msg"></div>
+
+    <div style="display:flex;gap:12px;border-bottom:1px solid var(--border);margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-sapphire mtab active" data-mtab="skip" onclick="switchMtab('skip',this)" style="font-size:12px;padding:6px 12px">忽略词 ({{ skip_count }})</button>
+      <button class="btn btn-sapphire mtab" data-mtab="alloy" onclick="switchMtab('alloy',this)" style="font-size:12px;padding:6px 12px">金属列 ({{ alloy_count }})</button>
+      <button class="btn btn-sapphire mtab" data-mtab="metal" onclick="switchMtab('metal',this)" style="font-size:12px;padding:6px 12px">贵金属映射 ({{ metal_count }})</button>
+      <button class="btn btn-sapphire mtab" data-mtab="gemstone" onclick="switchMtab('gemstone',this)" style="font-size:12px;padding:6px 12px">宝玉石映射 ({{ gemstone_count }})</button>
+    </div>
+
+    <!-- 忽略词 / 金属列：每行一个词，textarea 编辑 -->
+    <div class="mtab-panel" id="panel-skip" style="display:block">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text-dim)">每行一个忽略词（出现在商详材质/镶嵌/配件中的词，跳过检查）</span>
+        <button class="btn btn-sapphire" onclick="addLine('skip')" style="font-size:11px;padding:3px 8px">+ 添加</button>
+      </div>
+      <textarea id="skipText" rows="8" style="width:100%;font-family:Menlo,monospace;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:6px;resize:vertical"></textarea>
+    </div>
+    <div class="mtab-panel" id="panel-alloy" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text-dim)">每行一个合金类材质（金属列，用于合金类检查）</span>
+        <button class="btn btn-sapphire" onclick="addLine('alloy')" style="font-size:11px;padding:3px 8px">+ 添加</button>
+      </div>
+      <textarea id="alloyText" rows="8" style="width:100%;font-family:Menlo,monospace;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:6px;resize:vertical"></textarea>
+    </div>
+
+    <!-- 贵金属 / 宝玉石：材质→结论 表格编辑 -->
+    <div class="mtab-panel" id="panel-metal" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text-dim)">商详贵金属材质 → 允许的贵金属结论（结论用逗号分隔多个）</span>
+        <button class="btn btn-sapphire" onclick="addMappingRow('metal')" style="font-size:11px;padding:3px 8px">+ 添加材质</button>
+      </div>
+      <div style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px" id="metalMapTable">
+          <thead><tr style="background:#f8fafc;position:sticky;top:0"><th style="padding:8px;text-align:left;width:40%">商详材质</th><th style="padding:8px;text-align:left">允许结论</th><th style="padding:8px;width:44px"></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="mtab-panel" id="panel-gemstone" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text-dim)">商详宝玉石材质 → 允许的宝玉石结论（结论用逗号分隔多个）</span>
+        <button class="btn btn-sapphire" onclick="addMappingRow('gemstone')" style="font-size:11px;padding:3px 8px">+ 添加材质</button>
+      </div>
+      <div style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px" id="gemstoneMapTable">
+          <thead><tr style="background:#f8fafc;position:sticky;top:0"><th style="padding:8px;text-align:left;width:40%">商详材质</th><th style="padding:8px;text-align:left">允许结论</th><th style="padding:8px;width:44px"></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- 运行日志 -->
   <div class="card" id="logCard">
     <h2 style="display:flex;justify-content:space-between;align-items:center">
@@ -477,7 +539,121 @@ function logout() {
   fetch('/api/admin/logout', {method: 'POST'}).then(function() { window.location.href = '/login'; });
 }
 
+// ===== 材质映射表管理 =====
+var _mappingData = null;
+
+function mappingMsg(text, color) {
+  var el = document.getElementById('mappingMsg');
+  el.textContent = text;
+  el.className = 'msg ' + (color === 'red' ? 'error' : 'success');
+  setTimeout(function() { el.className = 'msg'; }, 3000);
+}
+
+function switchMtab(name, btn) {
+  document.querySelectorAll('.mtab').forEach(function(b) { b.classList.remove('active'); b.style.opacity = '0.7'; });
+  btn.classList.add('active'); btn.style.opacity = '1';
+  document.querySelectorAll('.mtab-panel').forEach(function(p) { p.style.display = 'none'; });
+  document.getElementById('panel-' + name).style.display = 'block';
+}
+
+async function loadMapping() {
+  try {
+    var r = await qcFetch('/api/admin/mapping');
+    if (!r.ok) return;
+    var d = await r.json();
+    if (!d.success) return;
+    _mappingData = d.mapping;
+    renderMapping();
+  } catch(e) {}
+}
+
+function renderMapping() {
+  if (!_mappingData) return;
+  document.getElementById('skipText').value = (_mappingData.skip || []).join('\n');
+  document.getElementById('alloyText').value = (_mappingData.alloy || []).join('\n');
+  renderMapTable('metal', 'metalMapTable');
+  renderMapTable('gemstone', 'gemstoneMapTable');
+}
+
+function renderMapTable(kind, tableId) {
+  var tbody = document.getElementById(tableId).querySelector('tbody');
+  var map = _mappingData[kind] || {};
+  var keys = Object.keys(map).sort(function(a,b) { return a.localeCompare(b, 'zh'); });
+  tbody.innerHTML = keys.map(function(k) {
+    var vals = (map[k] || []).join(', ');
+    return '<tr>' +
+      '<td style="padding:6px"><input class="map-mat" value="' + escHtml(k) + '" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px"></td>' +
+      '<td style="padding:6px"><input class="map-concl" value="' + escHtml(vals) + '" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px"></td>' +
+      '<td style="padding:6px;text-align:center"><button class="btn btn-danger" onclick="delMappingRow(this)" style="font-size:11px;padding:2px 7px">✕</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function addLine(kind) {
+  var el = document.getElementById(kind + 'Text');
+  el.value = (el.value ? el.value + '\n' : '') + '';
+  el.focus();
+}
+
+function addMappingRow(kind) {
+  var tbody = document.getElementById(kind + 'MapTable').querySelector('tbody');
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td style="padding:6px"><input class="map-mat" placeholder="商详材质" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px"></td>' +
+    '<td style="padding:6px"><input class="map-concl" placeholder="允许结论（逗号分隔）" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px"></td>' +
+    '<td style="padding:6px;text-align:center"><button class="btn btn-danger" onclick="delMappingRow(this)" style="font-size:11px;padding:2px 7px">✕</button></td>';
+  tbody.appendChild(tr);
+}
+
+function delMappingRow(btn) {
+  var tr = btn.closest('tr');
+  if (tr) tr.remove();
+}
+
+async function saveMapping() {
+  var skip = document.getElementById('skipText').value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+  var alloy = document.getElementById('alloyText').value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+  var metal = collectMapTable('metal');
+  var gemstone = collectMapTable('gemstone');
+  if (!skip.length && !alloy.length && !Object.keys(metal).length && !Object.keys(gemstone).length) {
+    mappingMsg('映射表为空，未保存', 'red'); return;
+  }
+  var body = { mapping: { skip: skip, alloy: alloy, metal: metal, gemstone: gemstone } };
+  try {
+    var r = await qcFetch('/api/admin/mapping', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+    var d = await r.json();
+    if (d.success) { _mappingData = d.mapping; renderMapping(); mappingMsg('映射表已保存并生效'); }
+    else mappingMsg(d.message || '保存失败', 'red');
+  } catch(e) { mappingMsg('保存失败：网络错误', 'red'); }
+}
+
+function collectMapTable(kind) {
+  var rows = document.getElementById(kind + 'MapTable').querySelectorAll('tbody tr');
+  var out = {};
+  rows.forEach(function(tr) {
+    var mat = tr.querySelector('.map-mat').value.trim();
+    var concl = tr.querySelector('.map-concl').value.trim();
+    if (!mat || !concl) return;
+    out[mat] = concl.split(/[,，]/).map(function(s) { return s.trim(); }).filter(Boolean);
+  });
+  return out;
+}
+
+async function resetMapping() {
+  if (!confirm('确定恢复映射表为默认（最新业务表）？当前修改将丢失。')) return;
+  try {
+    var r = await qcFetch('/api/admin/mapping/reset', { method: 'POST' });
+    var d = await r.json();
+    if (d.success) { _mappingData = d.mapping; renderMapping(); mappingMsg('已恢复默认映射'); }
+    else mappingMsg(d.message || '恢复失败', 'red');
+  } catch(e) { mappingMsg('恢复失败：网络错误', 'red'); }
+}
+
 initUser();
+loadMapping();
 
 // 事件委托：删除/修改/保存/取消/确认删除
 document.getElementById('userCard').addEventListener('click', function(e) {
