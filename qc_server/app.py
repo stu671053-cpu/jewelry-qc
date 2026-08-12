@@ -710,6 +710,26 @@ def api_get_mapping():
     return jsonify({"success": True, "mapping": mapping})
 
 
+def _sync_frontend_files(mapping: dict):
+    """将映射同步生成到前端 r11_mapping.js 与自动录入插件 mapping.js，保持三处一致"""
+    try:
+        from mapping_store import sync_frontend_files
+        files = sync_frontend_files(mapping)
+        for rel_path, content in (
+            ("r11_mapping.js", files["r11_mapping_js"]),
+            ("自动录入插件/mapping.js", files["plugin_js"]),
+        ):
+            target = BASE_DIR.parent / rel_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            tmp = target.with_suffix(".js.tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(content)
+            tmp.replace(target)
+        logger.info("[映射] 已同步前端 r11_mapping.js 与插件 mapping.js")
+    except Exception as e:
+        logger.warning(f"[映射] 前端文件同步失败(不影响后端): {e}")
+
+
 @app.route("/api/admin/mapping", methods=["PUT"])
 def api_put_mapping():
     """保存材质映射表（管理后台调整用）"""
@@ -726,6 +746,8 @@ def api_put_mapping():
         _r11.MAPPING = saved
     except Exception as e:
         logger.warning(f"[映射] 规则热更新失败: {e}")
+    # 同步生成前端 r11_mapping.js 与插件 mapping.js
+    _sync_frontend_files(saved)
     return jsonify({"success": True, "message": msg, "mapping": saved})
 
 
@@ -743,6 +765,8 @@ def api_reset_mapping():
         _r11.MAPPING = saved
     except Exception as e:
         logger.warning(f"[映射] 规则热更新失败: {e}")
+    # 同步生成前端 r11_mapping.js 与插件 mapping.js
+    _sync_frontend_files(saved)
     return jsonify({"success": True, "message": msg, "mapping": saved})
 
 

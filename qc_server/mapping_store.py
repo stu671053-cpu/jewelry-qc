@@ -267,3 +267,72 @@ def normalize_mapping(mapping: dict) -> dict:
             if vals:
                 out[kind][mat] = vals
     return out
+
+
+# ==================== 同步生成前端/插件映射文件 ====================
+
+def _js_quote(s: str) -> str:
+    """JS 字符串转义"""
+    return json.dumps(s, ensure_ascii=False)
+
+
+def render_frontend_js(mapping: dict) -> str:
+    """渲染 qc_web.html 使用的 r11_mapping.js（R11_MAPPING 结构）"""
+    lines = ["// R11 材质与结论对应关系表 (由管理后台映射表自动生成，请勿手工编辑)",
+             "const R11_MAPPING = {"]
+    # alloy
+    lines.append('  "alloy": [')
+    for a in mapping.get("alloy", []):
+        lines.append(f'    {_js_quote(a)},')
+    lines.append("  ],")
+    # metal
+    lines.append('  "metal": {')
+    for mat in sorted(mapping.get("metal", {})):
+        vals = ", ".join(_js_quote(v) for v in mapping["metal"][mat])
+        lines.append(f'    {_js_quote(mat)}: [{vals}],')
+    lines.append("  },")
+    # gemstone
+    lines.append('  "gemstone": {')
+    for mat in sorted(mapping.get("gemstone", {})):
+        vals = ", ".join(_js_quote(v) for v in mapping["gemstone"][mat])
+        lines.append(f'    {_js_quote(mat)}: [{vals}],')
+    lines.append("  },")
+    # skip
+    lines.append('  "skip": [')
+    for s in mapping.get("skip", []):
+        lines.append(f'    {_js_quote(s)},')
+    lines.append("  ],")
+    lines.append("};")
+    return "\n".join(lines)
+
+
+def render_plugin_js(mapping: dict) -> str:
+    """渲染自动录入插件 mapping.js（IGNORE_WORDS + MATERIAL_MAP 结构）"""
+    lines = ["// ===== 由管理后台映射表自动生成，请勿手工编辑 =====", ""]
+    # IGNORE_WORDS = skip + alloy
+    ignore = list(mapping.get("skip", [])) + list(mapping.get("alloy", []))
+    items = ", ".join(_js_quote(w) for w in ignore)
+    lines.append("// 忽略词：处理前从商品材质中去掉这些词")
+    lines.append(f"var IGNORE_WORDS = [{items}];")
+    lines.append("")
+    # MATERIAL_MAP = metal + gemstone（每个材质取第一个结论）
+    lines.append("// 材质→结论映射（按关键词长度降序，优先长匹配）")
+    lines.append("var MATERIAL_MAP = {")
+    pairs = []
+    for kind in ("metal", "gemstone"):
+        for mat, concls in mapping.get(kind, {}).items():
+            pairs.append((mat, concls[0] if concls else ""))
+    pairs.sort(key=lambda p: -len(p[0]))  # 长匹配优先
+    for mat, concl in pairs:
+        lines.append(f'  {_js_quote(mat)}:{_js_quote(concl)},')
+    lines.append("};")
+    return "\n".join(lines)
+
+
+def sync_frontend_files(mapping: dict) -> dict:
+    """将映射同步生成到 r11_mapping.js 与 自动录入插件/mapping.js
+    返回 {r11_mapping_js, plugin_js} 内容（不写盘由调用方写）"""
+    return {
+        "r11_mapping_js": render_frontend_js(mapping),
+        "plugin_js": render_plugin_js(mapping),
+    }
