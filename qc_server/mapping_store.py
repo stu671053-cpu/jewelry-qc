@@ -277,37 +277,35 @@ def _js_quote(s: str) -> str:
 
 
 def render_frontend_js(mapping: dict) -> str:
-    """渲染 qc_web.html 使用的 r11_mapping.js（R11_MAPPING 结构）"""
+    """渲染 qc_web.html 使用的 r11_mapping.js（R11_MAPPING 结构，无尾逗号）"""
     lines = ["// R11 材质与结论对应关系表 (由管理后台映射表自动生成，请勿手工编辑)",
              "const R11_MAPPING = {"]
     # alloy
-    lines.append('  "alloy": [')
-    for a in mapping.get("alloy", []):
-        lines.append(f'    {_js_quote(a)},')
-    lines.append("  ],")
+    alloy = mapping.get("alloy", [])
+    lines.append('  "alloy": [' + ",".join(f" {_js_quote(a)}" for a in alloy) + " ],")
     # metal
     lines.append('  "metal": {')
-    for mat in sorted(mapping.get("metal", {})):
+    for i, mat in enumerate(sorted(mapping.get("metal", {}))):
         vals = ", ".join(_js_quote(v) for v in mapping["metal"][mat])
-        lines.append(f'    {_js_quote(mat)}: [{vals}],')
+        comma = "," if i < len(mapping["metal"]) - 1 else ""
+        lines.append(f'    {_js_quote(mat)}: [{vals}]{comma}')
     lines.append("  },")
     # gemstone
     lines.append('  "gemstone": {')
-    for mat in sorted(mapping.get("gemstone", {})):
+    for i, mat in enumerate(sorted(mapping.get("gemstone", {}))):
         vals = ", ".join(_js_quote(v) for v in mapping["gemstone"][mat])
-        lines.append(f'    {_js_quote(mat)}: [{vals}],')
+        comma = "," if i < len(mapping["gemstone"]) - 1 else ""
+        lines.append(f'    {_js_quote(mat)}: [{vals}]{comma}')
     lines.append("  },")
-    # skip
-    lines.append('  "skip": [')
-    for s in mapping.get("skip", []):
-        lines.append(f'    {_js_quote(s)},')
-    lines.append("  ],")
+    # skip（最后一个属性，无尾逗号）
+    skip = mapping.get("skip", [])
+    lines.append('  "skip": [' + ",".join(f" {_js_quote(s)}" for s in skip) + " ]")
     lines.append("};")
     return "\n".join(lines)
 
 
 def render_plugin_js(mapping: dict) -> str:
-    """渲染自动录入插件 mapping.js（IGNORE_WORDS + MATERIAL_MAP 结构）"""
+    """渲染自动录入插件 mapping.js（IGNORE_WORDS + MATERIAL_MAP 结构，无尾逗号）"""
     lines = ["// ===== 由管理后台映射表自动生成，请勿手工编辑 =====", ""]
     # IGNORE_WORDS = skip + alloy
     ignore = list(mapping.get("skip", [])) + list(mapping.get("alloy", []))
@@ -323,8 +321,9 @@ def render_plugin_js(mapping: dict) -> str:
         for mat, concls in mapping.get(kind, {}).items():
             pairs.append((mat, concls[0] if concls else ""))
     pairs.sort(key=lambda p: -len(p[0]))  # 长匹配优先
-    for mat, concl in pairs:
-        lines.append(f'  {_js_quote(mat)}:{_js_quote(concl)},')
+    for i, (mat, concl) in enumerate(pairs):
+        comma = "," if i < len(pairs) - 1 else ""
+        lines.append(f'  {_js_quote(mat)}:{_js_quote(concl)}{comma}')
     lines.append("};")
     return "\n".join(lines)
 

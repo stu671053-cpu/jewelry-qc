@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """内网部署包打包脚本"""
-import os, shutil, zipfile, fnmatch
+import os, shutil, zipfile, fnmatch, sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -106,6 +106,19 @@ for root, dirs, files in os.walk(ROOT):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(fp, dst)
         file_count += 1
+
+# 生成与运行时一致的 r11_mapping.js：优先用本地 mapping_config.json（业务已调整过的映射），
+# 否则用内置默认业务表；避免部署包内前端映射与后端 mapping_config 不一致。
+try:
+    sys.path.insert(0, str(ROOT / "qc_server"))
+    from mapping_store import load_mapping, render_frontend_js
+    _m = load_mapping()
+    _r11 = render_frontend_js(_m)
+    with open(BUILD / "r11_mapping.js", "w", encoding="utf-8") as f:
+        f.write(_r11)
+    print(f"✅ r11_mapping.js 已按当前映射表生成 (gemstone={len(_m.get('gemstone', {}))}条)")
+except Exception as e:
+    print(f"⚠️ r11_mapping.js 生成失败，使用源码版本: {e}")
 
 if ZIP_NAME.exists():
     ZIP_NAME.unlink()
