@@ -3,6 +3,10 @@ chcp 65001 >nul
 title Jewelry QC Server
 cd /d "%~dp0"
 
+:: 全局强制 UTF-8 输出，避免 Windows 控制台 GBK 编码下 emoji 打印崩溃
+set PYTHONIOENCODING=utf-8
+set PYTHONUTF8=1
+
 echo.
 echo   ============================================
 echo     Jewelry QC AI Inspection Server
@@ -39,9 +43,10 @@ python -c "import websocket" 2>nul || set NEED_INSTALL=1
 
 if %NEED_INSTALL%==1 (
     echo   [*] Installing missing packages...
-    pip install waitress flask requests pyyaml websocket-client -q
+    :: 用 python -m pip 确保装到当前这个 Python 解释器上，而不是 PATH 里另一个 pip 指向的 Python
+    python -m pip install waitress flask requests pyyaml websocket-client -q
     if %errorlevel% neq 0 (
-        echo   [ERROR] Package install failed! Try running: pip install -r requirements.txt
+        echo   [ERROR] Package install failed! Try running: python -m pip install -r requirements.txt
         pause
         exit /b 1
     )

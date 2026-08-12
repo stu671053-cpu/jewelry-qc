@@ -8,6 +8,16 @@ QC Server - Flask 主入口
 - 手动刷新: 提供全量同步入口（调试/应急用）
 """
 
+import sys
+# Windows 控制台默认 GBK 编码，无法输出 emoji（📋✅❌等），会导致 print 抛异常中断。
+# 强制 stdout/stderr 使用 UTF-8，errors="replace" 保证任何字符都能输出不崩溃。
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import json
 import logging
 import secrets

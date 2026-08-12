@@ -8,8 +8,15 @@ HAR 解析工具 — 从 Chrome 导出的 HAR 文件中提取 Loupe API 路径
 输出: loupe_apis_extracted.json（供 sync_service 使用）
 """
 
-import json
 import sys
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+import json
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 

@@ -10,6 +10,16 @@ Loupe QIC 数据同步服务
     python sync_service.py --fetch-order QC001  # 拉取单条订单
 """
 
+import sys
+# Windows 控制台默认 GBK 编码，无法输出 emoji（📋✅❌等），会导致 print 抛异常中断，
+# 同步进程可能因此中止、数据写不进数据库。强制 stdout/stderr 使用 UTF-8。
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import json
 import logging
 import sqlite3

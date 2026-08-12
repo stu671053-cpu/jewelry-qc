@@ -10,6 +10,14 @@
     脚本会从回调中提取 chatid 并保存到 config.json
 """
 
+import sys
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import json
 import time
 from pathlib import Path
