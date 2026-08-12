@@ -260,11 +260,9 @@ class Rule:
         gemstone_conclusion = gemstone_conclusion.strip()
         remark = remark.strip()
 
-        # ① 碧玉专项：商品材质与宝玉石结论中"碧玉"必须同时出现，否则漏检
-        #    （单独处理，不影响其他材质；置于金属遍历前，带镶嵌金属的碧玉订单也会被拦截）
-        material_has_biyu = '碧玉' in material
-        conclusion_has_biyu = '碧玉' in gemstone_conclusion
-        if material_has_biyu != conclusion_has_biyu:
+        # ① 碧玉单向专项：商详标"碧玉"则结论必须仍含"碧玉"，否则视为材质漏检
+        #    （商详"和田玉"出"和田玉（碧玉）"属纠正商家材质，不在此拦截，由下方宝石匹配放行）
+        if '碧玉' in material and '碧玉' not in gemstone_conclusion:
             return '材质漏检'
 
         # ② 材质字段全空 → 正确
@@ -339,7 +337,12 @@ class Rule:
                     for c in valid_conc
                 )
                 if not matched:
-                    return '材质漏检'
+                    # 碧玉纠正场景放行：商详只写"和田玉"，结论为"和田玉（碧玉）"
+                    # 视为检测机构对商家材质的细化纠正，不算漏检
+                    if '碧玉' in gemstone_conclusion and '和田玉' in mat:
+                        matched = True
+                    else:
+                        return '材质漏检'
                 continue
 
         if not any_matched:
