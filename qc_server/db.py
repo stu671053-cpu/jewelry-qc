@@ -159,12 +159,16 @@ class Database:
             return {r["order_code"] for r in rows}
 
     def get_unchecked_orders(self, batch_size: int = 200) -> list:
-        """获取未检测的订单"""
+        """获取未检测的订单（仅质检数据已提交的订单）
+        状态 100(待质检)/200(质检中) 的订单质量数据尚未提交（质检完成时间为零值），
+        不纳入检测，避免重量/结论为空时被规则误报。
+        """
         with self._conn() as conn:
             try:
                 rows = conn.execute("""
                     SELECT * FROM qic_orders
                     WHERE 订单码 NOT IN (SELECT order_code FROM qc_check_results)
+                      AND 状态 NOT IN ('100', '200')
                     ORDER BY 质检完成时间 DESC
                     LIMIT ?
                 """, (batch_size,)).fetchall()
