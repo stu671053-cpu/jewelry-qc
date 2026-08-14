@@ -2095,7 +2095,7 @@ const ruleSourceFields = {
   r5: ['商品名称', '商品材质', '配件材质', '宝玉石结论', '备注'],
   r6: ['商品材质', '宝玉石结论', '备注'],
   r7: ['商品名称', '商品材质', '配件材质', '宝玉石结论', '备注'],
-  r8: ['商品材质', '配件材质', '宝玉石结论', '备注'],
+  r8: ['配件材质', '宝玉石结论', '贵金属结论', '备注'],
   r9: ['商品名称', '饰品类型'],
   r10: ['商品质量', '重量', '商品材质', '镶嵌材质', '配件材质'],
   r11: ['商品材质', '镶嵌材质', '配件材质', '贵金属结论', '宝玉石结论', '备注'],
@@ -2502,23 +2502,31 @@ function ruleR7(row) {
 
 // R8: 合成立方氧化锆备注检查（与 rules/r8_cubic_zirconia.py 同步）
 function ruleR8(row) {
+  // 前提①：质检结果不通过 → 不判断
   if (isQCFailed(row)) return '正确';
-  const material = cleanVal(row['商品材质']);
-  const accessory = cleanVal(row['配件材质']);
+  const fitting = cleanVal(row['配件材质']);
   const gemstone = cleanVal(row['宝玉石结论']);
+  const metal = cleanVal(row['贵金属结论']);
   const remark = cleanVal(row['备注']);
+  const qcResult = cleanVal(row['质检结果']);
+
+  // 前提②：质检结果通过/空 且 宝玉石结论、贵金属结论同时为空 → 不判断
+  if ((qcResult === '' || qcResult === '通过') && !gemstone && !metal) {
+    return '正确';
+  }
 
   const CUBIC = '合成立方氧化锆';
-  const hasCubicField = material.includes(CUBIC) || accessory.includes(CUBIC);
-  const hasCubicGem = gemstone.includes(CUBIC);
-  const remarkHas = remark.includes(CUBIC);
 
-  if (hasCubicField || hasCubicGem) {
-    if (!remarkHas) return '漏备注';
-    // 备注含立方氧化锆，还需检查是否用"配为/伴"格式（配/为/伴在立方氧化锆前面）
+  // 分支1：配件材质含「合成立方氧化锆」
+  if (fitting.includes(CUBIC)) {
+    if (gemstone.includes(CUBIC) || remark.includes(CUBIC)) return '正确';
+    return '漏备注';
+  }
+
+  // 分支2：配件材质不含「合成立方氧化锆」
+  if (remark.includes(CUBIC)) {
     return /[配为伴].*合成立方氧化锆/.test(remark) ? '正确' : '多备注';
   }
-  if (remarkHas) return '漏备注';
   return '正确';
 }
 
