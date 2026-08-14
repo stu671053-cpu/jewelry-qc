@@ -2514,11 +2514,11 @@ function ruleR8(row) {
   const remarkHas = remark.includes(CUBIC);
 
   if (hasCubicField || hasCubicGem) {
-    return remarkHas ? '正确' : '漏备注';
+    if (!remarkHas) return '漏备注';
+    // 备注含立方氧化锆，还需检查是否用"配为/伴"格式（配/为/伴在立方氧化锆前面）
+    return /[配为伴].*合成立方氧化锆/.test(remark) ? '正确' : '多备注';
   }
-  if (remarkHas) {
-    return (hasCubicField || hasCubicGem) ? '正确' : '漏备注';
-  }
+  if (remarkHas) return '漏备注';
   return '正确';
 }
 
