@@ -355,6 +355,7 @@ def api_anomalies():
                    r.overtime_risk,
                    r.r11_material_conclusion,
                    r.r12_stone_check,
+                   r.r13_chenxiang_tag,
                    o.入库批次号 as batch_code, o.证书编码 as cert_code, o.操作人 as operator,
                    o.质检完成时间 as batch_time, o.状态 as order_status
             FROM qc_check_results r
@@ -377,6 +378,7 @@ def api_anomalies():
         "r9_style_check": "R9 款式核实", "r10_weight_compare": "R10 重量比对",
         "r11_material_conclusion": "R11 材质结论对应",
         "r12_stone_check": "R12 配石检查",
+        "r13_chenxiang_tag": "R13 沉香木带宝",
         "overtime_risk": "超时预警",
     }
 

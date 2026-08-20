@@ -497,6 +497,11 @@ class SyncEngine:
         elif is_re == "1":
             mapped["是否复检"] = "否"
 
+        # 计算字段: 是否木带宝（label 数组含 wood_jewel → 是）
+        labels = item.get("label") or []
+        wood = any(isinstance(l, dict) and l.get("code") == "wood_jewel" for l in labels)
+        mapped["是否木带宝"] = "是" if wood else "否"
+
         # API未返回的字段填空值
         api_missing = ["机构地址", "计量单位", "检测性质", "报告用途", "结果出具形式", "样品贮存要求", "场地"]
         for f in api_missing:

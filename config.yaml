@@ -73,3 +73,9 @@ rules:
     column: 配石检查
     enabled: true
     priority: 12
+
+  - id: r13_chenxiang_tag
+    name: 沉香木带宝检查
+    column: 沉香木带宝检查
+    enabled: true
+    priority: 13
